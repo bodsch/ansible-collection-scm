@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+
+. hooks/_tox_base
+
+mkdir \
+  --parents \
+  "${COLLECTION_DIR}"
+
+rsync \
+  --archive \
+  --recursive \
+  ../ansible-collection-$COLLECTION_NAME/* \
+  "${COLLECTION_DIR}/"

@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+
+. hooks/_tox_base
+
+if [ -z "${COLLECTION_DIR}" ]
+then
+  echo "missing collection directory"
+  echo "run 'make install' first"
+
+  exit 1
+fi
+
+if [ -d ${COLLECTION_DIR} ]
+then
+  ansible-doc --type module --list ${COLLECTION_NAMESPACE}.${COLLECTION_NAME}
+
+  ansible-doc --type module ${COLLECTION_NAMESPACE}.${COLLECTION_NAME}.github_latest
+fi
+
+exit 0
