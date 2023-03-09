@@ -181,8 +181,8 @@ class GithubLatest(object):
         self.module.log(msg=f"latest_release: {latest_release}")
 
         return dict(
-            failed = False,
-            latest_release = latest_release
+            failed=False,
+            latest_release=latest_release
         )
 
     def latest_information(self):
@@ -193,12 +193,12 @@ class GithubLatest(object):
         if os.path.exists(self.cache_file_name):
             self.module.log(msg=f" - read cache file  {self.cache_file_name}")
 
-            now           = datetime.datetime.now()
+            now = datetime.datetime.now()
             creation_time = datetime.datetime.fromtimestamp(os.path.getctime(self.cache_file_name))
-            diff          = now - creation_time
+            diff = now - creation_time
             # define the difference from now to the creation time in minutes
-            cached_time   = diff.total_seconds() / 60
-            out_of_cache  = cached_time > self.cache_minutes
+            cached_time = diff.total_seconds() / 60
+            out_of_cache = cached_time > self.cache_minutes
 
             # self.module.log(msg=f" - now            {now}")
             # self.module.log(msg=f" - creation_time  {creation_time}")
@@ -306,7 +306,7 @@ class GithubLatest(object):
     def version_sort(self, version_list):
         """
         """
-        version_list.sort(key = parseVersion)
+        version_list.sort(key=parseVersion)
 
         return version_list
 
