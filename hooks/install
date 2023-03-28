@@ -2,12 +2,15 @@
 
 . hooks/_tox_base
 
+echo "install collection ${COLLECTION_NAMESPACE}.${COLLECTION_NAME} to ${COLLECTION_DIR}"
+
 mkdir \
   --parents \
   "${COLLECTION_DIR}"
 
 rsync \
   --archive \
+  --verbose \
   --recursive \
   ../ansible-collection-$COLLECTION_NAME/* \
   "${COLLECTION_DIR}/"

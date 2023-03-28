@@ -16,6 +16,8 @@ from packaging.version import parse as parseVersion
 from pathlib import Path
 
 from ansible.module_utils.basic import AnsibleModule
+from ansible_collections.bodsch.core.plugins.module_utils.cache.cache_valid import cache_valid
+from ansible_collections.bodsch.core.plugins.module_utils.directory import create_directory
 
 __metaclass__ = type
 
@@ -112,10 +114,14 @@ EXAMPLES = r"""
 """
 
 RETURN = r"""
+failed:
+    type: bool
+    description:
+        - True if an error occurs
 latest_release:
-    description: ""
-    type: dict
-
+    type: string
+    description:
+        - The required version
 """
 
 
@@ -160,7 +166,7 @@ class GithubLatest(object):
     def run(self):
         """
         """
-        self.__create_directory(self.cache_directory)
+        create_directory(self.cache_directory)
         data = self.latest_information()
 
         if self.github_releases:
@@ -190,28 +196,13 @@ class GithubLatest(object):
         """
         output = None
 
-        if os.path.exists(self.cache_file_name):
-            self.module.log(msg=f" - read cache file  {self.cache_file_name}")
+        out_of_cache = cache_valid(self.module, self.cache_file_name, self.cache_minutes, True)
 
-            now = datetime.datetime.now()
-            creation_time = datetime.datetime.fromtimestamp(os.path.getctime(self.cache_file_name))
-            diff = now - creation_time
-            # define the difference from now to the creation time in minutes
-            cached_time = diff.total_seconds() / 60
-            out_of_cache = cached_time > self.cache_minutes
+        if not out_of_cache:
+            with open(self.cache_file_name, "r") as f:
+                output = json.loads(f.read())
 
-            # self.module.log(msg=f" - now            {now}")
-            # self.module.log(msg=f" - creation_time  {creation_time}")
-            # self.module.log(msg=f" - cached since   {cached_time}")
-            # self.module.log(msg=f" - out of cache   {out_of_cache}")
-
-            if out_of_cache:
-                os.remove(self.cache_file_name)
-            else:
-                with open(self.cache_file_name, "r") as f:
-                    output = json.loads(f.read())
-
-                    return output
+                return output
 
         if not output:
             self.module.log(msg=f" - read from url  {self.github_url}")
@@ -228,19 +219,6 @@ class GithubLatest(object):
         """
         with open(self.cache_file_name, "w") as f:
             json.dump(data, f, indent=2, sort_keys=True)
-
-    def __create_directory(self, dir):
-        """
-        """
-        try:
-            os.makedirs(dir, exist_ok=True)
-        except FileExistsError:
-            pass
-
-        if os.path.isdir(dir):
-            return True
-        else:
-            return False
 
     def __call_url(self, method='GET', data=None):
         """
