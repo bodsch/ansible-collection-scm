@@ -10,7 +10,6 @@ import urllib3
 import requests
 import json
 import os
-import datetime
 
 from packaging.version import parse as parseVersion
 from pathlib import Path

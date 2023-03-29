@@ -8,7 +8,6 @@ import json
 import os
 import re
 from enum import Enum
-import datetime
 
 from packaging.version import parse as parseVersion
 from pathlib import Path
@@ -124,11 +123,13 @@ checksums:
     description: a list with all checksums
 """
 
+
 class Architecture(Enum):
-    amd64   = "x86_64"
-    arm64   = "aarch64"
-    armv7   = "armv7l"
-    armv6   = "armv6l"
+    amd64 = "x86_64"
+    arm64 = "aarch64"
+    armv7 = "armv7l"
+    armv6 = "armv6l"
+
 
 class GithubChecksum(object):
     """
@@ -197,10 +198,10 @@ class GithubChecksum(object):
             rc = 0
 
         return dict(
-            failed = False,
-            rc = rc,
-            checksum = checksum,
-            checksums = data
+            failed=False,
+            rc=rc,
+            checksum=checksum,
+            checksums=data
         )
 
     def latest_information(self):
@@ -306,7 +307,7 @@ class GithubChecksum(object):
     def version_sort(self, version_list):
         """
         """
-        version_list.sort(key = parseVersion)
+        version_list.sort(key=parseVersion)
 
         return version_list
 
@@ -314,7 +315,7 @@ class GithubChecksum(object):
 def main():
     """
     """
-    argument_spec=dict(
+    argument_spec = dict(
         project=dict(
             type=str,
             required=True,
@@ -359,8 +360,8 @@ def main():
     )
 
     module = AnsibleModule(
-        argument_spec = argument_spec,
-        supports_check_mode = False,
+        argument_spec=argument_spec,
+        supports_check_mode=False,
     )
 
     api = GithubChecksum(module)
