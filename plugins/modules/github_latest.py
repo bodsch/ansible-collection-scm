@@ -10,8 +10,11 @@ import urllib3
 import requests
 import json
 import os
+import re
 
 from packaging.version import parse as parseVersion
+from packaging.version import InvalidVersion
+
 from pathlib import Path
 
 from ansible.module_utils.basic import AnsibleModule
@@ -123,7 +126,6 @@ latest_release:
         - The required version
 """
 
-
 class GithubLatest(object):
     """
     Main Class
@@ -146,18 +148,21 @@ class GithubLatest(object):
         self.cache_minutes = int(module.params.get("cache"))
         self.github_releases = module.params.get("github_releases")
         self.github_tags = module.params.get("github_tags")
+        self.filter_elements = module.params.get("filter_elements")
 
         self.github_url = f"https://api.github.com/repos/{self.project}/{self.repository}"
 
-        if self.github_tags:
-            self.github_releases = False
-            self.github_url = f"{self.github_url}/tags"
+        url_path = "releases"
 
-        if self.github_releases:
-            self.github_url = f"{self.github_url}/releases"
+        if self.github_tags:
+            url_path = "tags"
+
+        self.github_url = f"{self.github_url}/{url_path}"
+
+        # self.module.log(msg=f"github url: {self.github_url}")
 
         self.cache_directory = f"{Path.home()}/.ansible/cache/github/{self.project}"
-        self.cache_file_name = os.path.join(self.cache_directory, f"{self.repository}_latest.json")
+        self.cache_file_name = os.path.join(self.cache_directory, f"{self.repository}_latest_{url_path}.json")
         # self.cache_minutes = 60
 
         urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
@@ -168,20 +173,19 @@ class GithubLatest(object):
         create_directory(self.cache_directory)
         data = self.latest_information()
 
+        self.module.log(msg=f"data: {data}")
+
         if self.github_releases:
             releases = [v.get("tag_name") for v in data if v.get('tag_name', None)]
         else:
             releases = [v.get("name") for v in data if v.get('name', None)]
 
-        # filter beta version
-        if self.without_beta:
-            releases = [x for x in releases if "beta" not in x]
+        self.module.log(msg=f"releases: {releases}")
 
         releases = self.version_sort(releases)
-        latest_release = releases[-1:][0]
+        self.module.log(msg=f"releases: {releases}")
 
-        if self.only_version:
-            latest_release = latest_release.replace("v", "").replace("V", "")
+        latest_release = releases[-1:][0]
 
         self.module.log(msg=f"latest_release: {latest_release}")
 
@@ -283,7 +287,27 @@ class GithubLatest(object):
     def version_sort(self, version_list):
         """
         """
-        version_list.sort(key=parseVersion)
+        filter_elements = "|".join(self.filter_elements)
+        filter_elements = f".*({filter_elements}).*"
+
+        version_list = [x for x in version_list if not re.match(filter_elements, x)]
+
+        self.module.log(msg=f"version_list   : {version_list}")
+
+        # filter beta version
+        if self.without_beta:
+            version_list = [x for x in version_list if "beta" not in x]
+
+        # remove "v" or "V" from version
+        if self.only_version:
+            version_list = [x.replace("v", "").replace("V", "") for x in version_list]
+
+        try:
+            version_list.sort(key=parseVersion)
+        except InvalidVersion as e:
+            self.module.log(msg=f"ERROR   : {e}")
+        except Exception as e:
+            self.module.log(msg=f"ERROR   : {e}")
 
         return version_list
 
@@ -291,8 +315,7 @@ class GithubLatest(object):
 def main():
     """
     """
-    module = AnsibleModule(
-        argument_spec=dict(
+    args=dict(
             project=dict(
                 required=True,
                 type=str
@@ -303,10 +326,12 @@ def main():
             ),
             github_releases=dict(
                 required=False,
+                type=bool,
                 default=True,
             ),
             github_tags=dict(
                 required=False,
+                type=bool,
                 default=False,
             ),
             user=dict(
@@ -326,6 +351,11 @@ def main():
                 type=bool,
                 default=True
             ),
+            filter_elements=dict(
+                required=False,
+                type=list,
+                default=[]
+            ),
             only_version=dict(
                 required=False,
                 type=bool,
@@ -335,7 +365,10 @@ def main():
                 required=False,
                 default=60
             )
-        ),
+        )
+
+    module = AnsibleModule(
+        argument_spec=args,
         supports_check_mode=False,
     )
 
