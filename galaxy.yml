@@ -1,3 +1,4 @@
+
 namespace: bodsch
 name: scm
 
@@ -29,14 +30,12 @@ homepage: https://github.com/bodsch/ansible-collection-scm
 issues: https://github.com/bodsch/ansible-collection-scm/issues
 
 build_ignore:
-  - .github
-  - .cache
-  - molecule
-  - .gitignore
-  - .flake8
-  - .editorconfig
-  - .yamllint
-  - .ansible-lint
-  - test-requirements.txt
+  - "galaxy.yml"
   - "*.pyc"
   - "*.retry"
+  - ".ansible-lint"
+  - ".editorconfig"
+  - ".flake8"
+  - ".gitignore"
+  - ".yamllint"
+  - ".github"
