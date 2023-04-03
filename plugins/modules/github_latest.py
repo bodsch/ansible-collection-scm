@@ -156,6 +156,7 @@ class GithubLatest(object):
         url_path = "releases"
 
         if self.github_tags:
+            self.github_releases = False
             url_path = "tags"
 
         self.github_url = f"{self.github_url}/{url_path}"
@@ -174,14 +175,16 @@ class GithubLatest(object):
         create_directory(self.cache_directory)
         data = self.latest_information()
 
-        self.module.log(msg=f"data: {data}")
+        # self.module.log(msg=f"data: {data}")
+        # self.module.log(f"{self.github_releases}")
+        # self.module.log(f"{self.github_tags}")
 
         if self.github_releases:
             releases = [v.get("tag_name") for v in data if v.get('tag_name', None)]
         else:
             releases = [v.get("name") for v in data if v.get('name', None)]
 
-        self.module.log(msg=f"releases: {releases}")
+        # self.module.log(msg=f"releases: {releases}")
 
         releases = self.version_sort(releases)
         self.module.log(msg=f"releases: {releases}")
@@ -288,16 +291,19 @@ class GithubLatest(object):
     def version_sort(self, version_list):
         """
         """
-        filter_elements = "|".join(self.filter_elements)
-        filter_elements = f".*({filter_elements}).*"
-
-        version_list = [x for x in version_list if not re.match(filter_elements, x)]
-
-        self.module.log(msg=f"version_list   : {version_list}")
-
         # filter beta version
         if self.without_beta:
-            version_list = [x for x in version_list if "beta" not in x]
+            self.filter_elements.append("beta")
+
+        if self.filter_elements and len(self.filter_elements) > 0:
+            filter_elements = "|".join(self.filter_elements)
+            filter_elements = f".*({filter_elements}).*"
+
+            # self.module.log(msg=f"filter_elements: {filter_elements}")
+
+            version_list = [x for x in version_list if not re.match(filter_elements, x)]
+
+        # self.module.log(msg=f"version_list: {version_list}")
 
         # remove "v" or "V" from version
         if self.only_version:
