@@ -10,9 +10,6 @@ authors:
 
 description: Collection of Ansible modules to communicate with SCM systems.
 
-license:
-  - Apache-2.0
-
 license_file: 'LICENSE'
 
 tags:
