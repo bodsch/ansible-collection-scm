@@ -126,6 +126,7 @@ latest_release:
         - The required version
 """
 
+
 class GithubLatest(object):
     """
     Main Class
@@ -315,57 +316,57 @@ class GithubLatest(object):
 def main():
     """
     """
-    args=dict(
-            project=dict(
-                required=True,
-                type=str
-            ),
-            repository=dict(
-                required=True,
-                type=str
-            ),
-            github_releases=dict(
-                required=False,
-                type=bool,
-                default=True,
-            ),
-            github_tags=dict(
-                required=False,
-                type=bool,
-                default=False,
-            ),
-            user=dict(
-                required=False,
-                type=str
-            ),
-            password=dict(
-                required=False,
-                type=str,
-                no_log=True
-            ),
-            major_version=dict(
-                required=False,
-            ),
-            without_beta=dict(
-                required=False,
-                type=bool,
-                default=True
-            ),
-            filter_elements=dict(
-                required=False,
-                type=list,
-                default=[]
-            ),
-            only_version=dict(
-                required=False,
-                type=bool,
-                default=True
-            ),
-            cache=dict(
-                required=False,
-                default=60
-            )
+    args = dict(
+        project=dict(
+            required=True,
+            type=str
+        ),
+        repository=dict(
+            required=True,
+            type=str
+        ),
+        github_releases=dict(
+            required=False,
+            type=bool,
+            default=True,
+        ),
+        github_tags=dict(
+            required=False,
+            type=bool,
+            default=False,
+        ),
+        user=dict(
+            required=False,
+            type=str
+        ),
+        password=dict(
+            required=False,
+            type=str,
+            no_log=True
+        ),
+        major_version=dict(
+            required=False,
+        ),
+        without_beta=dict(
+            required=False,
+            type=bool,
+            default=True
+        ),
+        filter_elements=dict(
+            required=False,
+            type=list,
+            default=[]
+        ),
+        only_version=dict(
+            required=False,
+            type=bool,
+            default=True
+        ),
+        cache=dict(
+            required=False,
+            default=60
         )
+    )
 
     module = AnsibleModule(
         argument_spec=args,

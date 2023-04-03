@@ -2,9 +2,6 @@
 name: CI
 
 on:
-  schedule:
-    - cron: "0 4 * * 0"
-  workflow_dispatch:
   workflow_run:
     workflows:
       - "code linter"
