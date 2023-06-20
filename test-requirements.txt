@@ -2,7 +2,7 @@ ansible-lint
 docker
 flake8
 molecule
-molecule-docker
+molecule-plugins[docker]
 netaddr
 pytest
 pytest-testinfra

@@ -1,5 +1,7 @@
 # Collections Plugins Directory
 
+Cache Path: `$HOME/.ansible/cache/github/${project}/${repository}`
+
 ## modules
 
 ### github_latest

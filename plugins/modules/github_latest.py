@@ -80,6 +80,13 @@ options:
     type: bool
     default: true
     required: false
+  filter_elements:
+    description:
+      - defined a list for a filter.
+      - all hits are excluded from the final result
+    type: list
+    required: false,
+    default: []
   cache:
     description:
       - Defines the validity of the meta information in seconds.
@@ -113,6 +120,22 @@ EXAMPLES = r"""
     user: "{{ lookup('env', 'GH_USER') | default(omit) }}"
     password: "{{ lookup('env', 'GH_TOKEN') | default(omit) }}"
   register: _latest_release
+
+- name: get latest tag without beta, preview or others
+  delegate_to: localhost
+  become: false
+  run_once: true
+  github_latest:
+    project: aws
+    repository: aws-cli
+    github_tags: true
+    user: "{{ lookup('env', 'GH_USER') | default(omit) }}"
+    password: "{{ lookup('env', 'GH_TOKEN') | default(omit) }}"
+    filter_elements:
+      - ".*preview"
+      - ".*beta"
+      - ".*rc"
+  register: _latest_release
 """
 
 RETURN = r"""
@@ -123,7 +146,7 @@ failed:
 latest_release:
     type: string
     description:
-        - The required version
+        - The last available version
 """
 
 
@@ -175,16 +198,14 @@ class GithubLatest(object):
         create_directory(self.cache_directory)
         data = self.latest_information()
 
-        # self.module.log(msg=f"data: {data}")
-        # self.module.log(f"{self.github_releases}")
-        # self.module.log(f"{self.github_tags}")
+        # self.module.log(f"data: {data}")
+        # self.module.log(f"GH releases: {self.github_releases}")
+        # self.module.log(f"GH tags    : {self.github_tags}")
 
         if self.github_releases:
             releases = [v.get("tag_name") for v in data if v.get('tag_name', None)]
         else:
             releases = [v.get("name") for v in data if v.get('name', None)]
-
-        # self.module.log(msg=f"releases: {releases}")
 
         releases = self.version_sort(releases)
         self.module.log(msg=f"releases: {releases}")
@@ -299,11 +320,11 @@ class GithubLatest(object):
             filter_elements = "|".join(self.filter_elements)
             filter_elements = f".*({filter_elements}).*"
 
-            # self.module.log(msg=f"filter_elements: {filter_elements}")
+            self.module.log(msg=f"filter_elements: {filter_elements}")
 
             version_list = [x for x in version_list if not re.match(filter_elements, x)]
 
-        # self.module.log(msg=f"version_list: {version_list}")
+        self.module.log(msg=f"version_list: {version_list}")
 
         # remove "v" or "V" from version
         if self.only_version:
