@@ -24,7 +24,7 @@ DOCUMENTATION = r"""
 ---
 module: github_releases
 author: Bodo 'bodsch' Schulz <bodo@boone-schulz.de>
-version_added: 0.9.9
+version_added: 0.9.6
 
 short_description: Fetches the releases version of a GitHub project and returns the download urls.
 description:

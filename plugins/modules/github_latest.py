@@ -198,7 +198,7 @@ class GithubLatest(object):
         create_directory(self.cache_directory)
         data = self.latest_information()
 
-        # self.module.log(f"data: {data}")
+        self.module.log(f"data: {data}")
         # self.module.log(f"GH releases: {self.github_releases}")
         # self.module.log(f"GH tags    : {self.github_tags}")
 
@@ -227,6 +227,7 @@ class GithubLatest(object):
         out_of_cache = cache_valid(self.module, self.cache_file_name, self.cache_minutes, True)
 
         if not out_of_cache:
+            self.module.log(msg=f" - read from cache  {self.cache_file_name}")
             with open(self.cache_file_name, "r") as f:
                 output = json.loads(f.read())
 
@@ -234,7 +235,6 @@ class GithubLatest(object):
 
         if not output:
             self.module.log(msg=f" - read from url  {self.github_url}")
-
             status_code, output = self.__call_url()
 
             if status_code == 200:
