@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 
-. hooks/_tox_base
+. hooks/molecule.rc
+
+set -x
 
 if [ -z "${COLLECTION_DIR}" ]
 then
@@ -12,9 +14,18 @@ fi
 
 if [ -d ${COLLECTION_DIR} ]
 then
-  ansible-doc --type module --list ${COLLECTION_NAMESPACE}.${COLLECTION_NAME}
+  # ansible-doc --list --list_files -t module ${COLLECTION_NAMESPACE}.${COLLECTION_NAME}
 
-  ansible-doc --type module ${COLLECTION_NAMESPACE}.${COLLECTION_NAME}.github_latest
+  ansible_modules=$(
+    ansible-doc --list ${COLLECTION_NAMESPACE}.${COLLECTION_NAME} --json | jq -r 'keys[]'
+  )
+
+  for i in ${ansible_modules}
+  do
+    # echo " - ${i}"
+    PAGER='cat' ansible-doc --type module ${i}
+    echo ""
+  done
 fi
 
 exit 0

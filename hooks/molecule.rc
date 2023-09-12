@@ -1,7 +1,4 @@
 
-COLLECTION_NAMESPACE=bodsch
-COLLECTION_NAME=scm
-
 COLLECTION_DIR="${HOME}/.ansible/collections/ansible_collections/${COLLECTION_NAMESPACE}/${COLLECTION_NAME}"
 
 TOX_ARGS=

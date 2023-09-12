@@ -56,8 +56,11 @@ jobs:
 
       - name: test with tox
         run: |
-          tox -e ansible_$(printf "${{ matrix.ansible-version }}") \
-            -- molecule test --scenario-name default
+          make \
+            test \
+              -e TOX_ANSIBLE="ansible_${{ matrix.ansible-version }}" \
+              -e DISTRIBUTION="${{ matrix.image }}" \
+              -e COLLECTION_SCENARIO="${{ matrix.scenario }}"
         env:
           PY_COLORS: '1'
           ANSIBLE_FORCE_COLOR: '1'

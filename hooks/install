@@ -1,8 +1,6 @@
 #!/usr/bin/env bash
 
-. hooks/_tox_base
-
-echo "install collection ${COLLECTION_NAMESPACE}.${COLLECTION_NAME} to ${COLLECTION_DIR}"
+. hooks/molecule.rc
 
 mkdir \
   --parents \
@@ -12,5 +10,8 @@ rsync \
   --archive \
   --verbose \
   --recursive \
-  ../ansible-collection-$COLLECTION_NAME/* \
+  --exclude hooks \
+  --exclude __pycache__ \
+  --delete \
+  ../ansible-collection-${COLLECTION_NAME}/* \
   "${COLLECTION_DIR}/"

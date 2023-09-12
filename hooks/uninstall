@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-. hooks/_tox_base
+. hooks/molecule.rc
 
 if [ -z "${COLLECTION_DIR}" ]
 then

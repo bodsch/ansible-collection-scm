@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+
+hooks/run_tox.sh "test"
