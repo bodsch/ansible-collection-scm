@@ -1,7 +1,8 @@
 ansible-lint
+ansible-compat < 4.0.1
 docker
 flake8
-molecule
+molecule < 5.0.0
 molecule-plugins[docker]
 netaddr
 pytest
