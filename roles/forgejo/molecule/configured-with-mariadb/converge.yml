@@ -11,4 +11,4 @@
       ansible.builtin.setup:
 
   roles:
-    - role: ansible-forgejo
+    - role: bodsch.scm.forgejo

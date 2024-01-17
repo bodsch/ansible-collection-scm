@@ -113,9 +113,9 @@ class GiteaAuth(object):
             pass
 
         return dict(
-            changed = changed,
-            failed = False,
-            msg = msg,
+            changed=changed,
+            failed=False,
+            msg=msg,
         )
 
     def auth_exists(self, name):

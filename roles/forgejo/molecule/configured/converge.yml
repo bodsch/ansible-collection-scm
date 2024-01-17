@@ -6,4 +6,4 @@
   become: false
 
   roles:
-    - role: ansible-forgejo
+    - role: bodsch.scm.forgejo

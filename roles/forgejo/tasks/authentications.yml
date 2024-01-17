@@ -4,7 +4,7 @@
   remote_user: "{{ forgejo_system_user }}"
   become_user: "{{ forgejo_system_user }}"
   become: true
-  forgejo_user:
+  bodsch.scm.forgejo_user:
     admin: true
     username: "{{ forgejo_admin_user.username }}"
     password: "{{ forgejo_admin_user.password }}"
@@ -18,7 +18,7 @@
   remote_user: "{{ forgejo_system_user }}"
   become_user: "{{ forgejo_system_user }}"
   become: true
-  forgejo_auth:
+  bodsch.scm.forgejo_auth:
     name: "{{ forgejo_auths.ldap.name | default(omit) }}"
     state: "{{ forgejo_auths.ldap.state | default(omit) }}"
     active: "{{ forgejo_auths.ldap.active | default(omit) }}"
