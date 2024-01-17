@@ -1,0 +1,92 @@
+---
+
+- name: define download information
+  ansible.builtin.set_fact:
+    forgejo_runner_release: "{{ forgejo_runner_defaults_release | combine(forgejo_runner_release, recursive=True) }}"
+
+- name: define delegate instance for download handling
+  ansible.builtin.set_fact:
+    forgejo_runner_delegate_to: "{{ ansible_host }}"
+    forgejo_runner_local_tmp_directory: "{{
+        lookup('env', 'CUSTOM_LOCAL_TMP_DIRECTORY') |
+        default('/var/cache/ansible/forgejo', true) }}/{{ forgejo_runner_version }}"
+  when:
+    - forgejo_runner_direct_download
+
+- name: create download directory
+  become: false
+  delegate_to: "{{ forgejo_runner_delegate_to }}"
+  run_once: "{{ 'false' if forgejo_runner_direct_download else 'true' }}"
+  ansible.builtin.file:
+    path: "{{ forgejo_runner_local_tmp_directory }}"
+    state: directory
+    mode: 0750
+
+- name: detect the downloaded forgejo-runner archive
+  become: false
+  delegate_to: "{{ forgejo_runner_delegate_to }}"
+  run_once: "{{ 'false' if forgejo_runner_direct_download else 'true' }}"
+  ansible.builtin.stat:
+    path: "{{ forgejo_runner_local_tmp_directory }}/{{ forgejo_runner_release.file }}"
+  register: stat_forgejo_runner_archive
+
+- name: download
+  when:
+    - stat_forgejo_runner_archive.stat is defined
+    - not stat_forgejo_runner_archive.stat.exists | default('false')
+  block:
+    # - name: checksum
+    #   become: false
+    #   delegate_to: localhost
+    #   run_once: true
+    #   block:
+    #     - name: get checksum list
+    #       bodsch.scm.scm_checksum:
+    #         scm_uri: "https://codeberg.org"
+    #         project: forgejo
+    #         repository: forgejo
+    #         checksum_file: "{{ forgejo_runner_release.checksum }}"
+    #         user: "{{ lookup('env', 'GH_USER') | default(omit) }}"
+    #         password: "{{ lookup('env', 'GH_TOKEN') | default(omit) }}"
+    #         architecture: "{{ ansible_architecture }}"
+    #         system: "{{ ansible_facts.system }}"
+    #         version: "v{{ forgejo_runner_version }}"
+    #       register: _latest_checksum
+    #
+    #     - name: define checksum for {{ system_architecture }} architecture
+    #       ansible.builtin.set_fact:
+    #         __forgejo_runner_checksum: "sha256:{{ _latest_checksum.checksum }}"
+    #       when:
+    #         - _latest_checksum.rc == 0
+    #         - _latest_checksum.checksum is defined
+    #         - _latest_checksum.checksum | string | length > 0
+
+    - name: download forgejo-runner binary archive
+      become: false
+      delegate_to: "{{ forgejo_runner_delegate_to }}"
+      run_once: "{{ 'false' if forgejo_runner_direct_download else 'true' }}"
+      ansible.builtin.get_url:
+        url: "{{ forgejo_runner_release.download_url }}/download/v{{ forgejo_runner_version }}/{{ forgejo_runner_release.file }}"
+        dest: "{{ forgejo_runner_local_tmp_directory }}/{{ forgejo_runner_release.file }}"
+        checksum: "sha256:{{ forgejo_runner_release.download_url }}/download/v{{ forgejo_runner_version }}/{{ forgejo_runner_release.checksum }}"
+        mode: 0640
+      register: _download_archive
+      until: _download_archive is succeeded
+      retries: 5
+      delay: 2
+      check_mode: false
+
+  rescue:
+    - name: delete download directory
+      become: false
+      delegate_to: "{{ forgejo_runner_delegate_to }}"
+      run_once: "{{ 'false' if forgejo_runner_direct_download else 'true' }}"
+      ansible.builtin.file:
+        path: "{{ forgejo_runner_local_tmp_directory }}"
+        state: absent
+
+    - name: exit with fail
+      ansible.builtin.fail:
+        msg: A serious error occurred when downloading the archive.
+
+...

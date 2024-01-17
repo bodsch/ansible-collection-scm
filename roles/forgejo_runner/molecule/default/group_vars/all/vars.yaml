@@ -1,0 +1,26 @@
+---
+
+forgejo_config_dir: /etc/forgejo
+forgejo_working_dir: /var/lib/forgejo
+
+forgejo_runner_controller:
+  hostname: "forgejo"
+  username: "forgejo"
+
+forgejo_runner_register:
+  - name: "{{ ansible_hostname }}"
+    tags: []
+    instance: "http://forgejo.molecule.lan"
+    secret: "4ef3eb262c04aad5e279511c1c86f7377e28d6b9"
+    scope: ""
+    labels:
+      - ansible
+  - name: "foo"
+    state: disabled
+    tags: []
+    instance: "http://forgejo.molecule.lan"
+    secret: "4ef3eb262c04aad5e279511c1c86f7377e28d6b9"
+    scope: ""
+    labels: []
+
+...

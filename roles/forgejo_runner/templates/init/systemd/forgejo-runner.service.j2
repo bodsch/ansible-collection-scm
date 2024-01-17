@@ -1,0 +1,40 @@
+#jinja2: trim_blocks: True, lstrip_blocks: True
+# {{ ansible_managed }}
+
+[Unit]
+Description             = Forgejo Runner
+
+{% if forgejo_runner_systemd.unit.after is defined and
+      forgejo_runner_systemd.unit.after | count > 0 %}
+After                   = {{ forgejo_runner_systemd.unit.after | join(' ') }}
+{% endif %}
+{% if forgejo_runner_systemd.unit.wants is defined and
+      forgejo_runner_systemd.unit.wants | count > 0 %}
+Wants                   = {{ forgejo_runner_systemd.unit.wants | join(' ') }}
+{% endif %}
+{% if forgejo_runner_systemd.unit.requires is defined and
+      forgejo_runner_systemd.unit.requires | count > 0 %}
+Requires              = network.target {{ forgejo_runner_systemd.unit.requires | join(' ') }}
+{% endif %}
+
+[Service]
+RestartSec              = 15s
+Type                    = simple
+User                    = {{ forgejo_runner_system_user }}
+Group                   = {{ forgejo_runner_system_group }}
+WorkingDirectory        = {{ forgejo_runner_working_dir }}
+
+RuntimeDirectory        = forgejo-runner
+
+EnvironmentFile         = -{{ forgejo_runner_defaults_directory }}/forgejo-runner
+
+ExecStart               = /usr/bin/forgejo-runner daemon $OPTIONS
+Restart                 = always
+ExecReload              = /bin/kill -HUP $MAINPID
+ExecStartPre            = /bin/sh -c 'umask 022; mkdir /run/forgejo-runner'
+ExecStartPost           = /bin/sh -c 'umask 022; pgrep forgejo-runner > /run/forgejo-runner/forgejo-runner.pid'
+
+# PIDFile                 = /run/forgejo-runner/forgejo-runner.pid
+
+[Install]
+WantedBy                = multi-user.target

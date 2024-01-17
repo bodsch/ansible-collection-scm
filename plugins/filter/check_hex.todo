@@ -1,0 +1,22 @@
+
+
+def is_hexadecimal_1(s):
+    try:
+        int(s, 16)
+        return True
+    except ValueError:
+        return False
+
+s1 = "BF57C"
+if is_hexadecimal_1(s1):
+    print("Yes")
+    print("Decimal Representation of the given string = {}".format(int(s1, 16)))
+else:
+    print("No")
+
+s2 = "58GK"
+if is_hexadecimal_1(s2):
+    print("Yes")
+    print("Decimal Representation of the given string = {}".format(int(s2, 16)))
+else:
+    print("No")
