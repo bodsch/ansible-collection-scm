@@ -1,0 +1,150 @@
+---
+
+- name: user and group handling
+  when:
+    - forgejo_system_user != "root"
+  block:
+    - name: create forgejo group
+      ansible.builtin.group:
+        name: "{{ forgejo_system_group }}"
+        state: present
+        system: true
+
+    - name: create forgejo user
+      ansible.builtin.user:
+        name: "{{ forgejo_system_user }}"
+        groups: "{{ forgejo_system_group }}"
+        # append: true
+        shell: /bin/bash
+        system: true
+        createhome: false
+        home: "{{ forgejo_working_dir }}"
+
+- name: create install directory
+  ansible.builtin.file:
+    path: "{{ forgejo_install_path }}"
+    state: directory
+    owner: "{{ forgejo_system_user }}"
+    group: "{{ forgejo_system_group }}"
+    mode: 0755
+
+- name: detect binary file for forgejo on '{{ forgejo_delegate_to }}'
+  become: false
+  delegate_to: "{{ forgejo_delegate_to }}"
+  run_once: "{{ 'false' if forgejo_direct_download else 'true' }}"
+  ansible.builtin.stat:
+    path: "{{ forgejo_local_tmp_directory }}/{{ forgejo_release.binary }}"
+  register: stat_file_binary
+
+- name: fail when binary are missing
+  ansible.builtin.fail:
+    msg: "missing binary on ansible controller"
+  when:
+    - not stat_file_binary.stat.exists
+
+- name: detect installed forgejo binary
+  ansible.builtin.stat:
+    path: "{{ forgejo_install_path }}/forgejo"
+  register: stat_forgejo_binary
+
+- name: detect activated forgejo binary
+  ansible.builtin.stat:
+    path: "/usr/bin/forgejo"
+  register: stat_forgejo_activated
+
+- name: install and activate forgejo
+  when:
+    - (stat_forgejo_binary.stat is defined and not stat_forgejo_binary.stat.exists | default('false')) or
+      not stat_forgejo_activated.stat | bodsch.core.linked_version(forgejo_install_path, forgejo_version)
+  block:
+    - name: propagate files
+      block:
+        - name: propagate forgejo binary
+          ansible.builtin.copy:
+            src: "{{ forgejo_local_tmp_directory }}/{{ forgejo_release.binary }}"
+            dest: "{{ forgejo_install_path }}/forgejo"
+            mode: 0755
+            owner: "{{ forgejo_system_user }}"
+            group: "{{ forgejo_system_group }}"
+            remote_src: "{{ 'true' if forgejo_direct_download else 'false' }}"
+
+        - name: make files executable
+          ansible.builtin.file:
+            path: "{{ forgejo_install_path }}/forgejo"
+            mode: 0755
+            owner: "{{ forgejo_system_user }}"
+            group: "{{ forgejo_system_group }}"
+
+        - name: create link to binary
+          ansible.builtin.file:
+            src: "{{ forgejo_install_path }}/forgejo"
+            dest: "/usr/bin/forgejo"
+            state: link
+            force: true
+            follow: false
+          notify:
+            - restart forgejo
+
+      rescue:
+        - name: delete install directory
+          ansible.builtin.file:
+            path: "{{ forgejo_install_path }}"
+            state: absent
+
+        - name: exit with fail
+          ansible.builtin.fail:
+            msg: A serious error occurred during the installation of the binary.
+
+- name: systemd
+  when:
+    - ansible_service_mgr | lower == "systemd"
+  block:
+    - name: create forgejo run configuration
+      ansible.builtin.template:
+        src: "forgejo.j2"
+        dest: "{{ forgejo_defaults_directory }}/forgejo"
+        force: true
+        owner: root
+        group: "{{ forgejo_system_group }}"
+        mode: 0640
+      notify:
+        - restart forgejo
+
+    - name: create systemd service unit
+      ansible.builtin.template:
+        src: "init/systemd/forgejo.service.j2"
+        dest: "{{ systemd_lib_directory }}/forgejo.service"
+        owner: root
+        group: root
+        mode: 0644
+      notify:
+        - daemon-reload
+        - restart forgejo
+
+- name: openrc
+  when:
+    - ansible_service_mgr | lower == "openrc"
+  block:
+    - name: create openrc service configuration
+      ansible.builtin.template:
+        src: "init/openrc/conf.d/forgejo.j2"
+        dest: "/etc/conf.d/forgejo"
+        owner: root
+        group: root
+        mode: 0644
+
+    - name: create openrc init configuration
+      ansible.builtin.template:
+        src: "init/openrc/init.d/forgejo.j2"
+        dest: "/etc/init.d/forgejo"
+        owner: root
+        group: root
+        mode: 0750
+
+- name: create custom fact file
+  bodsch.core.facts:
+    name: forgejo
+    facts:
+      version: "{{ forgejo_version }}"
+
+...

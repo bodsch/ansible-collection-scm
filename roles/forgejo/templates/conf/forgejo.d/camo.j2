@@ -1,0 +1,26 @@
+
+[camo]
+  {#
+    validate first:
+    server_url **is required** if camo is enabled.
+    hmac_key **is required** if camo is enabled.
+  #}
+  {% set forgejo_camo_enabled = forgejo_camo.enabled %}
+  {% if forgejo_camo.server_url | default('') | string | length == 0 %}
+;; server_url **is required** if camo is enabled.
+    {% set forgejo_camo_enabled = false %}
+  {% endif %}
+  {% if forgejo_camo.hmac_key | default('') | string | length == 0 %}
+;; hmac_key **is required** if camo is enabled.
+    {% set forgejo_camo_enabled = false %}
+  {% endif %}
+ENABLED = {{ forgejo_camo_enabled | bool | ternary('true', 'false') }}
+  {% if forgejo_camo.server_url | default('') | string | length > 0 %}
+SERVER_URL = {{ forgejo_camo.server_url }}
+  {% endif %}
+  {% if forgejo_camo.hmac_key | default('') | string | length > 0 %}
+HMAC_KEY = {{ forgejo_camo.hmac_key }}
+  {% endif %}
+  {% if forgejo_camo.allways | default('') | string | length > 0 %}
+ALLWAYS = {{ forgejo_camo.allways | bodsch.core.config_bool(true_as='true', false_as='false') }}
+  {% endif %}

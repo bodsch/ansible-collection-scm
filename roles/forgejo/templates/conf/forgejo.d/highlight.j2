@@ -1,0 +1,8 @@
+
+  {% if forgejo_highlight.mapping is defined and
+        forgejo_highlight.mapping | count > 0 %}
+[highlight.mapping]
+    {% for k, v in forgejo_highlight.mapping.items() %}
+{{ k }} = {{ v }}
+    {% endfor %}
+  {% endif %}

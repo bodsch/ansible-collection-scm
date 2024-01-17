@@ -1,0 +1,14 @@
+---
+
+- name: converge
+  hosts: instance
+  any_errors_fatal: false
+  become: false
+  gather_facts: true
+
+  pre_tasks:
+    - name: do facts module to get latest information
+      ansible.builtin.setup:
+
+  roles:
+    - role: ansible-forgejo

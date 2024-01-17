@@ -1,0 +1,61 @@
+
+[mailer]
+ENABLED = {{ forgejo_mailer.enabled | default('false') | bodsch.core.config_bool(true_as='true', false_as='false') }}
+  {% if forgejo_mailer.send_buffer_len | default('') | string | length > 0 %}
+SEND_BUFFER_LEN = {{ forgejo_mailer.send_buffer_len }}
+  {% endif %}
+  {% if forgejo_mailer.protocol | default('') | string | length > 0 and
+        forgejo_mailer.protocol in ["smtp", "smtps", "smtp+starttls", "smtp+unix", "sendmail", "dummy"] %}
+PROTOCOL = {{ forgejo_mailer.protocol }}
+  {% endif %}
+  {% if forgejo_mailer.smtp_addr | default('') | string | length > 0 %}
+SMTP_ADDR = {{ forgejo_mailer.smtp_addr }}
+  {% endif %}
+  {% if forgejo_mailer.smtp_port | default('') | string | length > 0 %}
+SMTP_PORT = {{ forgejo_mailer.smtp_port }}
+  {% endif %}
+  {% if forgejo_mailer.enable_helo | default('') | string | length > 0 %}
+ENABLE_HELO = {{ forgejo_mailer.enable_helo | bodsch.core.config_bool(true_as='true', false_as='false') }}
+  {% endif %}
+  {% if forgejo_mailer.helo_hostname | default('') | string | length > 0 %}
+HELO_HOSTNAME = {{ forgejo_mailer.helo_hostname }}
+  {% endif %}
+  {% if forgejo_mailer.force_trust_server_cert | default('') | string | length > 0 %}
+FORCE_TRUST_SERVER_CERT = {{ forgejo_mailer.force_trust_server_cert | bodsch.core.config_bool(true_as='true', false_as='false') }}
+  {% endif %}
+  {% if forgejo_mailer.use_client_cert | default('') | string | length > 0 %}
+USE_CLIENT_CERT = {{ forgejo_mailer.use_client_cert | bodsch.core.config_bool(true_as='true', false_as='false') }}
+  {% endif %}
+  {% if forgejo_mailer.client_cert_file | default('') | string | length > 0 %}
+CLIENT_CERT_FILE = {{ forgejo_mailer.client_cert_file }}
+  {% endif %}
+  {% if forgejo_mailer.client_key_file | default('') | string | length > 0 %}
+CLIENT_KEY_FILE = {{ forgejo_mailer.client_key_file }}
+  {% endif %}
+  {% if forgejo_mailer.from | default('') | string | length > 0 %}
+FROM = {{ forgejo_mailer.from }}
+  {% endif %}
+  {% if forgejo_mailer.envelop_from | default('') | string | length > 0 %}
+ENVELOPE_FROM = {{ forgejo_mailer.envelop_from }}
+  {% endif %}
+  {% if forgejo_mailer.user | default('') | string | length > 0 %}
+USER = {{ forgejo_mailer.user }}
+  {% endif %}
+  {% if forgejo_mailer.passwd | default('') | string | length > 0 %}
+PASSWD = {{ forgejo_mailer.passwd }}
+  {% endif %}
+  {% if forgejo_mailer.send_as_plain_text | default('') | string | length > 0 %}
+SEND_AS_PLAIN_TEXT = {{ forgejo_mailer.send_as_plain_text | bodsch.core.config_bool(true_as='true', false_as='false') }}
+  {% endif %}
+  {% if forgejo_mailer.sendmail_path | default('') | string | length > 0 %}
+SENDMAIL_PATH = {{ forgejo_mailer.sendmail_path }}
+  {% endif %}
+  {% if forgejo_mailer.sendmail_args | default('') | string | length > 0 %}
+SENDMAIL_ARGS = {{ forgejo_mailer.sendmail_args }}
+  {% endif %}
+  {% if forgejo_mailer.sendmail_timeout | default('') | string | length > 0 %}
+SENDMAIL_TIMEOUT = {{ forgejo_mailer.sendmail_timeout }}
+  {% endif %}
+  {% if forgejo_mailer.sendmail_convert_crlf | default('') | string | length > 0 %}
+SENDMAIL_CONVERT_CRLF = {{ forgejo_mailer.sendmail_convert_crlf | bodsch.core.config_bool(true_as='true', false_as='false') }}
+  {% endif %}

@@ -1,0 +1,22 @@
+
+[oauth2_client]
+  {% if forgejo_oauth2_client.register_email_confirm | default('') | string | length > 0 %}
+REGISTER_EMAIL_CONFIRM = {{ forgejo_oauth2_client.register_email_confirm }}
+  {% endif %}
+  {% if forgejo_oauth2_client.openid_connect_scopes | default('') | string | length > 0 %}
+OPENID_CONNECT_SCOPES = {{ forgejo_oauth2_client.openid_connect_scopes }}
+  {% endif %}
+  {% if forgejo_oauth2_client.enable_auto_registration | default('') | string | length > 0 %}
+ENABLE_AUTO_REGISTRATION = {{ forgejo_oauth2_client.enable_auto_registration | bodsch.core.config_bool(true_as='true', false_as='false') }}
+  {% endif %}
+  {% if forgejo_oauth2_client.username | default('') | string | length > 0 and
+        forgejo_oauth2_client.username in ["userid", "nickname", "email"] %}
+USERNAME = {{ forgejo_oauth2_client.username }}
+  {% endif %}
+  {% if forgejo_oauth2_client.update_avatar | default('') | string | length > 0 %}
+UPDATE_AVATAR = {{ forgejo_oauth2_client.update_avatar | bodsch.core.config_bool(true_as='true', false_as='false') }}
+  {% endif %}
+  {% if forgejo_oauth2_client.account_linking | default('') | string | length > 0 and
+        forgejo_oauth2_client.account_linking in ["disabled", "login", "auto"] %}
+ACCOUNT_LINKING = {{ forgejo_oauth2_client.account_linking }}
+  {% endif %}

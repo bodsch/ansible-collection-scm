@@ -1,0 +1,7 @@
+
+[actions]
+ENABLED = {{ forgejo_actions.enabled | bodsch.core.config_bool(true_as='true', false_as='false') }}
+  {% if forgejo_actions.default_actions_url is defined and
+        forgejo_actions.default_actions_url | string | length > 0 %}
+DEFAULT_ACTIONS_URL = {{ forgejo_actions.default_actions_url }}
+  {% endif %}

@@ -1,0 +1,78 @@
+---
+
+forgejo_version: 1.20.5-0
+
+forgejo_system_user: forgejo
+forgejo_system_group: forgejo
+forgejo_config_dir: /etc/forgejo
+forgejo_working_dir: /var/lib/forgejo
+forgejo_home_dir: /home/{{ forgejo_system_user }}
+
+forgejo_systemd:
+  unit:
+    after:
+      - syslog.target
+      - network.target
+    wants: []
+    requires: []
+
+forgejo_release: {}
+
+forgejo_direct_download: false
+
+forgejo_name: "Forgejo – Beyond coding. We forge."
+# Either "dev", "prod" or "test", default is "prod"
+forgejo_run_mode: "prod"
+
+forgejo_admin_user:
+  username: ""
+  password: ""
+  email: ""
+
+forgejo_actions: {}
+forgejo_admin: {}
+forgejo_api: {}
+forgejo_attachment: {}
+forgejo_auths:
+  ldap: {}
+forgejo_cache: {}
+forgejo_camo: {}
+forgejo_cron: {}
+forgejo_database: {}
+forgejo_email: {}
+forgejo_federation: {}
+forgejo_git: {}
+forgejo_highlight: {}
+forgejo_i18n: {}
+forgejo_indexer: {}
+forgejo_lfs: {}
+forgejo_log: {}
+forgejo_mailer: {}
+forgejo_markdown: {}
+forgejo_markup: {}
+forgejo_metrics: {}
+forgejo_migrations: {}
+forgejo_mirror: {}
+forgejo_oauth2: {}
+forgejo_oauth2_client: {}
+forgejo_openid: {}
+forgejo_other: {}
+forgejo_packages: {}
+forgejo_picture: {}
+forgejo_project: {}
+forgejo_proxy: {}
+forgejo_queue: {}
+forgejo_repository: {}
+forgejo_security: {}
+forgejo_server: {}
+forgejo_service: {}
+forgejo_session: {}
+forgejo_ssh: {}
+forgejo_storage: {}
+forgejo_task: {}
+forgejo_time: {}
+forgejo_ui: {}
+forgejo_webhook: {}
+
+
+...

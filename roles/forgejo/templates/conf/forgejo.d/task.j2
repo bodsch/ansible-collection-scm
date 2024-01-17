@@ -1,0 +1,14 @@
+
+[task]
+  {% if forgejo_task.queue_type | default('') | string | length > 0 and
+        forgejo_task.queue_type in ["channel", "redis"] %}
+QUEUE_TYPE = {{ forgejo_task.queue_type }}
+    {% if forgejo_task.queue_type == "channel" and
+          forgejo_task.queue_length | default('') | string | length > 0 %}
+QUEUE_LENGTH = {{ forgejo_task.queue_length }}
+    {% endif %}
+    {% if forgejo_task.queue_type == "redis" and
+          forgejo_task.queue_conn_str | default('') | string | length > 0 %}
+QUEUE_CONN_STR = {{ forgejo_task.queue_conn_str }}
+    {% endif %}
+  {% endif %}

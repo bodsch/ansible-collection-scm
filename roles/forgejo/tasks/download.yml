@@ -1,0 +1,114 @@
+---
+
+# - name: get latest release
+#   delegate_to: localhost
+#   become: false
+#   run_once: true
+#   when:
+#     - forgejo_version == "latest"
+#   block:
+#     - name: get latest release
+#       delegate_to: localhost
+#       become: false
+#       run_once: true
+#       bodsch.scm.github_latest:
+#         project: go-forgejo
+#         repository: forgejo
+#         user: "{{ lookup('env', 'GH_USER') | default(omit) }}"
+#         password: "{{ lookup('env', 'GH_TOKEN') | default(omit) }}"
+#       register: _latest_release
+#
+#     - name: re-define forgejo_version
+#       ansible.builtin.set_fact:
+#         forgejo_version: "{{ _latest_release.latest_release }}"
+
+- name: define download information
+  ansible.builtin.set_fact:
+    forgejo_release: "{{ forgejo_defaults_release | combine(forgejo_release, recursive=True) }}"
+
+- name: define delegate instance for download handling
+  ansible.builtin.set_fact:
+    forgejo_delegate_to: "{{ ansible_host }}"
+    forgejo_local_tmp_directory: "{{
+        lookup('env', 'CUSTOM_LOCAL_TMP_DIRECTORY') |
+        default('/var/cache/ansible/forgejo', true) }}/{{ forgejo_version }}"
+  when:
+    - forgejo_direct_download
+
+- name: create download directory
+  become: false
+  delegate_to: "{{ forgejo_delegate_to }}"
+  run_once: "{{ 'false' if forgejo_direct_download else 'true' }}"
+  ansible.builtin.file:
+    path: "{{ forgejo_local_tmp_directory }}"
+    state: directory
+    mode: 0750
+
+- name: detect the downloaded forgejo archive
+  become: false
+  delegate_to: "{{ forgejo_delegate_to }}"
+  run_once: "{{ 'false' if forgejo_direct_download else 'true' }}"
+  ansible.builtin.stat:
+    path: "{{ forgejo_local_tmp_directory }}/{{ forgejo_release.file }}"
+  register: stat_forgejo_archive
+
+- name: download
+  when:
+    - stat_forgejo_archive.stat is defined
+    - not stat_forgejo_archive.stat.exists | default('false')
+  block:
+    # - name: checksum
+    #   become: false
+    #   delegate_to: localhost
+    #   run_once: true
+    #   block:
+    #     - name: get checksum list
+    #       bodsch.scm.scm_checksum:
+    #         scm_uri: "https://codeberg.org"
+    #         project: forgejo
+    #         repository: forgejo
+    #         checksum_file: "{{ forgejo_release.checksum }}"
+    #         user: "{{ lookup('env', 'GH_USER') | default(omit) }}"
+    #         password: "{{ lookup('env', 'GH_TOKEN') | default(omit) }}"
+    #         architecture: "{{ ansible_architecture }}"
+    #         system: "{{ ansible_facts.system }}"
+    #         version: "v{{ forgejo_version }}"
+    #       register: _latest_checksum
+    #
+    #     - name: define checksum for {{ system_architecture }} architecture
+    #       ansible.builtin.set_fact:
+    #         __forgejo_checksum: "sha256:{{ _latest_checksum.checksum }}"
+    #       when:
+    #         - _latest_checksum.rc == 0
+    #         - _latest_checksum.checksum is defined
+    #         - _latest_checksum.checksum | string | length > 0
+
+    - name: download forgejo binary archive
+      become: false
+      delegate_to: "{{ forgejo_delegate_to }}"
+      run_once: "{{ 'false' if forgejo_direct_download else 'true' }}"
+      ansible.builtin.get_url:
+        url: "{{ forgejo_release.download_url }}/download/v{{ forgejo_version }}/{{ forgejo_release.file }}"
+        dest: "{{ forgejo_local_tmp_directory }}/{{ forgejo_release.file }}"
+        checksum: "{{ __forgejo_checksum | default(omit) }}"
+        mode: 0640
+      register: _download_archive
+      until: _download_archive is succeeded
+      retries: 5
+      delay: 2
+      check_mode: false
+
+  rescue:
+    - name: delete download directory
+      become: false
+      delegate_to: "{{ forgejo_delegate_to }}"
+      run_once: "{{ 'false' if forgejo_direct_download else 'true' }}"
+      ansible.builtin.file:
+        path: "{{ forgejo_local_tmp_directory }}"
+        state: absent
+
+    - name: exit with fail
+      ansible.builtin.fail:
+        msg: A serious error occurred when downloading the archive.
+
+...

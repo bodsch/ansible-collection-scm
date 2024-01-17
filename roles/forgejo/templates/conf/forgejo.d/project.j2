@@ -1,0 +1,8 @@
+
+[project]
+  {% if forgejo_project.project_board_basic_kanban_type | count > 0 %}
+PROJECT_BOARD_BASIC_KANBAN_TYPE = {{ forgejo_project.project_board_basic_kanban_type | join(', ') }}
+  {% endif %}
+  {% if forgejo_project.project_board_bug_triage_type | count > 0 %}
+PROJECT_BOARD_BUG_TRIAGE_TYPE = {{ forgejo_project.project_board_bug_triage_type | join(', ') }}
+  {% endif %}

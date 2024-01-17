@@ -1,0 +1,21 @@
+
+[federation]
+ENABLED = {{ forgejo_federation.enabled | default('false') | bodsch.core.config_bool(true_as='true', false_as='false') }}
+  {% if forgejo_federation.share_user_statistics | default('') | string | length > 0 %}
+SHARE_USER_STATISTICS = {{ forgejo_federation.share_user_statistics | bodsch.core.config_bool(true_as='true', false_as='false') }}
+  {% endif %}
+  {% if forgejo_federation.max_size | default('') | string | length > 0 %}
+MAX_SIZE = {{ forgejo_federation.max_size }}
+  {% endif %}
+  {% if forgejo_federation.algorithms | default('') | string | length > 0 %}
+ALGORITHMS = {{ forgejo_federation.algorithms | join(', ') }}
+  {% endif %}
+  {% if forgejo_federation.digest_algorithm | default('') | string | length > 0 %}
+DIGEST_ALGORITHM = {{ forgejo_federation.digest_algorithm }}
+  {% endif %}
+  {% if forgejo_federation.get_headers | default('') | string | length > 0 %}
+GET_HEADERS = {{ forgejo_federation.get_headers | join(', ') }}
+  {% endif %}
+  {% if forgejo_federation.post_headers | default('') | string | length > 0 %}
+POST_HEADERS = {{ forgejo_federation.post_headers | join(', ') }}
+  {% endif %}
