@@ -1,7 +1,7 @@
 namespace: bodsch
 name: scm
 
-version: 0.9.7
+version: 0.10.0
 
 readme: README.md
 
@@ -15,6 +15,7 @@ license_file: 'LICENSE'
 tags:
   - scm
   - github
+  - forgejo
 
 dependencies:
   "community.general": "*"
