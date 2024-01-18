@@ -1,0 +1,10 @@
+---
+
+- name: ensure service is enabled on boot
+  become: true
+  ansible.builtin.service:
+    name: forgejo-runner
+    enabled: true
+    state: started
+
+...

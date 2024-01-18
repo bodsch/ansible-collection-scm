@@ -1,0 +1,45 @@
+---
+
+forgejo_runner_main_version: "{{ forgejo_runner_version[0:3] }}"
+
+forgejo_runner_install_path: /opt/forgejo-runner/{{ forgejo_runner_version }}
+
+forgejo_runner_delegate_to: localhost
+
+forgejo_runner_local_tmp_directory: "{{
+  lookup('env', 'CUSTOM_LOCAL_TMP_DIRECTORY') |
+  default(lookup('env', 'HOME') ~ '/.cache/ansible/forgejo-runner', true) }}/{{ forgejo_runner_version }}"
+
+forgejo_runner_cache_directory: /var/cache/ansible/forgejo-runner
+
+forgejo_runner_remote_tmp_directory: "{{ forgejo_runner_cache_directory }}/{{ forgejo_runner_version }}"
+
+forgejo_runner_requirements:
+  - iproute2
+  - git
+
+forgejo_runner_defaults_service: {}
+
+forgejo_runner_defaults_release:
+  download_url: https://code.forgejo.org/forgejo/runner/releases
+  file: forgejo-runner-{{ forgejo_runner_version }}-{{ ansible_system | lower }}-{{ system_architecture }}
+  checksum: forgejo-runner-{{ forgejo_runner_version }}-{{ ansible_system | lower }}-{{ system_architecture }}.sha256
+  binary: forgejo-runner-{{ forgejo_runner_version }}-linux-{{ system_architecture }}
+
+# ----------------------------------------------------------------------------------------
+
+forgejo_runner_upgrade: false
+
+forgejo_runner_defaults_directory: /etc/default
+
+go_arch_map:
+  x86_64: 'amd64'
+  aarch64: 'arm64'
+  armv7l: 'armv7'
+  armv6l: 'armv6'
+
+system_architecture: "{{ go_arch_map[ansible_architecture] | default(ansible_architecture) }}"
+
+systemd_lib_directory: /lib/systemd/system
+
+...

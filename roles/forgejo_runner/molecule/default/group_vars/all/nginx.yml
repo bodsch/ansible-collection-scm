@@ -1,0 +1,126 @@
+---
+
+nginx_gzip:
+  enabled: true
+
+nginx_events:
+  multi_accept: true
+
+nginx_http:
+  extra_options: |
+    proxy_buffering        off;
+    proxy_set_header       X-Real-IP $remote_addr;
+    proxy_set_header       X-Scheme $scheme;
+    proxy_set_header       X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header       Host $http_host;
+
+    types_hash_max_size    1024;
+    types_hash_bucket_size 512;
+
+    map_hash_max_size      128;
+    map_hash_bucket_size   128;
+
+nginx_logformat:
+  json_combined:
+    format: |
+      '{'
+        '"time_local": "$time_local",'
+        '"remote_addr": "$remote_addr",'
+        '"remote_user": "$remote_user",'
+        '"request": "$request",'
+        '"status": "$status",'
+        '"body_bytes_sent": "$body_bytes_sent",'
+        '"request_time": "$request_time",'
+        '"http_referrer": "$http_referer",'
+        '"http_user_agent": "$http_user_agent"'
+      '}';
+    # escape: json
+
+nginx_vhosts:
+  - name: forgejo.molecule.lan
+    filename: 10-forgejo.molecule.lan.conf
+    state: present  # default: present
+    enabled: true   # default: true
+
+    domains:
+      - forgejo.molecule.lan
+
+    listen:
+      - 80
+
+    upstreams:
+      - name: forgejo
+        servers:
+          - 127.0.0.1:3000
+
+    logfiles:
+      access:
+        file: /var/log/nginx/forgejo.molecule.lan/access.log
+        loglevel: json_combined
+      error:
+        file: /var/log/nginx/forgejo.molecule.lan/error.log
+        loglevel: notice
+
+    locations:
+      "/api/actions":
+        options: |
+          add_header X-Backend "forgejo api";
+
+          proxy_pass          http://forgejo/api/actions;
+          proxy_set_header    Host              $host;
+          proxy_set_header    X-Real-IP         $remote_addr;
+          proxy_set_header    X-Forwarded-For   $proxy_add_x_forwarded_for;
+          proxy_set_header    X-Forwarded-Proto $scheme;
+
+      "/":
+        options: |
+          add_header X-Backend "forgejo";
+
+          proxy_pass          http://forgejo/;
+          proxy_set_header    Host              $host;
+          proxy_set_header    X-Real-IP         $remote_addr;
+          proxy_set_header    X-Forwarded-For   $proxy_add_x_forwarded_for;
+          proxy_set_header    X-Forwarded-Proto $scheme;
+
+
+  - name: forgejo.molecule.lan
+    filename: 20-forgejo.molecule.lan.conf
+    state: present  # default: present
+    enabled: true   # default: true
+
+    domains:
+      - forgejo.molecule.lan
+
+    listen:
+      - 443 ssl http2
+
+    upstreams:
+      - name: forgejo
+        servers:
+          - 127.0.0.1:3000
+
+    logfiles:
+      access:
+        file: /var/log/nginx/forgejo.molecule.lan/access.log
+        loglevel: json_combined
+      error:
+        file: /var/log/nginx/forgejo.molecule.lan/error.log
+        loglevel: notice
+
+    # enable ssl
+    ssl:
+      enabled: true
+      certificate: /etc/snakeoil/molecule.lan/molecule.lan.crt
+      certificate_key: /etc/snakeoil/molecule.lan/molecule.lan.key
+      dhparam: /etc/snakeoil/molecule.lan/dh.pem
+
+    locations:
+      "/":
+        options: |
+          add_header X-Backend "forgejo";
+
+          proxy_pass          http://forgejo/;
+          proxy_set_header    Host              $host;
+          proxy_set_header    X-Real-IP         $remote_addr;
+          proxy_set_header    X-Forwarded-For   $proxy_add_x_forwarded_for;
+          proxy_set_header    X-Forwarded-Proto $scheme;
