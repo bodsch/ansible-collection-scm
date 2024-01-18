@@ -1,12 +1,12 @@
 ---
 
-name: forgejo
+name: forgejo-runner
 
 on:
   workflow_dispatch:
-    inputs:
+    inputs:.github/workflows/forgejo-runner.yml
       logLevel:
-        description: 'Log level'
+        description: 'Log le.github/workflows/forgejo-runner.ymlvel'
         required: true
         default: 'warning'
         type: choice
