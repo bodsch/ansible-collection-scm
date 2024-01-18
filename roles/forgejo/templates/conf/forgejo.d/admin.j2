@@ -1,0 +1,9 @@
+
+[admin]
+  {% if forgejo_admin.disable_regular_org_creation | default('') | string | length > 0 %}
+DISABLE_REGULAR_ORG_CREATION = {{ forgejo_admin.disable_regular_org_creation | bodsch.core.config_bool(true_as='true', false_as='false') }}
+  {% endif %}
+  {% if forgejo_admin.default_email_notifications | default('') | string | length > 0 and
+        forgejo_admin.default_email_notifications in ["enabled", "onmention", "disabled"] %}
+DEFAULT_EMAIL_NOTIFICATIONS = {{ forgejo_admin.default_email_notifications }}
+  {% endif %}

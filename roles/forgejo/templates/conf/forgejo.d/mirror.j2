@@ -1,0 +1,15 @@
+
+[mirror]
+ENABLED = {{ forgejo_mirror.enabled | default('false') | bodsch.core.config_bool(true_as='true', false_as='false') }}
+  {% if forgejo_mirror.disable_new_pull | default('') | string | length > 0 %}
+DISABLE_NEW_PULL = {{ forgejo_mirror.disable_new_pull | default('false') | bodsch.core.config_bool(true_as='true', false_as='false') }}
+  {% endif %}
+  {% if forgejo_mirror.disable_new_push | default('') | string | length > 0 %}
+DISABLE_NEW_PUSH = {{ forgejo_mirror.disable_new_push | default('false') | bodsch.core.config_bool(true_as='true', false_as='false') }}
+  {% endif %}
+  {% if forgejo_mirror.default_interval | default('') | string | length > 0 %}
+DEFAULT_INTERVAL = {{ forgejo_mirror.default_interval }}
+  {% endif %}
+  {% if forgejo_mirror.min_interval | default('') | string | length > 0 %}
+MIN_INTERVAL = {{ forgejo_mirror.min_interval }}
+  {% endif %}

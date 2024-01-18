@@ -1,0 +1,57 @@
+---
+
+- name: create forgejo configuration directory
+  ansible.builtin.file:
+    path: "{{ forgejo_config_dir }}"
+    state: directory
+    owner: "{{ forgejo_system_user }}"
+    group: "{{ forgejo_system_group }}"
+    mode: 0750
+
+- name: create forgejo working directory
+  ansible.builtin.file:
+    path: "{{ forgejo_working_dir }}"
+    state: directory
+    owner: "{{ forgejo_system_user }}"
+    group: "{{ forgejo_system_group }}"
+    mode: 0770
+
+- name: create forgejo custom directory tree
+  ansible.builtin.file:
+    path: "{{ forgejo_working_dir }}/{{ item }}"
+    state: directory
+    owner: "{{ forgejo_system_user }}"
+    group: "{{ forgejo_system_group }}"
+    mode: 0770
+  loop:
+    - log
+    - custom/options
+    - data
+    - data/forgejo-repositories
+    - data/lfs
+    - data/home
+
+- name: create forgejo configuration
+  ansible.builtin.template:
+    force: true
+    src: conf/forgejo.ini.j2
+    dest: "{{ forgejo_config_dir }}/forgejo.ini"
+    owner: "{{ forgejo_system_user }}"
+    group: "{{ forgejo_system_group }}"
+    mode: 0644
+  register: forgejo_config
+  notify:
+    - restart forgejo
+
+- name: restart forgejo if needed
+  ansible.builtin.meta: flush_handlers
+
+- name: check if forgejo are available
+  ansible.builtin.wait_for:
+    path: /run/forgejo/forgejo.pid
+    state: present
+    delay: 2
+    msg: "Timeout to find /run/forgejo/forgejo.pid"
+  ignore_errors: false
+
+...

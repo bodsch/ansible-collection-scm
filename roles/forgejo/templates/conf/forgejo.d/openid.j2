@@ -1,0 +1,14 @@
+
+[openid]
+  {% if forgejo_openid.enable_openid_signin | default('') | string | length > 0 %}
+ENABLE_OPENID_SIGNIN = {{ forgejo_openid.enable_openid_signin | bodsch.core.config_bool(true_as='true', false_as='false') }}
+  {% endif %}
+  {% if forgejo_openid.enable_openid_signup | default('') | string | length > 0 %}
+ENABLE_OPENID_SIGNUP = {{ forgejo_openid.enable_openid_signup | bodsch.core.config_bool(true_as='true', false_as='false') }}
+  {% endif %}
+  {% if forgejo_openid.whitelisted_uris | count > 0 %}
+WHITELISTED_URIS = {{ forgejo_openid.whitelisted_uris | join(' ') }}
+  {% endif %}
+  {% if forgejo_openid.blacklisted_uris | count > 0 %}
+BLACKLISTED_URIS = {{ forgejo_openid.blacklisted_uris | join(' ') }}
+  {% endif %}

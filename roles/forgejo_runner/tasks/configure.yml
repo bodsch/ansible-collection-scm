@@ -1,0 +1,62 @@
+---
+
+- name: create forgejo-runner configuration directory
+  ansible.builtin.file:
+    path: "{{ forgejo_runner_config_dir }}"
+    state: directory
+    owner: "{{ forgejo_runner_system_user }}"
+    group: "{{ forgejo_runner_system_group }}"
+    mode: 0750
+
+- name: create forgejo-runner working directory
+  ansible.builtin.file:
+    path: "{{ forgejo_runner_working_dir }}"
+    state: directory
+    owner: "{{ forgejo_runner_system_user }}"
+    group: "{{ forgejo_runner_system_group }}"
+    mode: 0770
+
+- name: create runner token on {{ forgejo_runner_controller.hostname }}
+  remote_user: "{{ forgejo_runner_controller.username }}"
+  become_user: "{{ forgejo_runner_controller.username }}"
+  become: true
+  delegate_to: "{{ forgejo_runner_controller.hostname }}"
+  bodsch.scm.forgejo_cli:
+    command: register
+    config: "{{ forgejo_config_dir }}/forgejo.ini"
+    working_dir: "{{ forgejo_working_dir }}"
+    runners: "{{ forgejo_runner_register | default([]) }}"
+
+- name: append runner to {{ forgejo_runner_controller.hostname }}
+  remote_user: "{{ forgejo_runner_controller.username }}"
+  become_user: "{{ forgejo_runner_controller.username }}"
+  become: true
+  bodsch.scm.forgejo_runner:
+    command: create_runner
+    working_dir: "{{ forgejo_runner_working_dir }}"
+    runners: "{{ forgejo_runner_register | default([]) }}"
+
+- name: create forgejo-runner configuration
+  ansible.builtin.template:
+    force: true
+    src: forgejo-runner/config.yaml.j2
+    dest: "{{ forgejo_runner_config_dir }}/config.yaml"
+    owner: "{{ forgejo_runner_system_user }}"
+    group: "{{ forgejo_runner_system_group }}"
+    mode: 0644
+  register: forgejo_runner_config
+  notify:
+    - restart forgejo-runner
+
+- name: restart forgejo-runner if needed
+  ansible.builtin.meta: flush_handlers
+
+- name: check if forgejo-runner are available
+  ansible.builtin.wait_for:
+    path: /run/forgejo-runner/forgejo-runner.pid
+    state: present
+    delay: 2
+    msg: "Timeout to find /run/forgejo-runner/forgejo-runner.pid"
+  ignore_errors: false
+
+...

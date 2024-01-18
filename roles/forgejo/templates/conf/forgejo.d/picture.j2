@@ -1,0 +1,36 @@
+
+[picture]
+  {% if forgejo_picture.avatar_upload_path | default('') | string | length > 0 %}
+AVATAR_UPLOAD_PATH = {{ forgejo_picture.avatar_upload_path }}
+  {% endif %}
+  {% if forgejo_picture.repository_avatar_upload_path | default('') | string | length > 0 %}
+REPOSITORY_AVATAR_UPLOAD_PATH = {{ forgejo_picture.repository_avatar_upload_path }}
+  {% endif %}
+  {% if forgejo_picture.repository_avatar_fallback | default('') | string | length > 0 and
+        forgejo_picture.repository_avatar_fallback in ["none", "random", "image"]    %}
+REPOSITORY_AVATAR_FALLBACK = {{ forgejo_picture.repository_avatar_fallback }}
+  {% endif %}
+  {% if forgejo_picture.repository_avatar_fallback_image | default('') | string | length > 0 %}
+REPOSITORY_AVATAR_FALLBACK_IMAGE = {{ forgejo_picture.repository_avatar_fallback_image }}
+  {% endif %}
+  {% if forgejo_picture.avatar_max_width | default('') | string | length > 0 %}
+AVATAR_MAX_WIDTH = {{ forgejo_picture.avatar_max_width }}
+  {% endif %}
+  {% if forgejo_picture.avatar_max_height | default('') | string | length > 0 %}
+AVATAR_MAX_HEIGHT = {{ forgejo_picture.avatar_max_height }}
+  {% endif %}
+  {% if forgejo_picture.avatar_rendered_size_factor | default('') | string | length > 0 %}
+AVATAR_RENDERED_SIZE_FACTOR = {{ forgejo_picture.avatar_rendered_size_factor }}
+  {% endif %}
+  {% if forgejo_picture.avatar_max_file_size | default('') | string | length > 0 %}
+AVATAR_MAX_FILE_SIZE = {{ forgejo_picture.avatar_max_file_size }}
+  {% endif %}
+  {% if forgejo_picture.gravatar_source | default('') | string | length > 0 %}
+GRAVATAR_SOURCE = {{ forgejo_picture.gravatar_source }}
+  {% endif %}
+  {% if forgejo_picture.disable_gravatar | default('') | string | length > 0 %}
+DISABLE_GRAVATAR = {{ forgejo_picture.disable_gravatar | bodsch.core.config_bool(true_as='true', false_as='false') }}
+  {% endif %}
+  {% if forgejo_picture.enable_federated_avatar | default('') | string | length > 0 %}
+ENABLE_FEDERATED_AVATAR = {{ forgejo_picture.enable_federated_avatar | bodsch.core.config_bool(true_as='true', false_as='false') }}
+  {% endif %}

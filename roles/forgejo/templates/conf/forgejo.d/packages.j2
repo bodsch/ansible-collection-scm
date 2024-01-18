@@ -1,0 +1,60 @@
+
+[packages]
+ENABLED = {{ forgejo_packages.enabled | bodsch.core.config_bool(true_as='true', false_as='false') }}
+  {% if forgejo_packages.chunked_upload_path | default('') | string | length > 0 %}
+CHUNKED_UPLOAD_PATH = {{ forgejo_packages.chunked_upload_path }}
+  {% endif %}
+  {% if forgejo_packages.limit_total_owner_count | default('') | string | length > 0 %}
+LIMIT_TOTAL_OWNER_COUNT = {{ forgejo_packages.limit_total_owner_count }}
+  {% endif %}
+  {% if forgejo_packages.limit_total_owner_size | default('') | string | length > 0 %}
+LIMIT_TOTAL_OWNER_SIZE = {{ forgejo_packages.limit_total_owner_size }}
+  {% endif %}
+  {% if forgejo_packages.limit_size_cargo | default('') | string | length > 0 %}
+LIMIT_SIZE_CARGO = {{ forgejo_packages.limit_size_cargo }}
+  {% endif %}
+  {% if forgejo_packages.limit_size_chef | default('') | string | length > 0 %}
+LIMIT_SIZE_CHEF = {{ forgejo_packages.limit_size_chef }}
+  {% endif %}
+  {% if forgejo_packages.limit_size_composer | default('') | string | length > 0 %}
+LIMIT_SIZE_COMPOSER = {{ forgejo_packages.limit_size_composer }}
+  {% endif %}
+  {% if forgejo_packages.limit_size_conan | default('') | string | length > 0 %}
+LIMIT_SIZE_CONAN = {{ forgejo_packages.limit_size_conan }}
+  {% endif %}
+  {% if forgejo_packages.limit_size_conda | default('') | string | length > 0 %}
+LIMIT_SIZE_CONDA = {{ forgejo_packages.limit_size_conda }}
+  {% endif %}
+  {% if forgejo_packages.limit_size_container | default('') | string | length > 0 %}
+LIMIT_SIZE_CONTAINER = {{ forgejo_packages.limit_size_container }}
+  {% endif %}
+  {% if forgejo_packages.limit_size_generic | default('') | string | length > 0 %}
+LIMIT_SIZE_GENERIC = {{ forgejo_packages.limit_size_generic }}
+  {% endif %}
+  {% if forgejo_packages.limit_size_helm | default('') | string | length > 0 %}
+LIMIT_SIZE_HELM = {{ forgejo_packages.limit_size_helm }}
+  {% endif %}
+  {% if forgejo_packages.limit_size_maven | default('') | string | length > 0 %}
+LIMIT_SIZE_MAVEN = {{ forgejo_packages.limit_size_maven }}
+  {% endif %}
+  {% if forgejo_packages.limit_size_npm | default('') | string | length > 0 %}
+LIMIT_SIZE_NPM = {{ forgejo_packages.limit_size_npm }}
+  {% endif %}
+  {% if forgejo_packages.limit_size_nuget | default('') | string | length > 0 %}
+LIMIT_SIZE_NUGET = {{ forgejo_packages.limit_size_nuget }}
+  {% endif %}
+  {% if forgejo_packages.limit_size_pub | default('') | string | length > 0 %}
+LIMIT_SIZE_PUB = {{ forgejo_packages.limit_size_pub }}
+  {% endif %}
+  {% if forgejo_packages.limit_size_pypi | default('') | string | length > 0 %}
+LIMIT_SIZE_PYPI = {{ forgejo_packages.limit_size_pypi }}
+  {% endif %}
+  {% if forgejo_packages.limit_size_rubygems | default('') | string | length > 0 %}
+LIMIT_SIZE_RUBYGEMS = {{ forgejo_packages.limit_size_rubygems }}
+  {% endif %}
+  {% if forgejo_packages.limit_size_swift | default('') | string | length > 0 %}
+LIMIT_SIZE_SWIFT = {{ forgejo_packages.limit_size_swift }}
+  {% endif %}
+  {% if forgejo_packages.limit_size_vagrant | default('') | string | length > 0 %}
+LIMIT_SIZE_VAGRANT = {{ forgejo_packages.limit_size_vagrant }}
+  {% endif %}

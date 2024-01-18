@@ -1,0 +1,54 @@
+---
+
+- name: create admin user
+  remote_user: "{{ forgejo_system_user }}"
+  become_user: "{{ forgejo_system_user }}"
+  become: true
+  bodsch.scm.forgejo_user:
+    admin: true
+    username: "{{ forgejo_admin_user.username }}"
+    password: "{{ forgejo_admin_user.password }}"
+    email: "{{ forgejo_admin_user.email }}"
+  when:
+    - (forgejo_admin_user.username is defined and forgejo_admin_user.username | string | length > 0)
+    - (forgejo_admin_user.password is defined and forgejo_admin_user.password | string | length > 0)
+    - (forgejo_admin_user.email is defined and forgejo_admin_user.email | string | length > 0)
+
+- name: enable ldap authentication
+  remote_user: "{{ forgejo_system_user }}"
+  become_user: "{{ forgejo_system_user }}"
+  become: true
+  bodsch.scm.forgejo_auth:
+    name: "{{ forgejo_auths.ldap.name | default(omit) }}"
+    state: "{{ forgejo_auths.ldap.state | default(omit) }}"
+    active: "{{ forgejo_auths.ldap.active | default(omit) }}"
+    security_protocol: "{{ forgejo_auths.ldap.security_protocol | default(omit) }}"
+    skip_tls_verify: "{{ forgejo_auths.ldap.skip_tls_verify | default(omit) }}"
+    hostname: "{{ forgejo_auths.ldap.hostname | default(omit) }}"
+    port: "{{ forgejo_auths.ldap.port | default(omit) }}"
+    user_search_base: "{{ forgejo_auths.ldap.user_search_base | default(omit) }}"
+    filters:
+      user: "{{ forgejo_auths.ldap.filters.user | default(omit) }}"
+      admin: "{{ forgejo_auths.ldap.filters.admin | default(omit) }}"
+      restricted: "{{ forgejo_auths.ldap.filters.restricted | default(omit) }}"
+    allow_deactivate_all: "{{ forgejo_auths.ldap.allow_deactivate_all | default(omit) }}"
+    attributes:
+      username: "{{ forgejo_auths.ldap.attributes.username | default(omit) }}"
+      firstname: "{{ forgejo_auths.ldap.attributes.firstname | default(omit) }}"
+      surname: "{{ forgejo_auths.ldap.attributes.surname | default(omit) }}"
+      email: "{{ forgejo_auths.ldap.attributes.email | default(omit) }}"
+      public_ssh_key: "{{ forgejo_auths.ldap.attributes.public_ssh_key | default(omit) }}"
+      avatar: "{{ forgejo_auths.ldap.attributes.avatar | default(omit) }}"
+    skip_local_2fa: "{{ forgejo_auths.ldap.skip_local_2fa | default(omit) }}"
+    bind_dn: "{{ forgejo_auths.ldap.bind_dn | default(omit) }}"
+    bind_password: "{{ forgejo_auths.ldap.bind_password | default(omit) }}"
+    attributes_in_bind: "{{ forgejo_auths.ldap.attributes_in_bind | default(omit) }}"
+    synchronize_users: "{{ forgejo_auths.ldap.synchronize_users | default(omit) }}"
+  when:
+    - forgejo_auths.ldap is defined
+    - forgejo_auths.ldap | count > 0
+    - forgejo_auths.ldap.state is defined
+    - forgejo_auths.ldap.state | string | length > 0
+    - forgejo_auths.ldap.state is in ["present", "absent"]
+
+...

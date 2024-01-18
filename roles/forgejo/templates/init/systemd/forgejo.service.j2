@@ -1,0 +1,116 @@
+#jinja2: trim_blocks: True, lstrip_blocks: True
+# {{ ansible_managed }}
+
+[Unit]
+Description             = Gitea (Git with a cup of tea)
+
+{% if forgejo_systemd.unit.after is defined and
+      forgejo_systemd.unit.after | count > 0 %}
+After                   = {{ forgejo_systemd.unit.after | join(' ') }}
+{% endif %}
+{% if forgejo_systemd.unit.wants is defined and
+      forgejo_systemd.unit.wants | count > 0 %}
+Wants                   = {{ forgejo_systemd.unit.wants | join(' ') }}
+{% endif %}
+{% if forgejo_systemd.unit.requires is defined and
+      forgejo_systemd.unit.requires | count > 0 %}
+Requires              = network.target {{ forgejo_systemd.unit.requires | join(' ') }}
+{% endif %}
+
+###
+# Don't forget to add the database service dependencies
+###
+#
+#Wants=mysql.service
+#After=mysql.service
+#
+#Wants=mariadb.service
+#After=mariadb.service
+#
+#Wants=postgresql.service
+#After=postgresql.service
+#
+#Wants=memcached.service
+#After=memcached.service
+#
+#Wants=redis.service
+#After=redis.service
+#
+###
+# If using socket activation for main http/s
+###
+#
+#After=forgejo.main.socket
+#Requires=forgejo.main.socket
+#
+###
+# (You can also provide forgejo an http fallback and/or ssh socket too)
+#
+# An example of /etc/systemd/system/forgejo.main.socket
+###
+##
+## [Unit]
+## Description=Gitea Web Socket
+## PartOf=forgejo.service
+##
+## [Socket]
+## Service=forgejo.service
+## ListenStream=<some_port>
+## NoDelay=true
+##
+## [Install]
+## WantedBy=sockets.target
+##
+###
+
+[Service]
+# Uncomment the next line if you have repos with lots of files and get a HTTP 500 error because of that
+# LimitNOFILE             = 524288:524288
+RestartSec              = 4s
+Type                    = simple
+User                    = {{ forgejo_system_user }}
+Group                   = {{ forgejo_system_group }}
+WorkingDirectory        = {{ forgejo_working_dir }}
+
+# If using Unix socket: tells systemd to create the /run/forgejo folder, which will contain the forgejo.sock file
+# (manually creating /run/forgejo doesn't work, because it would not persist across reboots)
+RuntimeDirectory        = forgejo
+
+EnvironmentFile         = -{{ forgejo_defaults_directory }}/forgejo
+
+ExecStart               = /usr/bin/forgejo web $OPTIONS
+# --work-path {{ forgejo_working_dir }} --custom-path {{ forgejo_working_dir }}/custom --config {{ forgejo_config_dir }}/forgejo.ini
+Restart                 = always
+ExecReload              = /bin/kill -HUP $MAINPID
+
+#ExecStartPre             = /bin/bash -l -c 'echo "/usr/bin/forgejo web ${OPTIONS}" > /tmp/systemd_forgejo.debug'
+#ExecStartPre             = /bin/bash -l -c 'cat ${OPTIONS} >> /tmp/systemd_forgejo.debug'
+
+#Environment             = USER={{ forgejo_system_user }}
+#Environment             = HOME={{ forgejo_working_dir }}
+#Environment             = GITEA_WORK_DIR={{ forgejo_working_dir }}
+
+# If you install Git to directory prefix other than default PATH (which happens
+# for example if you install other versions of Git side-to-side with
+# distribution version), uncomment below line and add that prefix to PATH
+# Don't forget to place git-lfs binary on the PATH below if you want to enable
+# Git LFS support
+#Environment             = PATH=/path/to/git/bin:/bin:/sbin:/usr/bin:/usr/sbin
+
+# If you want to bind Gitea to a port below 1024, uncomment
+# the two values below, or use socket activation to pass Gitea its ports as above
+###
+#CapabilityBoundingSet   = CAP_NET_BIND_SERVICE
+#AmbientCapabilities     = CAP_NET_BIND_SERVICE
+###
+
+# In some cases, when using CapabilityBoundingSet and AmbientCapabilities option, you may want to
+# set the following value to false to allow capabilities to be applied on forgejo process. The following
+# value if set to true sandboxes forgejo service and prevent any processes from running with privileges
+# in the host user namespace.
+###
+# PrivateUsers            = false
+###
+
+[Install]
+WantedBy                = multi-user.target

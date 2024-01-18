@@ -1,5 +1,6 @@
 ---
-name: CI
+
+name: forgejo
 
 on:
   workflow_dispatch:
@@ -19,31 +20,39 @@ on:
       - 'feature/**'
       - 'fix/**'
       - '!doc/**'
+    paths:
+      - "!Makefile"
+      - "!README.md"
+      - 'roles/forgejo/**'
+      - '.github/workflows/forgejo.yml'
+      - '.config/ansible-lint.yml'
+      - '.yamllint'
   pull_request:
     branches:
       - 'main'
       - 'feature/**'
       - 'fix/**'
       - '!doc/**'
+    paths:
+      - "!Makefile"
+      - "!README.md"
+      - 'roles/forgejo/**'
+      - '.github/workflows/forgejo.yml'
+      - '.config/ansible-lint.yml'
+      - '.yamllint'
 
 env:
   COLLECTION_NAMESPACE: bodsch
   COLLECTION_NAME: scm
 
-defaults:
-  run:
-    working-directory: 'ansible-collection-scm'
-
 jobs:
   debian:
-    name: "${{ matrix.image }}: ${{ matrix.collection_role }} (ansible ${{ matrix.ansible-version }}, python ${{ matrix.python_version }})"
+    name: "${{ matrix.image }} / ${{ matrix.scenario }} / ${{ matrix.ansible-version }} / ${{ matrix.python_version }}"
     runs-on: ubuntu-20.04
-    if: ${{ github.event_name == 'schedule' || github.event.workflow_run.conclusion == 'success' }}
     strategy:
       fail-fast: false
       matrix:
         image:
-          - debian:11
           - debian:12
         ansible-version:
           - '6.7'
@@ -54,13 +63,10 @@ jobs:
           - default
         collection_role:
           - forgejo
-          - forgejo_runner
 
     steps:
       - name: check out the codebase.
         uses: actions/checkout@v3
-        with:
-          ref: ${{ github.event.workflow_run.head_branch }}
 
       - name: 🐍 set up python
         uses: actions/setup-python@v4
@@ -77,7 +83,7 @@ jobs:
           make \
             install
 
-      - name: test with tox
+      - name: test ${{ matrix.collection_role }} - ${{ matrix.scenario }}
         run: |
           make \
             test \

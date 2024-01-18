@@ -1,0 +1,36 @@
+
+[cron]
+ENABLED = {{ forgejo_cron.enabled | bodsch.core.config_bool(true_as='true', false_as='false') }}
+  {% if forgejo_cron.run_at_start | default('') | string | length > 0 %}
+RUN_AT_START = {{ forgejo_cron.run_at_start | bool | ternary('true', 'false') }}
+  {% endif %}
+  {% set cron_jobs = [
+      "archive_cleanup", "update_mirrors", "repo_health_check", "check_repo_stats",
+      "update_migration_poster_id", "sync_external_users", "cleanup_hook_task_table",
+      "cleanup_packages", "delete_inactive_accounts", "delete_repo_archives",
+      "git_gc_repos", "resync_all_sshkeys", "resync_all_hooks", "reinit_missing_repos",
+      "delete_missing_repos", "delete_generated_repository_avatars", "delete_old_actions",
+      "update_checker", "delete_old_system_notices", "gc_lfs"
+      ] %}
+  {% set cron_parameters = [
+      "run_at_start", "notice_on_success", "schedule", "older_than",
+      "pull_limit", "push_limit", "update_existing", "cleanup_type", "number_to_keep",
+      "http_endpoint"
+      ] %}
+  {% for job in cron_jobs %}
+    {% set d = forgejo_cron.get(job) %}
+    {% if d and d.enabled | default('false') | bool %}
+
+      {% set _ = d.pop("enabled") %}
+      {% if d.comment | default('') | string | length > 0 %}
+; ; {{ d.comment }}
+        {% set _ = d.pop("comment") %}
+      {% endif %}
+[cron.{{ job }}]
+      {% for k, v in d.items() %}
+        {% if v | default('') | string | length > 0 %}
+{{ k | upper }} = {{ v | bodsch.core.config_bool(true_as='true', false_as='false') }}
+        {% endif %}
+      {% endfor %}
+    {% endif %}
+  {% endfor %}

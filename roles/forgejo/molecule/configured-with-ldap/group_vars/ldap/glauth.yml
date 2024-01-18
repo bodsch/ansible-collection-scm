@@ -1,0 +1,91 @@
+---
+
+glauth_service:
+  listen:
+    ldap: ""
+    ldaps: ""
+  tls:
+    cert_file: "/etc/glauth/certs/molecule.lan.pem"
+    key_file: "/etc/glauth/certs/molecule.lan.key"
+
+glauth_config:
+  ldaps:
+    enabled: false
+    listen:
+      address: "0.0.0.0"
+      port: "636"
+    tls:
+      cert_file: "/etc/glauth/certs/molecule.lan.pem"
+      key_file: "/etc/glauth/certs/molecule.lan.key"
+
+glauth_backends:
+  config:
+    base_dn: "dc=molecule,dc=lan"
+    name_format: "cn"
+    group_format: "ou"
+
+glauth_groups:
+  admins:
+    gid: 3000
+  users:
+    gid: 4000
+    include_groups:
+      - 4001
+  forgejo:
+    gid: 4001
+
+glauth_users:
+  admin:
+    enabled: true
+    given_name: Admin
+    sn: ""
+    mail: "admin@matrix.lan"
+    uid: 3000
+    primary_group: 3000
+    other_groups: []
+    pass:
+      # echo -n "xxx" | openssl dgst -sha256
+      sha256: "cd2eb0837c9b4c962c22d2ff8b5441b7b45805887f051d39bf133b583baf6860"
+      sha256_apps: []
+      bcrypt: ""
+      bcrypt_apps: []
+    ssh_keys: []
+    otp_secret: ""
+    yubikey: ""
+    login_shell: ""
+    home_dir: ""
+    capabilities:
+#      "*":
+#        object: "dc=matrix,dc=lan"
+      "*":
+        object: "dc=molecule,dc=lan"
+    custom_attrs: {}
+
+  bodsch:
+    given_name: "B."
+    sn: "Schulz"
+    mail: "bodsch@matrix.lan"
+    uid: 4000
+    primary_group: 4000
+    other_groups:
+      - 4001
+    pass:
+      # echo -n "xxx" | openssl dgst -sha256
+      sha256: "cd2eb0837c9b4c962c22d2ff8b5441b7b45805887f051d39bf133b583baf6860"
+    login_shell: "/bin/bash"
+    home_dir: "/home/bodsch"
+    capabilities:
+#      "search":
+#        object: "dc=matrix,dc=lan"
+      "search":
+        object: "dc=molecule,dc=lan"
+
+glauth_behaviors:
+  ignore_capabilities: true
+
+glauth_api:
+  enabled: true
+  listen:
+    address: "0.0.0.0"
+
+...

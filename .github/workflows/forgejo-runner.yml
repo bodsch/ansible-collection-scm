@@ -1,0 +1,149 @@
+---
+
+name: forgejo-runner
+
+on:
+  workflow_dispatch:
+    inputs:
+      logLevel:
+        description: 'Log level'
+        required: true
+        default: 'warning'
+        type: choice
+        options:
+          - info
+          - warning
+          - debug
+  push:
+    branches:
+      - 'main'
+      - 'feature/**'
+      - 'fix/**'
+      - '!doc/**'
+    paths:
+      - "!Makefile"
+      - "!README.md"
+      - 'roles/forgejo_runner/**'
+      - '.github/workflows/forgejo.yml'
+      - '.config/ansible-lint.yml'
+      - '.yamllint'
+  pull_request:
+    branches:
+      - 'main'
+      - 'feature/**'
+      - 'fix/**'
+      - '!doc/**'
+    paths:
+      - "!Makefile"
+      - "!README.md"
+      - 'roles/forgejo_runner/**'
+      - '.github/workflows/forgejo.yml'
+      - '.config/ansible-lint.yml'
+      - '.yamllint'
+
+env:
+  COLLECTION_NAMESPACE: bodsch
+  COLLECTION_NAME: scm
+
+jobs:
+  # arch:
+  #   name: "${{ matrix.image }} / ${{ matrix.scenario }} / ${{ matrix.ansible-version }} / ${{ matrix.python_version }}"
+  #   runs-on: ubuntu-20.04
+  #   strategy:
+  #     fail-fast: false
+  #     matrix:
+  #       image:
+  #         - archlinux:latest
+  #       ansible-version:
+  #         - '6.7'
+  #       python_version:
+  #         - "3.10.11"
+  #         - "3.11.3"
+  #       scenario:
+  #         - default
+  #       collection_role:
+  #         - forgejo_runner
+  #
+  #   steps:
+  #     - name: check out the codebase.
+  #       uses: actions/checkout@v3
+  #       with:
+  #         ref: ${{ github.event.workflow_run.head_branch }}
+  #
+  #     - name: 🐍 set up python
+  #       uses: actions/setup-python@v4
+  #       with:
+  #         python-version: "${{ matrix.python_version }}"
+  #
+  #     - name: install dependencies
+  #       run: |
+  #         python -m pip install --upgrade pip
+  #         pip install -r test-requirements.txt
+  #
+  #     - name: Install collection
+  #       run: |
+  #         make \
+  #           install
+  #
+  #     - name: test ${{ matrix.collection_role }} - ${{ matrix.scenario }}
+  #       run: |
+  #         make \
+  #           test \
+  #             -e TOX_ANSIBLE="ansible_${{ matrix.ansible-version }}" \
+  #             -e DISTRIBUTION="${{ matrix.image }}" \
+  #             -e COLLECTION_ROLE="${{ matrix.collection_role }}" \
+  #             -e COLLECTION_SCENARIO="${{ matrix.scenario }}"
+  #       env:
+  #         PY_COLORS: '1'
+  #         ANSIBLE_FORCE_COLOR: '1'
+  #         DISTRIBUTION: ${{ matrix.image }}
+
+  debian:
+    name: "${{ matrix.image }} / ${{ matrix.scenario }} / ${{ matrix.ansible-version }} / ${{ matrix.python_version }}"
+    runs-on: ubuntu-20.04
+    strategy:
+      fail-fast: false
+      matrix:
+        image:
+          - debian:12
+        ansible-version:
+          - '6.7'
+        python_version:
+          - "3.10.11"
+          - "3.11.3"
+        scenario:
+          - default
+        collection_role:
+          - forgejo
+
+    steps:
+      - name: check out the codebase.
+        uses: actions/checkout@v3
+
+      - name: 🐍 set up python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "${{ matrix.python_version }}"
+
+      - name: install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r test-requirements.txt
+
+      - name: Install collection
+        run: |
+          make \
+            install
+
+      - name: test ${{ matrix.collection_role }} - ${{ matrix.scenario }}
+        run: |
+          make \
+            test \
+              -e TOX_ANSIBLE="ansible_${{ matrix.ansible-version }}" \
+              -e DISTRIBUTION="${{ matrix.image }}" \
+              -e COLLECTION_ROLE="${{ matrix.collection_role }}" \
+              -e COLLECTION_SCENARIO="${{ matrix.scenario }}"
+        env:
+          PY_COLORS: '1'
+          ANSIBLE_FORCE_COLOR: '1'
+          DISTRIBUTION: ${{ matrix.image }}

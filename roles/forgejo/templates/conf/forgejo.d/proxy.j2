@@ -1,0 +1,9 @@
+
+[proxy]
+PROXY_ENABLED = {{ forgejo_proxy.proxy_enabled | bodsch.core.config_bool(true_as='true', false_as='false') }}
+  {% if forgejo_proxy.proxy_url | default('') | string | length > 0 %}
+PROXY_URL = {{ forgejo_proxy.proxy_url }}
+  {% endif %}
+  {% if forgejo_proxy.proxy_hosts | count > 0 %}
+PROXY_HOSTS = {{ forgejo_proxy.proxy_hosts | join(', ') }}
+  {% endif %}

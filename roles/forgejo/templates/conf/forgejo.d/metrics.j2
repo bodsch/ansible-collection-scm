@@ -1,0 +1,13 @@
+
+[metrics]
+ENABLED = {{ forgejo_metrics.enabled | default('false') | bodsch.core.config_bool(true_as='true', false_as='false') }}
+  {% if forgejo_metrics.token | default('') | string | length > 0 %}
+;; If you want to add authorization, specify a token here
+TOKEN = {{ forgejo_metrics.token }}
+  {% endif %}
+  {% if forgejo_metrics.enabled_issue_by_label | default('') | string | length > 0 %}
+ENABLED_ISSUE_BY_LABEL = {{ forgejo_metrics.enabled_issue_by_label | default('false') | bodsch.core.config_bool(true_as='true', false_as='false') }}
+  {% endif %}
+  {% if forgejo_metrics.enabled_issue_by_repository | default('') | string | length > 0 %}
+ENABLED_ISSUE_BY_REPOSITORY = {{ forgejo_metrics.enabled_issue_by_repository | default('false') | bodsch.core.config_bool(true_as='true', false_as='false') }}
+  {% endif %}

@@ -1,0 +1,26 @@
+---
+
+mariadb_root_password: Y5FZfKXzCeOWGf4kBOiFSp6Il
+
+mariadb_root_password_update: true
+
+mariadb_databases:
+  - name: forgejo
+
+mariadb_users:
+  - name: forgejo
+    host: "%"
+    password: "{{ vault__database.forgejo }}"
+    encrypted: false
+    priv: "forgejo.*:ALL"
+
+mariadb_config_mysqld:
+  bind-address: 0.0.0.0
+  # socket: "{{ mariadb_socket }}"
+  skip-external-locking:
+  skip-name-resolve: 1
+  performance_schema: 1
+  expire_logs_days: 2
+  max_connections: 20
+
+...

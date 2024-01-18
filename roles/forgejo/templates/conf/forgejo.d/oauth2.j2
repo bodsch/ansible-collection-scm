@@ -1,0 +1,27 @@
+
+[oauth2]
+ENABLE = {{ forgejo_oauth2.enabled | default('false') | bodsch.core.config_bool(true_as='true', false_as='false') }}
+  {% if forgejo_oauth2.jwt_signing_algorithm | default('') | string | length > 0 and
+        forgejo_oauth2.jwt_signing_algorithm in ["HS256", "HS384", "HS512", "RS256", "RS384", "RS512", "ES256", "ES384", "ES512", "EdDSA"] %}
+JWT_SIGNING_ALGORITHM = {{ forgejo_oauth2.jwt_signing_algorithm }}
+  {% endif %}
+  {% if forgejo_oauth2.jwt_signing_algorithm in ["RS256", "RS384", "RS512", "ES256", "ES384", "ES512"] and
+        forgejo_oauth2.jwt_signing_private_key_file | default('') | string | length > 0 %}
+JWT_SIGNING_PRIVATE_KEY_FILE = {{ forgejo_oauth2.jwt_signing_private_key_file }}
+  {% endif %}
+  {% if forgejo_oauth2.jwt_signing_algorithm in ["HS256", "HS384", "HS512"] and
+        forgejo_oauth2.jwt_secret | default('') | string | length > 0 %}
+JWT_SECRET = {{ forgejo_oauth2.jwt_secret }}
+  {% endif %}
+  {% if forgejo_oauth2.access_token_expiration_time | default('') | string | length > 0 %}
+ACCESS_TOKEN_EXPIRATION_TIME = {{ forgejo_oauth2.access_token_expiration_time }}
+  {% endif %}
+  {% if forgejo_oauth2.refresh_token_expiration_time | default('') | string | length > 0 %}
+REFRESH_TOKEN_EXPIRATION_TIME = {{ forgejo_oauth2.refresh_token_expiration_time }}
+  {% endif %}
+  {% if forgejo_oauth2.invalidate_refresh_tokens | default('') | string | length > 0 %}
+INVALIDATE_REFRESH_TOKENS = {{ forgejo_oauth2.invalidate_refresh_tokens | bodsch.core.config_bool(true_as='true', false_as='false') }}
+  {% endif %}
+  {% if forgejo_oauth2.max_token_length | default('') | string | length > 0 %}
+MAX_TOKEN_LENGTH = {{ forgejo_oauth2.max_token_length }}
+  {% endif %}

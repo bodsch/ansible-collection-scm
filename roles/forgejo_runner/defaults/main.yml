@@ -1,0 +1,39 @@
+---
+
+forgejo_runner_version: 3.3.0
+
+forgejo_runner_system_user: forgejo
+forgejo_runner_system_group: forgejo
+forgejo_runner_config_dir: /etc/forgejo-runner
+forgejo_runner_working_dir: /var/lib/forgejo-runner
+forgejo_runner_home_dir: /home/{{ forgejo_runner_system_user }}
+
+forgejo_runner_systemd:
+  unit:
+    after:
+      - syslog.target
+      - network.target
+    wants: []
+    requires: []
+
+forgejo_runner_release: {}
+
+forgejo_runner_direct_download: false
+
+forgejo_runner_controller:
+  hostname: "localhost"
+  username: "forgejo"
+  # groupname: "forgejo"
+
+forgejo_runner_register:
+  - name: "{{ ansible_hostname }}" # runner name
+    state: disabled
+    # tags: []                     #
+    instance: "http://forgejo.tld" #
+    secret: "" # the secret the runner will use to connect as a 40 character hexadecimal string
+    scope: ""                    # {owner}[/{repo}] - leave empty for a global runner
+    labels: []                   # list of labels supported by the runner (e.g. docker,ubuntu-latest,self-hosted)  (not required since v1.21)
+
+forgejo_runner_service: {}
+
+...

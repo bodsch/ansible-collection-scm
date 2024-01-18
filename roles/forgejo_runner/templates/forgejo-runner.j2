@@ -1,0 +1,27 @@
+#jinja2: trim_blocks: True, lstrip_blocks: True
+# {{ ansible_managed }}
+
+OPTIONS="--config {{ forgejo_runner_config_dir }}/config.yaml"
+{#
+# /usr/bin/forgejo-runner --help
+Run Forgejo Actions locally by specifying the event name (e.g. `push`) or an action name directly.
+
+Usage:
+  forgejo-runner [command]
+
+Available Commands:
+  cache-server       Start a cache server for the cache action
+  create-runner-file Create a runner file using a shared secret used to pre-register the runner on the Forgejo instance
+  daemon             Run as a runner daemon
+  exec               Run workflow locally.
+  generate-config    Generate an example config file
+  help               Help about any command
+  register           Register a runner to the server
+
+Flags:
+  -c, --config string   Config file path
+  -h, --help            help for forgejo-runner
+  -v, --version         version for forgejo-runner
+
+Use "forgejo-runner [command] --help" for more information about a command.
+#}

@@ -1,0 +1,62 @@
+
+[storage]
+  {% if forgejo_storage.storage_type | default('') | string | length > 0 %}
+STORAGE_TYPE = {{ forgejo_storage.storage_type }}
+  {% endif %}
+  {% if forgejo_storage.storage_type == "local" %}
+    {% if forgejo_storage.path | default('') | string | length > 0 %}
+PATH = {{ forgejo_storage.path }}
+    {% endif %}
+  {% endif %}
+
+  {% if forgejo_storage.storage_type == "minio" %}
+    {% if forgejo_storage.serve_direct | default('') | string | length > 0 %}
+SERVE_DIRECT = {{ forgejo_storage.serve_direct | bodsch.core.config_bool(true_as='true', false_as='false') }}
+    {% endif %}
+    {% if forgejo_storage.minio_endpoint | default('') | string | length > 0 %}
+MINIO_ENDPOINT = {{ forgejo_storage.minio_endpoint }}
+    {% endif %}
+    {% if forgejo_storage.minio_access_key_id | default('') | string | length > 0 %}
+MINIO_ACCESS_KEY_ID = {{ forgejo_storage.minio_access_key_id }}
+    {% endif %}
+    {% if forgejo_storage.minio_secret_access_key | default('') | string | length > 0 %}
+MINIO_SECRET_ACCESS_KEY = {{ forgejo_storage.minio_secret_access_key }}
+    {% endif %}
+    {% if forgejo_storage.minio_bucket | default('') | string | length > 0 %}
+MINIO_BUCKET = {{ forgejo_storage.minio_bucket }}
+    {% endif %}
+    {% if forgejo_storage.minio_location | default('') | string | length > 0 %}
+MINIO_LOCATION = {{ forgejo_storage.minio_location }}
+    {% endif %}
+    {% if forgejo_storage.minio_use_ssl | default('') | string | length > 0 %}
+MINIO_USE_SSL = {{ forgejo_storage.minio_use_ssl | bodsch.core.config_bool(true_as='true', false_as='false') }}
+    {% endif %}
+    {% if forgejo_storage.minio_insecure_skip_verify | default('') | string | length > 0 %}
+MINIO_INSECURE_SKIP_VERIFY = {{ forgejo_storage.minio_insecure_skip_verify | bodsch.core.config_bool(true_as='true', false_as='false') }}
+    {% endif %}
+  {% endif %}
+  {% if forgejo_storage.repo_archive is defined and
+        forgejo_storage.repo_archive | count > 0 %}
+
+[storage.repo-archive]
+    {% if forgejo_storage.repo_archive.storage_type | default('') | string | length > 0 %}
+STORAGE_TYPE = {{ forgejo_storage.repo_archive.storage_type }}
+    {% endif %}
+  {% endif %}
+  {% if forgejo_storage.packages is defined and
+        forgejo_storage.packages | count > 0 %}
+
+[storage.packages]
+  {% if forgejo_storage.packages.storage_type | default('') | string | length > 0 %}
+STORAGE_TYPE = {{ forgejo_storage.packages.storage_type }}
+    {% endif %}
+  {% endif %}
+
+  {% if forgejo_storage.actions_log is defined and
+        forgejo_storage.actions_log | count > 0 %}
+
+[storage.actions_log]
+    {% if forgejo_storage.actions_log.storage_type | default('') | string | length > 0 %}
+STORAGE_TYPE = {{ forgejo_storage.actions_log.storage_type }}
+    {% endif %}
+  {% endif %}

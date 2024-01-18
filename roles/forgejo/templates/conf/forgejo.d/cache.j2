@@ -1,0 +1,30 @@
+
+[cache]
+ENABLED = {{ forgejo_cache.enabled | bodsch.core.config_bool(true_as='true', false_as='false') }}
+  {% if forgejo_cache.adapter  | default('') | string | length > 0 and
+        forgejo_cache.adapter in ["memory", "redis", "memcache", "twoqueue"] %}
+ADAPTER = {{ forgejo_cache.adapter }}
+  {% endif %}
+  {% if forgejo_cache.adapter == "memory" and
+        forgejo_cache.interval | default('') | string | length > 0 %}
+INTERVAL = {{ forgejo_cache.interval }}
+  {% endif %}
+  {% if forgejo_cache.adapter in ["redis", "memcache", "twoqueue"] and
+        forgejo_cache.host | default('') | string | length > 0 %}
+HOST = {{ forgejo_cache.host }}
+  {% endif %}
+  {% if forgejo_cache.item_ttl | default('') | string | length > 0 %}
+ITEM_TTL = {{ forgejo_cache.item_ttl }}
+  {% endif %}
+  {% if forgejo_cache.last_commit | default('') | string | length > 0 and
+        forgejo_cache.last_commit.enabled | default('false') | bool %}
+
+[cache.last_commit]
+ENABLED = {{ forgejo_cache.last_commit.enabled | bodsch.core.config_bool(true_as='true', false_as='false') }}
+    {% if forgejo_cache.last_commit.item_ttl | default('') | string | length > 0 %}
+ITEM_TTL = {{ forgejo_cache.last_commit.item_ttl }}
+    {% endif %}
+    {% if forgejo_cache.last_commit.commits_count | default('') | string | length > 0 %}
+COMMITS_COUNT = 1000
+    {% endif %}
+  {% endif %}

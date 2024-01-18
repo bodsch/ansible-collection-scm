@@ -1,0 +1,23 @@
+
+[webhook]
+  {% if forgejo_webhook.queue_length | default('') | string | length > 0 %}
+QUEUE_LENGTH = 1000
+  {% endif %}
+  {% if forgejo_webhook.deliver_timeout | default('') | string | length > 0 %}
+DELIVER_TIMEOUT = 5
+  {% endif %}
+  {% if forgejo_webhook.allowed_host_list | count > 0 %}
+ALLOWED_HOST_LIST = {{ forgejo_webhook.allowed_host_list | join(', ') }}
+  {% endif %}
+  {% if forgejo_webhook.skip_tls_verify | default('') | string | length > 0 %}
+SKIP_TLS_VERIFY = {{ forgejo_webhook.skip_tls_verify | bodsch.core.config_bool(true_as='true', false_as='false') }}
+  {% endif %}
+  {% if forgejo_webhook.paging_num | default('') | string | length > 0 %}
+PAGING_NUM = {{ forgejo_webhook.paging_num }}
+  {% endif %}
+  {% if forgejo_webhook.proxy_url | default('') | string | length > 0 %}
+PROXY_URL = {{ forgejo_webhook.proxy_url }}
+  {% endif %}
+  {% if forgejo_webhook.proxy_hosts | count > 0 %}
+PROXY_HOSTS = {{ forgejo_webhook.proxy_hosts | join(', ') }}
+  {% endif %}

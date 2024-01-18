@@ -1,0 +1,242 @@
+#jinja2: trim_blocks: True, lstrip_blocks: True
+; {{ ansible_managed }}
+{#
+; This file lists the default values used by Gitea
+;; Copy required sections to your own app.ini (default is custom/conf/app.ini)
+;; and modify as needed.
+;; Do not copy the whole file as-is, as it contains some invalid sections for illustrative purposes.
+;; If you don't know what a setting is you should not set it.
+;;
+;; see https://docs.forgejo.io/en-us/config-cheat-sheet/ for additional documentation.
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Default Configuration (non-`app.ini` configuration)
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;
+;; These values are environment-dependent but form the basis of a lot of values. They will be
+;; reported as part of the default configuration when running `forgejo --help` or on start-up. The order they are emitted there is slightly different but we will list them here in the order they are set-up.
+;;
+;; - _`AppPath`_: This is the absolute path of the running forgejo binary.
+;; - _`AppWorkPath`_: This refers to "working path" of the `forgejo` binary. It is determined by using the first set thing in the following hierarchy:
+;;   - The `--work-path` flag passed to the binary
+;;   - The environment variable `$GITEA_WORK_DIR`
+;;   - A built-in value set at build time (see building from source)
+;;   - Otherwise it defaults to the directory of the _`AppPath`_
+;;   - If any of the above are relative paths then they are made absolute against
+;; the directory of the _`AppPath`_
+;; - _`CustomPath`_: This is the base directory for custom templates and other options.
+;; It is determined by using the first set thing in the following hierarchy:
+;;   - The `--custom-path` flag passed to the binary
+;;   - The environment variable `$GITEA_CUSTOM`
+;;   - A built-in value set at build time (see building from source)
+;;   - Otherwise it defaults to _`AppWorkPath`_`/custom`
+;;   - If any of the above are relative paths then they are made absolute against the
+;; the directory of the _`AppWorkPath`_
+;; - _`CustomConf`_: This is the path to the `app.ini` file.
+;;   - The `--config` flag passed to the binary
+;;   - A built-in value set at build time (see building from source)
+;;   - Otherwise it defaults to _`CustomPath`_`/conf/app.ini`
+;;   - If any of the above are relative paths then they are made absolute against the
+;; the directory of the _`CustomPath`_
+;;
+;; In addition there is _`StaticRootPath`_ which can be set as a built-in at build time, but will otherwise default to _`AppWorkPath`_
+#}
+APP_NAME = {{ forgejo_name }}
+RUN_USER = {{ forgejo_system_user }}
+{% set run_mod = "prod" %}
+{% if forgejo_run_mode is defined and
+      forgejo_run_mode | string | length > 0 and
+      forgejo_run_mode in ["test", "dev", "prod"] %}
+{% set run_mod = forgejo_run_mode %}
+{% endif %}
+RUN_MODE = {{ run_mod }}
+{% if forgejo_working_dir is defined and
+      forgejo_working_dir | string | length > 0 %}
+WORK_PATH = {{ forgejo_working_dir }}
+{% endif %}
+{% if forgejo_actions is defined and
+      forgejo_actions | count > 0 and
+      forgejo_actions.enabled | default('false') | bool %}
+{% include('forgejo.d/actions.j2') %}
+{% endif %}
+{% if forgejo_admin is defined and
+      forgejo_admin | count > 0 %}
+{% include('forgejo.d/admin.j2') %}
+{% endif %}
+{% if forgejo_api is defined and
+      forgejo_api | count > 0 %}
+{% include('forgejo.d/api.j2') %}
+{% endif %}
+{% if forgejo_attachment is defined and
+      forgejo_attachment | count > 0  and
+      forgejo_attachment.enabled | default('false') | bool %}
+{% include('forgejo.d/attachment.j2') %}
+{% endif %}
+{% if forgejo_cache is defined and
+      forgejo_cache | count > 0 and
+      forgejo_cache.enabled | default('false') | bool %}
+{% include('forgejo.d/cache.j2') %}
+{% endif %}
+{% if forgejo_camo is defined and
+      forgejo_camo | count > 0 and
+      forgejo_camo.enabled | default('false') | bool %}
+{% include('forgejo.d/camo.j2') %}
+{% endif %}
+{% if forgejo_cors is defined and
+      forgejo_cors | count > 0 and
+      forgejo_cors.enabled | bool %}
+{% include('forgejo.d/cors.j2') %}
+{% endif %}
+{% if forgejo_cron is defined and
+      forgejo_cron | count > 0 and
+      forgejo_cron.enabled | default('false') | bool %}
+{% include('forgejo.d/cron.j2') %}
+{% endif %}
+{% if forgejo_database is defined and
+      forgejo_database | count > 0 %}
+{% include('forgejo.d/database.j2') %}
+{% endif %}
+{% if forgejo_email is defined and
+      forgejo_email | count > 0 %}
+{% include('forgejo.d/email.j2') %}
+{% endif %}
+{% if forgejo_federation is defined and
+      forgejo_federation | count > 0 and
+      forgejo_federation.enabled | default('false') | bool %}
+{% include('forgejo.d/federation.j2') %}
+{% endif %}
+{% if forgejo_git is defined and
+      forgejo_git | count > 0 %}
+{% include('forgejo.d/git.j2') %}
+{% endif %}
+{% if forgejo_highlight is defined and
+      forgejo_highlight | count > 0 %}
+{% include('forgejo.d/highlight.j2') %}
+{% endif %}
+{% if forgejo_i18n is defined and
+      forgejo_i18n | count > 0 %}
+{% include('forgejo.d/i18n.j2') %}
+{% endif %}
+{% if forgejo_indexer is defined and
+      forgejo_indexer | count > 0 %}
+{% include('forgejo.d/indexer.j2') %}
+{% endif %}
+{% if forgejo_lfs is defined and
+      forgejo_lfs | count > 0 %}
+{% include('forgejo.d/lfs.j2') %}
+{% endif %}
+{% if forgejo_log is defined and
+      forgejo_log | count > 0 %}
+{% include('forgejo.d/log.j2') %}
+{% endif %}
+{% if forgejo_mailer is defined and
+      forgejo_mailer | count > 0 and
+      forgejo_mailer.enabled | bool %}
+{% include('forgejo.d/mailer.j2') %}
+{% endif %}
+{% if forgejo_markdown is defined and
+      forgejo_markdown | count > 0 %}
+{% include('forgejo.d/markdown.j2') %}
+{% endif %}
+{% if forgejo_markup is defined and
+      forgejo_markup | count > 0 %}
+{% include('forgejo.d/markup.j2') %}
+{% endif %}
+{% if forgejo_metrics is defined and
+      forgejo_metrics | count > 0 and
+      forgejo_metrics.enabled | bool %}
+{% include('forgejo.d/metrics.j2') %}
+{% endif %}
+{% if forgejo_migrations is defined and
+      forgejo_migrations | count > 0 %}
+{% include('forgejo.d/migrations.j2') %}
+{% endif %}
+{% if forgejo_mirror is defined and
+      forgejo_mirror | count > 0 and
+      forgejo_mirror.enabled | bool %}
+{% include('forgejo.d/mirror.j2') %}
+{% endif %}
+{% if forgejo_oauth2 is defined and
+      forgejo_oauth2 | count > 0 and
+      forgejo_oauth2.enabled | bool %}
+{% include('forgejo.d/oauth2.j2') %}
+{% endif %}
+{% if forgejo_oauth2_client is defined and
+      forgejo_oauth2_client | count > 0 %}
+{% include('forgejo.d/oauth2_client.j2') %}
+{% endif %}
+{% if forgejo_openid is defined and
+      forgejo_openid | count > 0 %}
+{% include('forgejo.d/openid.j2') %}
+{% endif %}
+{% if forgejo_other is defined and
+      forgejo_other | count > 0 %}
+{% include('forgejo.d/other.j2') %}
+{% endif %}
+{% if forgejo_packages is defined and
+      forgejo_packages | count > 0 and
+      forgejo_packages.enabled | bool %}
+{% include('forgejo.d/packages.j2') %}
+{% endif %}
+{% if forgejo_picture is defined and
+      forgejo_picture | count > 0 %}
+{% include('forgejo.d/picture.j2') %}
+{% endif %}
+{% if forgejo_project is defined and
+      forgejo_project | count > 0 %}
+{% include('forgejo.d/project.j2') %}
+{% endif %}
+{% if forgejo_proxy is defined and
+      forgejo_proxy | count > 0 and
+      forgejo_proxy.proxy_enabled | bool %}
+{% include('forgejo.d/proxy.j2') %}
+{% endif %}
+{% if forgejo_queue is defined and
+      forgejo_queue | count > 0 %}
+{% include('forgejo.d/queue.j2') %}
+{% endif %}
+{% if forgejo_repository is defined and
+      forgejo_repository | count > 0 %}
+{% include('forgejo.d/repository.j2') %}
+{% endif %}
+{% if forgejo_security is defined and
+      forgejo_security | count > 0 %}
+{% include('forgejo.d/security.j2') %}
+{% endif %}
+{% if forgejo_server is defined and
+      forgejo_server | count > 0 %}
+{% include('forgejo.d/server.j2') %}
+{% endif %}
+{% if forgejo_service is defined and
+      forgejo_service | count > 0 %}
+{% include('forgejo.d/service.j2') %}
+{% endif %}
+{% if forgejo_session is defined and
+      forgejo_session | count > 0 %}
+{% include('forgejo.d/session.j2') %}
+{% endif %}
+{% if forgejo_ssh is defined and
+      forgejo_ssh | count > 0 %}
+{% include('forgejo.d/ssh.j2') %}
+{% endif %}
+{% if forgejo_storage is defined and
+      forgejo_storage | count > 0 %}
+{% include('forgejo.d/storage.j2') %}
+{% endif %}
+{% if forgejo_task is defined and
+      forgejo_task | count > 0 %}
+{% include('forgejo.d/task.j2') %}
+{% endif %}
+{% if forgejo_time is defined and
+      forgejo_time | count > 0 %}
+{% include('forgejo.d/time.j2') %}
+{% endif %}
+{% if forgejo_ui is defined and
+      forgejo_ui | count > 0 %}
+{% include('forgejo.d/ui.j2') %}
+{% endif %}
+{% if forgejo_webhook is defined and
+      forgejo_webhook | count > 0 %}
+{% include('forgejo.d/webhook.j2') %}
+{% endif %}
