@@ -121,11 +121,11 @@ class ForgejoCli(object):
 
         args_list = [
             self.forgejo_bin,
+            "--work-path", self.working_dir,
+            "--config", self.config,
             "forgejo-cli",
             "actions",
             "register",
-            "--work-path", self.working_dir,
-            "--config", self.config,
             "--name", runner_name,
             "--secret", secret,
         ]
