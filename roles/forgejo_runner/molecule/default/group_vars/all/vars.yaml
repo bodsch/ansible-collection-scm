@@ -14,13 +14,35 @@ forgejo_runner_register:
     secret: "4ef3eb262c04aad5e279511c1c86f7377e28d6b9"
     scope: ""
     labels:
-      - ansible
-  - name: "foo"
-    state: disabled
-    tags: []
-    instance: "http://forgejo.molecule.lan"
-    secret: "4ef3eb262c04aad5e279511c1c86f7377e28d6b9"
-    scope: ""
-    labels: []
+      - ubuntu-latest
+      - ubuntu-22.04
+
+forgejo_runner_config:
+  log:                                                  #
+    level: info                                         # trace, debug, info, warn, error, fatal
+  runner:                                               #
+    file: .runner
+    capacity: 2
+    envs: {}
+    env_file: .env
+    timeout: 3h
+    insecure: true
+    fetch_timeout: 5s
+    fetch_interval: 2s
+    labels:
+      #- "ubuntu-latest:docker://docker.io/ubuntu:latest"
+      #- "ubuntu-22.04:docker://docker.io/ubuntu:22.04"
+      - label: ubuntu-latest
+        type: docker
+        container: docker.io/ubuntu:latest
+      - label: ubuntu-22.04
+        type: docker
+        container: docker.io/ubuntu:22.04
+      - label: lxc
+        type: lxc
+        container: debian:bullseye
+      # - label: self-hosted
+      #   type: host
+      #   container: "-self-hosted"
 
 ...

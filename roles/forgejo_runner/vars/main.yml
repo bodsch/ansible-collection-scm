@@ -18,7 +18,36 @@ forgejo_runner_requirements:
   - iproute2
   - git
 
-forgejo_runner_defaults_service: {}
+forgejo_runner_defaults_config:
+  log:                                                  #
+    level: info                                         # trace, debug, info, warn, error, fatal
+  runner:                                               #
+    file: .runner
+    capacity: 1
+    envs: {}
+    env_file: .env
+    timeout: 3h
+    insecure: false
+    fetch_timeout: 5s
+    fetch_interval: 2s
+    labels: []
+  cache:                                                #
+    enabled: true
+    dir: ""
+    host: ""
+    port: 0
+    external_server: ""
+  container:                                            #
+    network: ""
+    enable_ipv6: false
+    privileged: false
+    options:
+    workdir_parent:
+    valid_volumes: []
+    docker_host: ""
+    force_pull: false
+  host:                                                 #
+    workdir_parent: ""
 
 forgejo_runner_defaults_release:
   download_url: https://code.forgejo.org/forgejo/runner/releases

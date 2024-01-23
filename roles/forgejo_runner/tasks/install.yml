@@ -95,6 +95,17 @@
           ansible.builtin.fail:
             msg: A serious error occurred during the installation of the binary.
 
+- name: add user {{ forgejo_runner_system_user }} to groups
+  ansible.builtin.user:
+    name: "{{ forgejo_runner_system_user }}"
+    groups: "{{ item }}"
+    append: true
+  loop:
+    "{{ forgejo_runner_groups | sort | unique }}"
+  when:
+    - forgejo_runner_groups is defined
+    - forgejo_runner_groups | count > 0
+
 - name: systemd
   when:
     - ansible_service_mgr | lower == "systemd"

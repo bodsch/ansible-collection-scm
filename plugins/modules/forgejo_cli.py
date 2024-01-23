@@ -133,7 +133,7 @@ class ForgejoCli(object):
         if scope:
             args_list.append(["--scope", scope])
 
-        if len(labels) > 0:
+        if isinstance(labels, list) and len(labels) > 0:
             _labels = ",".join(labels)
             args_list += ["--labels", _labels]
 

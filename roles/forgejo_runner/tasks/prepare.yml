@@ -25,7 +25,4 @@
     name: "{{ forgejo_runner_requirements }}"
     state: present
 
-- name: merge forgejo-runner configuration between defaults and custom
-  ansible.builtin.set_fact:
-    forgejo_runner_service: "{{ forgejo_runner_defaults_service | combine(forgejo_runner_service, recursive=True) }}"
 ...

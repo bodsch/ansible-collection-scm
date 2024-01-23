@@ -14,7 +14,7 @@ Wants                   = {{ forgejo_runner_systemd.unit.wants | join(' ') }}
 {% endif %}
 {% if forgejo_runner_systemd.unit.requires is defined and
       forgejo_runner_systemd.unit.requires | count > 0 %}
-Requires              = network.target {{ forgejo_runner_systemd.unit.requires | join(' ') }}
+Requires                = network.target {{ forgejo_runner_systemd.unit.requires | join(' ') }}
 {% endif %}
 
 [Service]

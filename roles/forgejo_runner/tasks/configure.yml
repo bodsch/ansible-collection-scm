@@ -1,5 +1,9 @@
 ---
 
+- name: merge forgejo-runner configuration between defaults and custom
+  ansible.builtin.set_fact:
+    forgejo_runner_config: "{{ forgejo_runner_defaults_config | combine(forgejo_runner_config, recursive=True) }}"
+
 - name: create forgejo-runner configuration directory
   ansible.builtin.file:
     path: "{{ forgejo_runner_config_dir }}"
@@ -15,6 +19,18 @@
     owner: "{{ forgejo_runner_system_user }}"
     group: "{{ forgejo_runner_system_group }}"
     mode: 0770
+
+- name: create forgejo-runner configuration
+  ansible.builtin.template:
+    force: true
+    src: forgejo-runner/config.yaml.j2
+    dest: "{{ forgejo_runner_config_dir }}/config.yaml"
+    owner: "{{ forgejo_runner_system_user }}"
+    group: "{{ forgejo_runner_system_group }}"
+    mode: 0644
+  register: forgejo_runner_config
+  notify:
+    - restart forgejo-runner
 
 - name: create runner token on {{ forgejo_runner_controller.hostname }}
   remote_user: "{{ forgejo_runner_controller.username }}"
@@ -35,18 +51,6 @@
     command: create_runner
     working_dir: "{{ forgejo_runner_working_dir }}"
     runners: "{{ forgejo_runner_register | default([]) }}"
-
-- name: create forgejo-runner configuration
-  ansible.builtin.template:
-    force: true
-    src: forgejo-runner/config.yaml.j2
-    dest: "{{ forgejo_runner_config_dir }}/config.yaml"
-    owner: "{{ forgejo_runner_system_user }}"
-    group: "{{ forgejo_runner_system_group }}"
-    mode: 0644
-  register: forgejo_runner_config
-  notify:
-    - restart forgejo-runner
 
 - name: restart forgejo-runner if needed
   ansible.builtin.meta: flush_handlers

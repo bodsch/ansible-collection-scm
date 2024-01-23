@@ -4,92 +4,69 @@
 
 # You don't have to copy this file to your instance,
 # just run `./act_runner generate-config > config.yaml` to generate a config file.
-
+{% set print = self %}
+{%- macro print_value(key, value, default=None, valid_values=None) -%}
+{# .... #}
+{# print_value(key='{{key}}', value='{{value}}', default='{{default}}', valid_values='{{valid_values}}') #}
+  {% if value is defined %}
+    {% if value | bodsch.core.type == "list" and
+          value | count > 0 %}
+  {{ key }}: {{ value | join(', ') }}
+    {% endif %}
+    {% if value | bodsch.core.type in ["str", "string", "bool", "int"] and
+            value | string | length > 0 %}
+      {% if valid_values %}
+        {% if value in valid_values %}
+  {{ key }}: {{ value }}
+        {% endif %}
+      {% else %}
+  {{ key }}: {{ value }}
+      {% endif %}
+    {% endif %}
+  {% endif %}
+{# .... #}
+{%- endmacro -%}
 log:
-  # The level of logging, can be trace, debug, info, warn, error, fatal
-  level: info
+  {% set v = forgejo_runner_config.log -%}
+  {{ print_value('level', value=v.level, valid_values=["trace", "debug", "info", "warn", "error", "fatal"]) -}}
 
 runner:
-  # Where to store the registration result.
-  file: .runner
-  # Execute how many tasks concurrently at the same time.
-  capacity: 1
-  # Extra environment variables to run jobs.
-  envs:
-    A_TEST_ENV_NAME_1: a_test_env_value_1
-    A_TEST_ENV_NAME_2: a_test_env_value_2
-  # Extra environment variables to run jobs from a file.
-  # It will be ignored if it's empty or the file doesn't exist.
-  env_file: .env
-  # The timeout for a job to be finished.
-  # Please note that the Forgejo instance also has a timeout (3h by default) for the job.
-  # So the job could be stopped by the Forgejo instance if it's timeout is shorter than this.
-  timeout: 3h
-  # Whether skip verifying the TLS certificate of the Forgejo instance.
-  insecure: false
-  # The timeout for fetching the job from the Forgejo instance.
-  fetch_timeout: 5s
-  # The interval for fetching the job from the Forgejo instance.
-  fetch_interval: 2s
-  # The labels of a runner are used to determine which jobs the runner can run, and how to run them.
-  # Like: ["macos-arm64:host", "ubuntu-latest:docker://node:16-bullseye", "ubuntu-22.04:docker://node:16-bullseye"]
-  # If it's empty when registering, it will ask for inputting labels.
-  # If it's empty when execute `deamon`, will use labels in `.runner` file.
-  labels: []
+  {% set v = forgejo_runner_config.runner -%}
+  {{ print_value('file', value=v.file) -}}
+  {{ print_value('capacity', value=v.capacity) -}}
+  {{ print_value('envs', value=v.envs) -}}
+  {{ print_value('env_file', value=v.env_file) -}}
+  {{ print_value('timeout', value=v.timeout) -}}
+  {{ print_value('insecure', value=v.insecure) -}}
+  {{ print_value('fetch_timeout', value=v.fetch_timeout) -}}
+  {{ print_value('fetch_interval', value=v.fetch_interval) -}}
+  {% if v.labels is defined and v.labels | count > 0 %}
+    {% set _labels = v.labels | bodsch.scm.runner_labels() %}
+  labels:
+    {% for l in _labels %}
+    - {{ l }}
+    {% endfor %}
+  {% endif -%}
 
 cache:
-  # Enable cache server to use actions/cache.
-  enabled: true
-  # The directory to store the cache data.
-  # If it's empty, the cache data will be stored in $HOME/.cache/actcache.
-  dir: ""
-  # The host of the cache server.
-  # It's not for the address to listen, but the address to connect from job containers.
-  # So 0.0.0.0 is a bad choice, leave it empty to detect automatically.
-  host: ""
-  # The port of the cache server.
-  # 0 means to use a random available port.
-  port: 0
-  # The external cache server URL. Valid only when enable is true.
-  # If it's specified, act_runner will use this URL as the ACTIONS_CACHE_URL rather than start a server by itself.
-  # The URL should generally end with "/".
-  external_server: ""
+  {% set v = forgejo_runner_config.cache -%}
+  {{ print_value('enabled', value=v.enabled) -}}
+  {{ print_value('dir', value=v.dir) -}}
+  {{ print_value('host', value=v.host) -}}
+  {{ print_value('port', value=v.port) -}}
+  {{ print_value('external_server', value=v.external_server) -}}
 
 container:
-  # Specifies the network to which the container will connect.
-  # Could be host, bridge or the name of a custom network.
-  # If it's empty, create a network automatically.
-  network: ""
-  # Whether to create networks with IPv6 enabled. Requires the Docker daemon to be set up accordingly.
-  # Only takes effect if "network" is set to "".
-  enable_ipv6: false
-  # Whether to use privileged mode or not when launching task containers (privileged mode is required for Docker-in-Docker).
-  privileged: false
-  # And other options to be used when the container is started (eg, --add-host=my.forgejo.url:host-gateway).
-  options:
-  # The parent directory of a job's working directory.
-  # If it's empty, /workspace will be used.
-  workdir_parent:
-  # Volumes (including bind mounts) can be mounted to containers. Glob syntax is supported, see https://github.com/gobwas/glob
-  # You can specify multiple volumes. If the sequence is empty, no volumes can be mounted.
-  # For example, if you only allow containers to mount the `data` volume and all the json files in `/src`, you should change the config to:
-  # valid_volumes:
-  #   - data
-  #   - /src/*.json
-  # If you want to allow any volume, please use the following configuration:
-  # valid_volumes:
-  #   - '**'
-  valid_volumes: []
-  # overrides the docker client host with the specified one.
-  # If it's empty, act_runner will find an available docker host automatically.
-  # If it's "-", act_runner will find an available docker host automatically, but the docker host won't be mounted to the job containers and service containers.
-  # If it's not empty or "-", the specified docker host will be used. An error will be returned if it doesn't work.
-  docker_host: ""
-  # Pull docker image(s) even if already present
-  force_pull: false
+  {% set v = forgejo_runner_config.container -%}
+  {{ print_value('network', value=v.network) -}}
+  {{ print_value('enable_ipv6', value=v.enable_ipv6) -}}
+  {{ print_value('privileged', value=v.privileged) -}}
+  {{ print_value('options', value=v.options) -}}
+  {{ print_value('workdir_parent', value=v.workdir_parent) -}}
+  {{ print_value('valid_volumes', value=v.valid_volumes) -}}
+  {{ print_value('docker_host', value=v.docker_host) -}}
+  {{ print_value('force_pull', value=v.force_pull) -}}
 
 host:
-  # The parent directory of a job's working directory.
-  # If it's empty, $HOME/.cache/act/ will be used.
-  workdir_parent:
-
+  {% set v = forgejo_runner_config.host -%}
+  {{ print_value('workdir_parent', value=v.workdir_parent) }}
