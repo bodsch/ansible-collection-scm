@@ -1,20 +1,20 @@
 #!/sbin/openrc-run
 
-DIR=/var/lib/forgejo
-USER=git
+DIR={{ forgejo_working_dir }}
+USER={{ forgejo_system_user }}
 HOME=/home/${USER}
 GITEA_WORK_DIR=${DIR}
-EXECUTABLE=/usr/local/bin/forgejo
+EXECUTABLE=/usr/bin/forgejo
 
 export USER
 export HOME
 export GITEA_WORK_DIR
 
 name=$RC_SVCNAME
-cfgfile="/etc/$RC_SVCNAME/app.ini"
+cfgfile="/etc/$RC_SVCNAME/forgejo.ini"
 command="${EXECUTABLE}"
 command_user="${USER}"
-command_args="web -c /etc/$RC_SVCNAME/app.ini"
+command_args="web -c /etc/$RC_SVCNAME/forgejo.ini"
 command_background="yes"
 pidfile="/run/$RC_SVCNAME/$RC_SVCNAME.pid"
 start_stop_daemon_args="--user ${USER} --chdir ${DIR}"
