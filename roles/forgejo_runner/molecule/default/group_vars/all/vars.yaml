@@ -19,7 +19,7 @@ forgejo_runner_register:
 
 forgejo_runner_config:
   log:                                                  #
-    level: info                                         # trace, debug, info, warn, error, fatal
+    level: warn                                         # trace, debug, info, warn, error, fatal
   runner:                                               #
     file: .runner
     capacity: 2
@@ -29,20 +29,20 @@ forgejo_runner_config:
     insecure: true
     fetch_timeout: 5s
     fetch_interval: 2s
-    labels:
-      #- "ubuntu-latest:docker://docker.io/ubuntu:latest"
-      #- "ubuntu-22.04:docker://docker.io/ubuntu:22.04"
-      - label: ubuntu-latest
-        type: docker
-        container: docker.io/ubuntu:latest
-      - label: ubuntu-22.04
-        type: docker
-        container: docker.io/ubuntu:22.04
-      - label: lxc
-        type: lxc
-        container: debian:bullseye
-      # - label: self-hosted
-      #   type: host
-      #   container: "-self-hosted"
+    labels: []
+    #   #- "ubuntu-latest:docker://docker.io/ubuntu:latest"
+    #   #- "ubuntu-22.04:docker://docker.io/ubuntu:22.04"
+    #   - label: ubuntu-latest
+    #     type: docker
+    #     container: docker.io/ubuntu:latest
+    #   - label: ubuntu-22.04
+    #     type: docker
+    #     container: docker.io/ubuntu:22.04
+    #   - label: lxc
+    #     type: lxc
+    #     container: debian:bullseye
+    #   # - label: self-hosted
+    #   #   type: host
+    #   #   container: "-self-hosted"
 
 ...
