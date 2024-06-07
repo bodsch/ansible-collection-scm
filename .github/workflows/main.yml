@@ -38,7 +38,7 @@ jobs:
   debian:
     name: "${{ matrix.image }}: ${{ matrix.collection_role }} (ansible ${{ matrix.ansible-version }}, python ${{ matrix.python_version }})"
     runs-on: ubuntu-20.04
-    if: ${{ github.event_name == 'schedule' || github.event.workflow_run.conclusion == 'success' }}
+    # if: ${{ github.event_name == 'schedule' || github.event.workflow_run.conclusion == 'success' }}
     strategy:
       fail-fast: false
       matrix:
