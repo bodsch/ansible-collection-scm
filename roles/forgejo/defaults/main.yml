@@ -1,6 +1,6 @@
 ---
 
-forgejo_version: 1.21.11-1
+forgejo_version: 7.0.3
 
 forgejo_system_user: forgejo
 forgejo_system_group: forgejo

@@ -230,8 +230,8 @@ class GiteaAuth(object):
     def __auth_params(self):
 
         args_list = [
-            "--work-path", self.working_dir,
             "--config", self.config,
+            "--work-path", self.working_dir,
             "--name", self.name,
             "--host", self.hostname,
             "--port", self.port,
