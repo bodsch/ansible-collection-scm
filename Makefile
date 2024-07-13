@@ -1,6 +1,6 @@
 #
-export TOX_SCENARIO  ?= default
-export TOX_ANSIBLE   ?= ansible_6.7
+export TOX_SCENARIO         ?= default
+export TOX_ANSIBLE          ?= ansible_8.5
 
 export COLLECTION_NAMESPACE ?= bodsch
 export COLLECTION_NAME      ?= scm
@@ -9,7 +9,7 @@ export COLLECTION_SCENARIO  ?= default
 
 .PHONY: install uninstall doc converge test destroy verify lint
 
-# default: install
+default: converge
 
 install:
 	@hooks/install
