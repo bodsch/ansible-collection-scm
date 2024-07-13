@@ -3,14 +3,62 @@
 
 This collection aims to provide a set of small Ansible modules and helper functions.
 
+
+[![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/bodsch/ansible-collection-scm/main.yml?branch=main)][ci]
+[![GitHub issues](https://img.shields.io/github/issues/bodsch/ansible-collection-scm)][issues]
+[![GitHub release (latest by date)](https://img.shields.io/github/v/release/bodsch/ansible-collection-scm)][releases]
+
+[ci]: https://github.com/bodsch/ansible-collection-scm/actions
+[issues]: https://github.com/bodsch/ansible-collection-scm/issues?q=is%3Aopen+is%3Aissue
+[releases]: https://github.com/bodsch/ansible-collection-scm/releases
+
+
+## supported operating systems
+
+* Arch Linux
+* Debian based
+    - Debian 11 / 12
+    - Ubuntu 22.04
+
+
+## Contribution
+
+Please read [Contribution](CONTRIBUTING.md)
+
+## Development,  Branches (Git Tags)
+
+The `master` Branch is my *Working Horse* includes the "latest, hot shit" and can be complete broken!
+
+If you want to use something stable, please use a [Tagged Version](https://github.com/bodsch/ansible-collection-scm/tags)!
+
+---
+
+## Roles
+
+| Role                                                           | Build State | Description |
+|:-------------------------------------------------------------- | :---- | :---- |
+| [bodsch.scm.forgejo](./roles/forgejo/README.md)                | [![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/bodsch/ansible-collection-scm/forgejo.yml?branch=main)][workflow-forgejo] | Ansible role to install and configure [forgejo](https://forgejo.org/). |
+| [bodsch.scm.forgejo_runner](./roles/forgejo_runner/README.md)  | [![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/bodsch/ansible-collection-scm/forgejo_runner.yml?branch=main)][workflow-forgejo_runner]| Ansible role to install and configure [forgejo-runner](https://code.forgejo.org/forgejo/runner) |
+
+[workflow-forgejo]: https://github.com/bodsch/ansible-collection-scm/actions/workflows/forgejo.yml
+[workflow-forgejo_runner]: https://github.com/bodsch/ansible-collection-scm/actions/workflows/forgejo_runner.yml
+
+
 ## Included content
 
 ### Modules
 
 | Name                      | Description |
 |:--------------------------|:----|
-| [github_checksum](./plugins/modules/github_checksum.py) | read a defined checksumfile and return the checksum for an artefact | 
-| [github_latest](./plugins/modules/github_latest.py)     | detect the latest release or tag from GitHub | 
+| [bodsch.scm.github_checksum](./plugins/modules/github_checksum.py) | read a defined checksumfile and return the checksum for an artefact | 
+| [bodsch.scm.github_latest](./plugins/modules/github_latest.py)     | detect the latest release or tag from GitHub | 
+| [bodsch.scm.github_releases](./plugins/modules/github_releases.py) | Fetches the releases version of a GitHub project and returns the download urls | 
+| [bodsch.scm.forgejo](./plugins/modules/forgejo.py)                 | | 
+| [bodsch.scm.forgejo_auth](./plugins/modules/forgejo_auth.py)       | | 
+| [bodsch.scm.forgejo_cli](./plugins/modules/forgejo_cli.py)         | | 
+| [bodsch.scm.forgejo_migrate](./plugins/modules/forgejo_migrate.py) | | 
+| [bodsch.scm.forgejo_runner](./plugins/modules/forgejo_runner.py)   | | 
+| [bodsch.scm.forgejo_user](./plugins/modules/forgejo_user.py)       | | 
 
 ## Installing this collection
 
@@ -55,7 +103,7 @@ or you can call modules by their short name if you list the `bodsch.scm` collect
   become: false
   run_once: true
   bodsch.scm.github_latest:
-    project: prometheus
+    project: scm
     repository: alertmanager
     user: "{{ lookup('env', 'GH_USER') | default(omit) }}"
     password: "{{ lookup('env', 'GH_TOKEN') | default(omit) }}"
