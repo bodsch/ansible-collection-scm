@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 # -*- coding: utf-8 -*-
 
 # (c) 2023, Bodo Schulz <bodo@boone-schulz.de>
@@ -64,9 +64,20 @@ class ForgeJoRunner(object):
 
         runner_name = socket.gethostname()
 
-        self.module.log(msg=f"runners : {self.runners}")
+        self.module.log(msg=f"runners     : {self.runners}")
+        self.module.log(msg=f"runner name : {runner_name}")
 
+        know_runners = [x.get("name") for x in self.runners if x.get("name")]
         thats_me = [x for x in self.runners if x.get("name") == runner_name]
+
+        if len(thats_me) == 0:
+
+            known_runners = ",".join(know_runners)
+
+            return dict(
+                failed=True,
+                msg=f"I can't find the runner with the name '{runner_name}'.\nI know the following runner: '{known_runners}'"
+            )
 
         self.module.log(msg=f"me : {thats_me[0]}")
 
