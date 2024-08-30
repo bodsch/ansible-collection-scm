@@ -21,6 +21,7 @@ forgejo_requirements:
 forgejo_defaults_actions:
   enabled: false
   default_actions_url: ""
+  artifact_retention_days: ""                     # 90
 
 forgejo_defaults_admin:
   disable_regular_org_creation: ""                # false
@@ -886,7 +887,7 @@ forgejo_defaults_storage:
   minio_location: ""                            # us-east-1
   minio_use_ssl: ""                             # false
   minio_insecure_skip_verify: ""                # false
-  repo_-archive:
+  repo_archive:
     storage_type: ""                              # local
   packages:
     storage_type: ""                              # local

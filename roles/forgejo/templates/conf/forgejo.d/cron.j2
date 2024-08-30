@@ -23,7 +23,7 @@ RUN_AT_START = {{ forgejo_cron.run_at_start | bool | ternary('true', 'false') }}
 
       {% set _ = d.pop("enabled") %}
       {% if d.comment | default('') | string | length > 0 %}
-; ; {{ d.comment }}
+; {{ d.comment }}
         {% set _ = d.pop("comment") %}
       {% endif %}
 [cron.{{ job }}]
