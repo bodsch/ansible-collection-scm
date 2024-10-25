@@ -42,16 +42,17 @@
   register: forgejo_config
   notify:
     - restart forgejo
+    - check if forgejo are available
 
 - name: restart forgejo if needed
   ansible.builtin.meta: flush_handlers
 
-- name: check if forgejo are available
-  ansible.builtin.wait_for:
-    path: /run/forgejo/forgejo.pid
-    state: present
-    delay: 2
-    msg: "Timeout to find /run/forgejo/forgejo.pid"
-  ignore_errors: false
+# - name: check if forgejo are available
+#   ansible.builtin.wait_for:
+#     path: /run/forgejo/forgejo.pid
+#     state: present
+#     delay: 2
+#     msg: "Timeout to find /run/forgejo/forgejo.pid"
+#   ignore_errors: false
 
 ...

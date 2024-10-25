@@ -84,6 +84,21 @@
             follow: false
           notify:
             - restart forgejo
+            - check if forgejo are available
+
+        - name: restart after update
+          when:
+            - not stat_forgejo_activated.stat | bodsch.core.linked_version(forgejo_install_path, forgejo_version)
+          block:
+            - name: restart forgejo if needed
+              ansible.builtin.meta: flush_handlers
+
+            - name: migrate forgejo database
+              remote_user: "{{ forgejo_system_user }}"
+              become_user: "{{ forgejo_system_user }}"
+              become: true
+              bodsch.scm.forgejo_migrate:
+                config: "{{ forgejo_config_dir }}/forgejo.ini"
 
       rescue:
         - name: delete install directory

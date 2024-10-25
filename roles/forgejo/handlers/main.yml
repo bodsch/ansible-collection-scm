@@ -24,4 +24,19 @@
   when:
     - ansible_service_mgr | lower == "systemd"
 
+- name: migrate forgejo database
+  remote_user: "{{ forgejo_system_user }}"
+  become_user: "{{ forgejo_system_user }}"
+  become: true
+  bodsch.scm.forgejo_migrate:
+    config: "{{ forgejo_config_dir }}/forgejo.ini"
+
+- name: check if forgejo are available
+  ansible.builtin.wait_for:
+    path: /run/forgejo/forgejo.pid
+    state: present
+    delay: 2
+    msg: "Timeout to find /run/forgejo/forgejo.pid"
+  ignore_errors: false
+
 ...

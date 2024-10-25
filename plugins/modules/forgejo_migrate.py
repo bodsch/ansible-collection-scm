@@ -42,8 +42,7 @@ class GiteaCli(object):
         """
         """
 
-        if self.state == "migrate":
-            result = self.migrate()
+        result = self.migrate()
 
         return result
 
@@ -59,24 +58,23 @@ class GiteaCli(object):
             "migrate"
         ]
 
-        rc, out, err = self._exec(args_list)
-
-    def add_user(self):
-        """
-            forgejo admin user create --admin --username root --password admin1234 --email root@example.com
-        """
-
-        args_list = [
-            self.forgejo_bin,
-            "--work-path", self.working_dir,
-            "--config", self.config,
-            "admin",
-            "user",
-            "create",
-
-        ]
+        self.module.log(msg=f"  args_list : '{args_list}'")
 
         rc, out, err = self._exec(args_list)
+
+        self.module.log(msg=f"  {out}")
+
+        if rc == 0:
+            return dict(
+                failed=False,
+                changed=True,
+                msg="Database successful migrated."
+            )
+        else:
+            return dict(
+                failed=True,
+                msg=err
+            )
 
     def _exec(self, commands, check_rc=True):
         """
@@ -107,7 +105,8 @@ def main():
             default=[]
         ),
         working_dir=dict(
-            required=True,
+            required=False,
+            default="/var/lib/forgejo",
             type=str
         ),
         environment=dict(
