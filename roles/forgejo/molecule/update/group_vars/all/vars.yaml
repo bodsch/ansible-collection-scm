@@ -4,7 +4,7 @@ forgejo_database:
   db_type: sqlite3
   charset: utf8
   path: /var/lib/forgejo/data/forgejo.db
-  log_sql: true
+  log_sql: false
 
 forgejo_repository:
   root: /var/lib/forgejo/data/forgejo-repositories
