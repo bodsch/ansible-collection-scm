@@ -45,14 +45,41 @@ class GiteaUser(object):
         """
         result = dict(
             changed=False,
-            failed=False
+            failed=True
         )
 
         if os.path.isdir(self.working_dir):
             os.chdir(self.working_dir)
 
+        existing_users = self.list_users()
+
+        # self.module.log(msg=f"  existing_users : '{existing_users}'")
+
+        if self.state == "list":
+            result = dict(
+                changed=False,
+                failed=False,
+                msg=existing_users
+            )
+
+        if self.state == "check":
+            if not existing_users.get(self.username):
+                result = dict(
+                    changed=False,
+                    failed=False,
+                    msg=f"User {self.username} is not created.",
+                    rc=1
+                )
+            else:
+                result = dict(
+                    changed=False,
+                    failed=False,
+                    msg=f"User {self.username} is present.",
+                    rc=0
+                )
+
         if self.state == "present":
-            if not self.user_exists(self.username):
+            if not existing_users.get(self.username):
                 result = self.add_user()
             else:
                 result = dict(
@@ -60,12 +87,16 @@ class GiteaUser(object):
                     msg=f"user {self.username} already created."
                 )
 
+        if self.state == "absent":
+            result["msg"] = "This part is currently not supported."
+
         return result
 
-    def user_exists(self, user_name):
+    def list_users(self):
         """
-            su forgejo -c "/usr/bin/forgejo --config /etc/forgejo/forgejo.ini --work-path /var/lib/forgejo admin user list"
         """
+        result = {}
+
         args_list = [
             self.forgejo_bin,
             "admin",
@@ -75,7 +106,6 @@ class GiteaUser(object):
             "--config", self.config,
         ]
 
-        result = False
         # self.module.log(msg=f"  args_list : '{args_list}'")
         rc, out, err = self._exec(args_list)
 
@@ -86,15 +116,34 @@ class GiteaUser(object):
         if outer_re_result:
             data = outer_re_result.group("data")
             inner_re_result = re.finditer(inner_pattern, data)
-            # self.module.log(msg=f"  inner_re_result : '{inner_re_result}'")
-            if inner_re_result:
-                found_match = [x for x in inner_re_result if x.group("username") == user_name]
-                # self.module.log(msg=f"  found_match : '{found_match}'")
-                if found_match and len(found_match) > 0:
-                    found_match = found_match[0]
-                    self.module.log(msg=f"  found user : {found_match.group('username')} with email {found_match.group('email')}")
 
-                    result = True
+            if inner_re_result:
+                for x in inner_re_result:
+                    if x.group("username"):
+                        username = x.group("username")
+
+                    if x.group("email"):
+                        email = x.group("email")
+                    else:
+                        email = "unknown"
+
+                    if x.group("active"):
+                        active = bool(x.group("active"))
+                    else:
+                        active = False
+
+                    if x.group("admin"):
+                        admin = bool(x.group("admin"))
+                    else:
+                        admin = False
+
+                    result[str(username)] = dict(
+                        email=email,
+                        active=active,
+                        admin=admin
+                    )
+
+        self.module.log(msg=f"  result : '{result}'")
 
         return result
 
@@ -157,7 +206,9 @@ def main():
             default="present",
             choices=[
                 "present",
-                "absent"
+                "absent",
+                "list",
+                "check"
             ]
         ),
         admin=dict(
@@ -166,16 +217,16 @@ def main():
             default=False
         ),
         username=dict(
-            required=True,
+            required=False,
             type=str
         ),
         password=dict(
-            required=True,
+            required=False,
             type=str,
             no_log=True,
         ),
         email=dict(
-            required=True,
+            required=False,
             type=str
         ),
         working_dir=dict(
