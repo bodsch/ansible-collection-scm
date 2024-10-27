@@ -23,7 +23,7 @@ ANSIBLE_METADATA = {
 }
 
 
-class GiteaAuth(object):
+class ForgejoAuth(object):
     """
     """
     module = None
@@ -81,7 +81,7 @@ class GiteaAuth(object):
             new_file = False
             msg = "The authentication has not been changed."
 
-            self.module.log(f'{json.dumps(self.module.params, indent=2, sort_keys=False)}' + "\n")
+            # self.module.log(f'{json.dumps(self.module.params, indent=2, sort_keys=False)}' + "\n")
 
             # self.module.log(f" changed       : {changed}")
             # self.module.log(f" new_checksum  : {new_checksum}")
@@ -132,10 +132,8 @@ class GiteaAuth(object):
         ]
 
         result = (False, 0)
-        self.module.log(msg=f"  args_list : '{args_list}'")
+        # self.module.log(msg=f"  args_list : '{args_list}'")
         rc, out, err = self._exec(args_list)
-
-        self.module.log(msg=f"  out : '{out}'")
 
         outer_pattern = re.compile(r".*ID\s+Name\s+Type\s+Enabled\n(?P<data>.*)", flags=re.MULTILINE | re.DOTALL)
         inner_pattern = re.compile(r"(?P<ID>\d+)\s+(?P<name>\w+)\s+(?P<type>[a-zA-Z+_\-\(\ \)\.]+)\s+(?P<enabled>\w+)", flags=re.MULTILINE | re.DOTALL)
@@ -180,8 +178,6 @@ class GiteaAuth(object):
 
         args_list += self.__auth_params()
 
-        self.module.log(msg=f"  args_list : '{args_list}'")
-
         rc, out, err = self._exec(args_list)
 
         if rc == 0:
@@ -210,8 +206,6 @@ class GiteaAuth(object):
         ]
 
         args_list += self.__auth_params()
-
-        self.module.log(msg=f"  args_list : '{args_list}'")
 
         rc, out, err = self._exec(args_list)
 
@@ -314,7 +308,7 @@ class GiteaAuth(object):
         """
         """
         rc, out, err = self.module.run_command(commands, check_rc=check_rc)
-        self.module.log(msg=f"  rc : '{rc}'")
+        # self.module.log(msg=f"  rc : '{rc}'")
 
         if rc != 0:
             self.module.log(msg=f"  out: '{out}'")
@@ -426,7 +420,7 @@ def main():
         supports_check_mode=False,
     )
 
-    kc = GiteaAuth(module)
+    kc = ForgejoAuth(module)
     result = kc.run()
 
     module.log(msg=f"= result : '{result}'")
@@ -456,10 +450,10 @@ forgejo admin auth add-ldap
 ```
 root@instance:/# su forgejo -c "/usr/bin/forgejo --config /etc/forgejo/forgejo.ini --work-path /var/lib/forgejo admin auth add-ldap --help"
 NAME:
-   Gitea admin auth add-ldap - Add new LDAP (via Bind DN) authentication source
+   Forgejo admin auth add-ldap - Add new LDAP (via Bind DN) authentication source
 
 USAGE:
-   Gitea admin auth add-ldap [command options] [arguments...]
+   Forgejo admin auth add-ldap [command options] [arguments...]
 
 OPTIONS:
    --name value                      Authentication name.

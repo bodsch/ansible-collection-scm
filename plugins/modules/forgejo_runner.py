@@ -95,8 +95,6 @@ class ForgeJoRunner(object):
             runner_name,
         ]
 
-        self.module.log(msg=f"cmd: {args_list}")
-
         rc, out, err = self._exec(args_list)
 
         if rc == 0:
@@ -114,7 +112,7 @@ class ForgeJoRunner(object):
         """
         """
         rc, out, err = self.module.run_command(commands, check_rc=check_rc)
-        self.module.log(msg=f"  rc : '{rc}'")
+        # self.module.log(msg=f"  rc : '{rc}'")
 
         if rc != 0:
             self.module.log(msg=f"  out: '{out}'")
@@ -168,7 +166,7 @@ if __name__ == '__main__':
 """
 root@instance:/# forgejo --help
 NAME:
-   Gitea - A painless self-hosted Git service
+   Forgejo - A painless self-hosted Git service
 
 USAGE:
    forgejo [global options] command [command options] [arguments...]
@@ -181,15 +179,15 @@ DESCRIPTION:
 arguments - which can alternatively be run by running the subcommand web.
 
 COMMANDS:
-   web              Start Gitea web server
+   web              Start Forgejo web server
    serv             This command should only be called by SSH shell
    hook             Delegate commands to corresponding Git hooks
-   dump             Dump Gitea files and database
+   dump             Dump Forgejo files and database
    cert             Generate self-signed certificate
    admin            Command line interface to perform common administrative operations
    generate         Command line interface for running generators
    migrate          Migrate the database
-   keys             This command queries the Gitea database to get the authorized command for a given ssh key fingerprint
+   keys             This command queries the Forgejo database to get the authorized command for a given ssh key fingerprint
    convert          Convert the database
    doctor           Diagnose and optionally fix problems
    manager          Manage the running forgejo process

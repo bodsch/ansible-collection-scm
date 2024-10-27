@@ -18,7 +18,7 @@ ANSIBLE_METADATA = {
 }
 
 
-class GiteaCli(object):
+class ForgejoCli(object):
     """
     """
     module = None
@@ -42,8 +42,7 @@ class GiteaCli(object):
         """
         """
 
-        if self.state == "migrate":
-            result = self.migrate()
+        result = self.migrate()
 
         return result
 
@@ -59,30 +58,27 @@ class GiteaCli(object):
             "migrate"
         ]
 
-        rc, out, err = self._exec(args_list)
-
-    def add_user(self):
-        """
-            forgejo admin user create --admin --username root --password admin1234 --email root@example.com
-        """
-
-        args_list = [
-            self.forgejo_bin,
-            "--work-path", self.working_dir,
-            "--config", self.config,
-            "admin",
-            "user",
-            "create",
-
-        ]
+        # self.module.log(msg=f"  args_list : '{args_list}'")
 
         rc, out, err = self._exec(args_list)
+
+        if rc == 0:
+            return dict(
+                failed=False,
+                changed=True,
+                msg="Database successful migrated."
+            )
+        else:
+            return dict(
+                failed=True,
+                msg=err
+            )
 
     def _exec(self, commands, check_rc=True):
         """
         """
         rc, out, err = self.module.run_command(commands, check_rc=check_rc)
-        self.module.log(msg=f"  rc : '{rc}'")
+        # self.module.log(msg=f"  rc : '{rc}'")
 
         if rc != 0:
             self.module.log(msg=f"  out: '{out}'")
@@ -107,7 +103,8 @@ def main():
             default=[]
         ),
         working_dir=dict(
-            required=True,
+            required=False,
+            default="/var/lib/forgejo",
             type=str
         ),
         environment=dict(
@@ -126,7 +123,7 @@ def main():
         supports_check_mode=False,
     )
 
-    kc = GiteaCli(module)
+    kc = ForgejoCli(module)
     result = kc.run()
 
     module.log(msg=f"= result : '{result}'")
@@ -141,7 +138,7 @@ if __name__ == '__main__':
 """
 root@instance:/# forgejo --help
 NAME:
-   Gitea - A painless self-hosted Git service
+   Forgejo - A painless self-hosted Git service
 
 USAGE:
    forgejo [global options] command [command options] [arguments...]
@@ -154,15 +151,15 @@ DESCRIPTION:
 arguments - which can alternatively be run by running the subcommand web.
 
 COMMANDS:
-   web              Start Gitea web server
+   web              Start Forgejo web server
    serv             This command should only be called by SSH shell
    hook             Delegate commands to corresponding Git hooks
-   dump             Dump Gitea files and database
+   dump             Dump Forgejo files and database
    cert             Generate self-signed certificate
    admin            Command line interface to perform common administrative operations
    generate         Command line interface for running generators
    migrate          Migrate the database
-   keys             This command queries the Gitea database to get the authorized command for a given ssh key fingerprint
+   keys             This command queries the Forgejo database to get the authorized command for a given ssh key fingerprint
    convert          Convert the database
    doctor           Diagnose and optionally fix problems
    manager          Manage the running forgejo process

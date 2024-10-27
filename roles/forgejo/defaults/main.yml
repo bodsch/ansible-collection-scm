@@ -1,6 +1,6 @@
 ---
 
-forgejo_version: 7.0.3
+forgejo_version: 9.0.0
 
 forgejo_system_user: forgejo
 forgejo_system_group: forgejo
@@ -73,6 +73,5 @@ forgejo_task: {}
 forgejo_time: {}
 forgejo_ui: {}
 forgejo_webhook: {}
-
 
 ...

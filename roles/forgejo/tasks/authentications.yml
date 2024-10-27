@@ -1,5 +1,21 @@
 ---
 
+- name: list forgejo users
+  remote_user: "{{ forgejo_system_user }}"
+  become_user: "{{ forgejo_system_user }}"
+  become: true
+  bodsch.scm.forgejo_user:
+    state: list
+
+- name: check forgejo admin user '{{ forgejo_admin_user.username }}'
+  remote_user: "{{ forgejo_system_user }}"
+  become_user: "{{ forgejo_system_user }}"
+  become: true
+  bodsch.scm.forgejo_user:
+    state: check
+    username: "{{ forgejo_admin_user.username }}"
+  register: forgejo_admin_user_present
+
 - name: create admin user
   remote_user: "{{ forgejo_system_user }}"
   become_user: "{{ forgejo_system_user }}"
@@ -10,6 +26,7 @@
     password: "{{ forgejo_admin_user.password }}"
     email: "{{ forgejo_admin_user.email }}"
   when:
+    - forgejo_admin_user_present.rc == 1
     - (forgejo_admin_user.username is defined and forgejo_admin_user.username | string | length > 0)
     - (forgejo_admin_user.password is defined and forgejo_admin_user.password | string | length > 0)
     - (forgejo_admin_user.email is defined and forgejo_admin_user.email | string | length > 0)
