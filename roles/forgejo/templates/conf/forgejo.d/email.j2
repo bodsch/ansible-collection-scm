@@ -17,7 +17,7 @@ PORT = {{ forgejo_email.incoming.port }}
 USERNAME = {{ forgejo_email.incoming.username }}
     {% endif %}
     {% if forgejo_email.incoming.password | default('') | string | length > 0 %}
-PASSWORD = {{ forgejo_email.incoming.passwordforgejo_email.incoming.port }}
+PASSWORD = {{ forgejo_email.incoming.password }}
     {% endif %}
     {% if forgejo_email.incoming.use_tls | default('') | string | length > 0 %}
 USE_TLS = {{ forgejo_email.incoming.use_tls | bodsch.core.config_bool(true_as='true', false_as='false') }}
