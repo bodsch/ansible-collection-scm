@@ -589,6 +589,17 @@ forgejo_defaults_packages:
   limit_size_rubygems: ""                         # -1
   limit_size_swift: ""                            # -1
   limit_size_vagrant: ""                          # -1
+  storage_type: "local"                           # local, minio
+  path: ""                                        # data/packages
+  minio_base_path: ""
+  minio_endpoint: ""
+  minio_access_key_id: ""
+  minio_secret_access_key: ""
+  minio_bucket: ""
+  minio_location: ""
+  minio_use_ssl: ""
+  minio_insecure_skip_verify: ""
+  minio_checksum_algorithm: ""
 
 forgejo_defaults_picture:
   avatar_upload_path: ""                          # data/avatars

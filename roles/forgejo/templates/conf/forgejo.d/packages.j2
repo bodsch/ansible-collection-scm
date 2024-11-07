@@ -58,3 +58,41 @@ LIMIT_SIZE_SWIFT = {{ forgejo_packages.limit_size_swift }}
   {% if forgejo_packages.limit_size_vagrant | default('') | string | length > 0 %}
 LIMIT_SIZE_VAGRANT = {{ forgejo_packages.limit_size_vagrant }}
   {% endif %}
+{% if forgejo_packages.storage_type | default('') | string | length > 0 and
+      forgejo_packages.storage_type in ["local", "minio"] %}
+STORAGE_TYPE = {{ forgejo_packages.storage_type }}
+  {% if forgejo_packages.storage_type == "local" %}
+    {% if forgejo_packages.path | default('') | string | length > 0 %}
+PATH = {{ forgejo_packages.path }}
+    {% endif %}
+  {% endif %}
+  {% if forgejo_packages.storage_type == "minio" %}
+    {% if forgejo_packages.minio_base_path | default('') | string | length > 0 %}
+MINIO_BASE_PATH = {{ forgejo_packages.minio_base_path }}
+    {% endif %}
+    {% if forgejo_packages.minio_endpoint | default('') | string | length > 0 %}
+MINIO_ENDPOINT = {{ forgejo_packages.minio_endpoint }}
+    {% endif %}
+    {% if forgejo_packages.minio_access_key_id | default('') | string | length > 0 %}
+MINIO_ACCESS_KEY_ID = {{ forgejo_packages.minio_access_key_id }}
+    {% endif %}
+    {% if forgejo_packages.minio_secret_access_key | default('') | string | length > 0 %}
+MINIO_SECRET_ACCESS_KEY = {{ forgejo_packages.minio_secret_access_key }}
+    {% endif %}
+    {% if forgejo_packages.minio_bucket | default('') | string | length > 0 %}
+MINIO_BUCKET = {{ forgejo_packages.minio_bucket }}
+    {% endif %}
+    {% if forgejo_packages.minio_location | default('') | string | length > 0 %}
+MINIO_LOCATION = {{ forgejo_packages.minio_location }}
+    {% endif %}
+    {% if forgejo_packages.minio_use_ssl | default('') | string | length > 0 %}
+MINIO_USE_SSL = {{ forgejo_packages.minio_use_ssl | bool | ternary('true', 'false') }}
+    {% endif %}
+    {% if forgejo_packages.minio_insecure_skip_verify | default('') | string | length > 0 %}
+MINIO_INSECURE_SKIP_VERIFY = {{ forgejo_packages.minio_insecure_skip_verify | bool | ternary('true', 'false') }}
+    {% endif %}
+    {% if forgejo_packages.minio_checksum_algorithm | default('') | string | length > 0 and
+          forgejo_packages.minio_checksum_algorithm in ["default", "md5"] %}
+MINIO_CHECKSUM_ALGORITHM = {{ forgejo_packages.minio_checksum_algorithm }}
+    {% endif %}  {% endif %}
+{% endif %}

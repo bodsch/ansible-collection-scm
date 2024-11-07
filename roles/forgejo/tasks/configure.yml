@@ -29,6 +29,7 @@
     - data
     - data/forgejo-repositories
     - data/lfs
+    - data/packages
     - data/home
 
 - name: create forgejo configuration
