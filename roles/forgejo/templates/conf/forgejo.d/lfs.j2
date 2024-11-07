@@ -27,5 +27,15 @@ MINIO_BUCKET = {{ forgejo_lfs.minio_bucket }}
     {% if forgejo_lfs.minio_location | default('') | string | length > 0 %}
 MINIO_LOCATION = {{ forgejo_lfs.minio_location }}
     {% endif %}
+    {% if forgejo_lfs.minio_use_ssl | default('') | string | length > 0 %}
+MINIO_USE_SSL = {{ forgejo_lfs.minio_use_ssl | bool | ternary('true', 'false') }}
+    {% endif %}
+    {% if forgejo_lfs.minio_insecure_skip_verify | default('') | string | length > 0 %}
+MINIO_INSECURE_SKIP_VERIFY = {{ forgejo_lfs.minio_insecure_skip_verify | bool | ternary('true', 'false') }}
+    {% endif %}
+    {% if forgejo_lfs.minio_checksum_algorithm | default('') | string | length > 0 and
+          forgejo_lfs.minio_checksum_algorithm in ["default", "md5"] %}
+MINIO_CHECKSUM_ALGORITHM = {{ forgejo_lfs.minio_checksum_algorithm }}
+    {% endif %}
   {% endif %}
 {% endif %}

@@ -411,6 +411,9 @@ forgejo_defaults_lfs:
   minio_secret_access_key: ""
   minio_bucket: ""
   minio_location: ""
+  minio_use_ssl: ""
+  minio_insecure_skip_verify: ""
+  minio_checksum_algorithm: ""
 
 forgejo_defaults_log:
   root_path: ""
@@ -905,6 +908,7 @@ forgejo_defaults_storage:
   minio_location: ""                            # us-east-1
   minio_use_ssl: ""                             # false
   minio_insecure_skip_verify: ""                # false
+  minio_checksum_algorithm: ""                  # false
   repo_archive:
     storage_type: ""                              # local
   packages:
