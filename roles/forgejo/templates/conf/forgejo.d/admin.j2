@@ -7,3 +7,14 @@ DISABLE_REGULAR_ORG_CREATION = {{ forgejo_admin.disable_regular_org_creation | b
         forgejo_admin.default_email_notifications in ["enabled", "onmention", "disabled"] %}
 DEFAULT_EMAIL_NOTIFICATIONS = {{ forgejo_admin.default_email_notifications }}
   {% endif %}
+  {% if forgejo_admin.user_disabled_features is defined and
+        forgejo_admin.user_disabled_features | count > 0 %}
+USER_DISABLED_FEATURES = {{ forgejo_admin.user_disabled_features | join(', ') }}
+  {% endif %}
+  {% if forgejo_admin.external_user_disable_features is defined and
+        forgejo_admin.external_user_disable_features | count > 0 %}
+EXTERNAL_USER_DISABLE_FEATURES = {{ forgejo_admin.external_user_disable_features | join(', ') }}
+  {% endif %}
+  {% if forgejo_admin.send_notification_email_on_new_user | default('') | string | length > 0 %}
+SEND_NOTIFICATION_EMAIL_ON_NEW_USER = {{ forgejo_admin.send_notification_email_on_new_user | bodsch.core.config_bool(true_as='true', false_as='false') }}
+  {% endif %}
