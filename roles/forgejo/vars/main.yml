@@ -22,6 +22,10 @@ forgejo_defaults_actions:
   enabled: false
   default_actions_url: ""
   artifact_retention_days: ""                     # 90
+  zombie_task_timeout: ""
+  endless_task_timeout: ""
+  abandoned_job_timeout: ""
+  skip_workflow_strings: []
 
 forgejo_defaults_admin:
   disable_regular_org_creation: ""                # false
