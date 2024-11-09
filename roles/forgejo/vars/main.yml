@@ -22,10 +22,17 @@ forgejo_defaults_actions:
   enabled: false
   default_actions_url: ""
   artifact_retention_days: ""                     # 90
+  zombie_task_timeout: ""
+  endless_task_timeout: ""
+  abandoned_job_timeout: ""
+  skip_workflow_strings: []
 
 forgejo_defaults_admin:
   disable_regular_org_creation: ""                # false
   default_email_notifications: ""                 # enabled
+  user_disabled_features: []
+  external_user_disable_features: []
+  send_notification_email_on_new_user: ""
 
 forgejo_defaults_api:
   enable_swagger: ""                              # true
@@ -404,6 +411,9 @@ forgejo_defaults_lfs:
   minio_secret_access_key: ""
   minio_bucket: ""
   minio_location: ""
+  minio_use_ssl: ""
+  minio_insecure_skip_verify: ""
+  minio_checksum_algorithm: ""
 
 forgejo_defaults_log:
   root_path: ""
@@ -589,6 +599,17 @@ forgejo_defaults_packages:
   limit_size_rubygems: ""                         # -1
   limit_size_swift: ""                            # -1
   limit_size_vagrant: ""                          # -1
+  storage_type: "local"                           # local, minio
+  path: ""                                        # data/packages
+  minio_base_path: ""
+  minio_endpoint: ""
+  minio_access_key_id: ""
+  minio_secret_access_key: ""
+  minio_bucket: ""
+  minio_location: ""
+  minio_use_ssl: ""
+  minio_insecure_skip_verify: ""
+  minio_checksum_algorithm: ""
 
 forgejo_defaults_picture:
   avatar_upload_path: ""                          # data/avatars
@@ -887,6 +908,7 @@ forgejo_defaults_storage:
   minio_location: ""                            # us-east-1
   minio_use_ssl: ""                             # false
   minio_insecure_skip_verify: ""                # false
+  minio_checksum_algorithm: ""                  # false
   repo_archive:
     storage_type: ""                              # local
   packages:

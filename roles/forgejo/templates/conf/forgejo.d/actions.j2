@@ -9,3 +9,16 @@ DEFAULT_ACTIONS_URL = {{ forgejo_actions.default_actions_url }}
         forgejo_actions.artifact_retention_days | string | length > 0 %}
 ARTIFACT_RETENTION_DAYS = {{ forgejo_actions.artifact_retention_days }}
   {% endif %}
+  {% if forgejo_actions.zombie_task_timeout | default('') | string | length > 0 %}
+ZOMBIE_TASK_TIMEOUT: {{ forgejo_actions.zombie_task_timeout }}
+  {% endif %}
+  {% if forgejo_actions.endless_task_timeout | default('') | string | length > 0 %}
+ENDLESS_TASK_TIMEOUT: {{ forgejo_actions.endless_task_timeout }}
+  {% endif %}
+  {% if forgejo_actions.abandoned_job_timeout | default('') | string | length > 0 %}
+ABANDONED_JOB_TIMEOUT: {{ forgejo_actions.abandoned_job_timeout }}
+  {% endif %}
+  {% if forgejo_actions.skip_workflow_strings is defined and
+        forgejo_actions.skip_workflow_strings | count > 0 %}
+SKIP_WORKFLOW_STRINGS: {{ forgejo_actions.skip_workflow_strings | join(', ') }}
+  {% endif %}

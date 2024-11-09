@@ -26,6 +26,7 @@
     password: "{{ forgejo_admin_user.password }}"
     email: "{{ forgejo_admin_user.email }}"
   when:
+    - not ansible_check_mode
     - forgejo_admin_user_present.rc == 1
     - (forgejo_admin_user.username is defined and forgejo_admin_user.username | string | length > 0)
     - (forgejo_admin_user.password is defined and forgejo_admin_user.password | string | length > 0)

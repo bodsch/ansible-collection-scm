@@ -1,6 +1,6 @@
 
 [oauth2]
-ENABLE = {{ forgejo_oauth2.enabled | default('false') | bodsch.core.config_bool(true_as='true', false_as='false') }}
+ENABLED = {{ forgejo_oauth2.enabled | default('false') | bodsch.core.config_bool(true_as='true', false_as='false') }}
   {% if forgejo_oauth2.jwt_signing_algorithm | default('') | string | length > 0 and
         forgejo_oauth2.jwt_signing_algorithm in ["HS256", "HS384", "HS512", "RS256", "RS384", "RS512", "ES256", "ES384", "ES512", "EdDSA"] %}
 JWT_SIGNING_ALGORITHM = {{ forgejo_oauth2.jwt_signing_algorithm }}
