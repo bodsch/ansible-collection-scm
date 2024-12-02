@@ -63,7 +63,12 @@ container:
   {{ print_value('privileged', value=v.privileged) -}}
   {{ print_value('options', value=v.options) -}}
   {{ print_value('workdir_parent', value=v.workdir_parent) -}}
-  {{ print_value('valid_volumes', value=v.valid_volumes) -}}
+  {% if v.valid_volumes is defined and v.valid_volumes | count > 0 %}
+  valid_volumes:
+    {% for vol in v.valid_volumes %}
+    - {{ vol }}
+    {% endfor %}
+  {% endif -%}
   {{ print_value('docker_host', value=v.docker_host) -}}
   {{ print_value('force_pull', value=v.force_pull) -}}
 
