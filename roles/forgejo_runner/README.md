@@ -1,5 +1,5 @@
 
-# Ansible Role:  `forgejo-runner`
+# Ansible Role:  `bodsch.scm.forgejo_runner`
 
 Ansible role to install and configure [forgejo-runner](https://code.forgejo.org/forgejo/runner) on various linux systems.
 
@@ -33,7 +33,7 @@ Tested on
 Full example
 
 ```yaml
-forgejo_runner_version: 3.3.0
+forgejo_runner_version: 3.4.1
 
 forgejo_runner_system_user: forgejo
 forgejo_runner_system_group: forgejo
@@ -71,34 +71,37 @@ forgejo_runner_register:
 forgejo_runner_groups: []
 
 forgejo_runner_config:
-  log:                                                  #
-    level: info                                         # trace, debug, info, warn, error, fatal
-  runner:                                               #
+  log:
+    # trace, debug, info, warn, error, fatal
+    level: info
+  runner:
     file: .runner
     capacity: 1
     envs: {}
     env_file: .env
     timeout: 3h
+    shutdown_timeout: 3h
     insecure: false
     fetch_timeout: 5s
     fetch_interval: 2s
+    report_interval: 1s
     labels: []
-  cache:                                                #
+  cache:
     enabled: true
     dir: ""
     host: ""
     port: 0
     external_server: ""
-  container:                                            #
+  container:
     network: ""
     enable_ipv6: false
     privileged: false
     options:
     workdir_parent:
     valid_volumes: []
-    docker_host: ""
+    docker_host: "-"
     force_pull: false
-  host:                                                 #
+  host:
     workdir_parent: ""
 ```
 

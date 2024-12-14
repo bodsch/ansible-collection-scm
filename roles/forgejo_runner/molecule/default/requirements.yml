@@ -1,23 +1,7 @@
 ---
 
-# - name: snakeoil
-#   src: bodsch.snakeoil
-#   version: 1.3.4
-#
-# - name: syslog-ng
-#   src: bodsch.syslog_ng
-#   version: 1.6.0
-
 - name: nginx
   src: bodsch.nginx
-  version: 0.25.1
-
-# - name: redis
-#   src: bodsch.redis
-#   version: 1.4.0
-#
-# - name: mariadb
-#   src: bodsch.mariadb
-#   version: 2.4.0
+  version: 0.27.2
 
 ...

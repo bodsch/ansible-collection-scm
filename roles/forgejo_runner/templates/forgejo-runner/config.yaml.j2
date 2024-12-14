@@ -1,26 +1,33 @@
 #jinja2: trim_blocks: True, lstrip_blocks: True
-# {{ ansible_managed }}
+# {{ ansible_managed -}}
 # Example configuration file, it's safe to copy this as the default config file without any modification.
 
 # You don't have to copy this file to your instance,
 # just run `./act_runner generate-config > config.yaml` to generate a config file.
 {% set print = self %}
-{%- macro print_value(key, value, default=None, valid_values=None) -%}
+{%- macro print_value(key, value, join_list=False, default=None, valid_values=None) -%}
 {# .... #}
-{# print_value(key='{{key}}', value='{{value}}', default='{{default}}', valid_values='{{valid_values}}') #}
+  {# # print_value(key='{{key-}}', value='{{value-}}' / type: {{ value | bodsch.core.type }}, join_list='{{ join_list }}', default='{{default-}}', valid_values='{{valid_values-}}') #}
   {% if value is defined %}
     {% if value | bodsch.core.type == "list" and
           value | count > 0 %}
-  {{ key }}: {{ value | join(', ') }}
+      {% if join_list %}
+  {{ key -}}: {{ value | join(', ') }}
+      {% else %}
+  {{ key -}}:
+        {% for v in value %}
+    - {{ v }}
+        {% endfor %}
+      {% endif %}
     {% endif %}
     {% if value | bodsch.core.type in ["str", "string", "bool", "int"] and
             value | string | length > 0 %}
       {% if valid_values %}
         {% if value in valid_values %}
-  {{ key }}: {{ value }}
+  {{ key -}}: {{ value | bodsch.core.config_bool(true_as='true', false_as='false') }}
         {% endif %}
       {% else %}
-  {{ key }}: {{ value }}
+  {{ key -}}: {{ value | bodsch.core.config_bool(true_as='true', false_as='false') }}
       {% endif %}
     {% endif %}
   {% endif %}
@@ -30,6 +37,7 @@ log:
   {% set v = forgejo_runner_config.log -%}
   {{ print_value('level', value=v.level, valid_values=["trace", "debug", "info", "warn", "error", "fatal"]) -}}
 
+{# .. #}
 runner:
   {% set v = forgejo_runner_config.runner -%}
   {{ print_value('file', value=v.file) -}}
@@ -37,17 +45,14 @@ runner:
   {{ print_value('envs', value=v.envs) -}}
   {{ print_value('env_file', value=v.env_file) -}}
   {{ print_value('timeout', value=v.timeout) -}}
+  {{ print_value('shutdown_timeout', value=v.shutdown_timeout) -}}
   {{ print_value('insecure', value=v.insecure) -}}
   {{ print_value('fetch_timeout', value=v.fetch_timeout) -}}
   {{ print_value('fetch_interval', value=v.fetch_interval) -}}
-  {% if v.labels is defined and v.labels | count > 0 %}
-    {% set _labels = v.labels | bodsch.scm.runner_labels() %}
-  labels:
-    {% for l in _labels %}
-    - {{ l }}
-    {% endfor %}
-  {% endif -%}
+  {{ print_value('report_interval', value=v.report_interval) -}}
+  {{ print_value('labels', value=v.labels | bodsch.scm.runner_labels()) -}}
 
+{# .. #}
 cache:
   {% set v = forgejo_runner_config.cache -%}
   {{ print_value('enabled', value=v.enabled) -}}
@@ -56,6 +61,7 @@ cache:
   {{ print_value('port', value=v.port) -}}
   {{ print_value('external_server', value=v.external_server) -}}
 
+{# .. #}
 container:
   {% set v = forgejo_runner_config.container -%}
   {{ print_value('network', value=v.network) -}}
@@ -63,15 +69,18 @@ container:
   {{ print_value('privileged', value=v.privileged) -}}
   {{ print_value('options', value=v.options) -}}
   {{ print_value('workdir_parent', value=v.workdir_parent) -}}
-  {% if v.valid_volumes is defined and v.valid_volumes | count > 0 %}
-  valid_volumes:
-    {% for vol in v.valid_volumes %}
-    - {{ vol }}
-    {% endfor %}
-  {% endif -%}
-  {{ print_value('docker_host', value=v.docker_host) -}}
-  {{ print_value('force_pull', value=v.force_pull) -}}
+  {{ print_value('valid_volumes', value=v.valid_volumes) -}}
+  {% if v.docker_host is defined and v.docker_host | string | length > 0 %}
+    {% if v.docker_host == '-' %}
+  docker_host: "-"
+    {% else %}
+  {{ print_value('docker_host', value=v.docker_host) }}
+    {% endif %}
+  {% endif %}
+  {{- print_value('force_pull', value=v.force_pull) -}}
 
+{# .. #}
 host:
   {% set v = forgejo_runner_config.host -%}
-  {{ print_value('workdir_parent', value=v.workdir_parent) }}
+  {{ print_value('workdir_parent', value=v.workdir_parent) -}}
+{# .. #}

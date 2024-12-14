@@ -32,10 +32,10 @@ class FilterModule():
               ##- 'lxc:lxc://debian:bullseye'
               ##- 'self-hosted:host://-self-hosted'
         """
-        # display.v(f"runner_labels(self, {data})")
+        display.v(f"runner_labels(self, {data})")
         result = []
 
-        if isinstance(data, list):
+        if isinstance(data, list) and len(data) > 0:
             first_value = data[0]
             if isinstance(first_value, dict):
                 for label_data in data:
@@ -51,5 +51,5 @@ class FilterModule():
             else:
                 result = data
 
-        # display.v(f"= {result}")
+        display.v(f"= {result}")
         return result

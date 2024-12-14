@@ -1,13 +1,5 @@
 ---
 
-# - name: prepare forgejo
-#   hosts: forgejo
-#   any_errors_fatal: false
-#   become: false
-#
-#   roles:
-#     - role: bodsch.scm.forgejo
-
 - name: converge
   hosts: instance
   any_errors_fatal: false

@@ -2,18 +2,18 @@
 
 - name: nginx
   src: bodsch.nginx
-  version: 0.27.0
+  version: 0.27.2
 
 - name: redis
   src: bodsch.redis
-  version: 1.4.0
+  version: 1.4.1
 
 - name: mariadb
   src: bodsch.mariadb
-  version: 2.4.3
+  version: 2.6.0
 
 - name: glauth
   src: bodsch.glauth
-  version: 1.4.0
+  version: 1.6.2
 
 ...

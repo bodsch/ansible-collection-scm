@@ -18,6 +18,7 @@ forgejo_runner_requirements:
   - iproute2
   - git
 
+# https://forgejo.org/docs/latest/admin/runner-installation/#configuration
 forgejo_runner_defaults_config:
   log:                                                  #
     level: info                                         # trace, debug, info, warn, error, fatal
@@ -27,9 +28,11 @@ forgejo_runner_defaults_config:
     envs: {}
     env_file: .env
     timeout: 3h
+    shutdown_timeout: 3h
     insecure: false
     fetch_timeout: 5s
     fetch_interval: 2s
+    report_interval: 1s
     labels: []
   cache:                                                #
     enabled: true
@@ -41,10 +44,10 @@ forgejo_runner_defaults_config:
     network: ""
     enable_ipv6: false
     privileged: false
-    options:
-    workdir_parent:
+    options: ""
+    workdir_parent: ""
     valid_volumes: []
-    docker_host: ""
+    docker_host: "-"                                    # "-"
     force_pull: false
   host:                                                 #
     workdir_parent: ""
