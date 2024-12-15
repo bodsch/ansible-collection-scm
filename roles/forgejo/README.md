@@ -1,5 +1,5 @@
 
-# Ansible Role:  `forgejo`
+# Ansible Role:  `bodsch.scm.forgejo`
 
 Ansible role to install and configure [forgejo](https://forgejo.org/) on various linux systems.
 
