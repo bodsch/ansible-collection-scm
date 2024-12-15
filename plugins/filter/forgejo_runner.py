@@ -1,9 +1,51 @@
 # python 3 headers, required if submitting to Ansible
 
+"""
+filter plugin file for forgejo runner labels: runner_labels
+"""
+
 from __future__ import (absolute_import, division, print_function)
+from ansible.utils.display import Display
+
 __metaclass__ = type
 
-from ansible.utils.display import Display
+DOCUMENTATION = """
+    name: runner_labels
+    author: Bodo Schulz (@bodsch)
+    version_added: "1.2.0"
+    short_description: A filter to create a list for runner labels.
+    description:
+      - A filter to create a list for runner labels.
+    options:
+        value:
+            description: A dictionary with elements.
+            type: dict
+            required: True
+    notes:
+"""
+
+EXAMPLES = r"""
+- name: define runner labels
+  ansible.builtin.set_fact:
+    runnner_labels:
+      - label: ubuntu-latest
+        type: docker
+        container: docker.io/ubuntu:latest
+      - label: ubuntu-22.04
+        type: docker
+        container: docker.io/ubuntu:22.04
+
+- name: create a list for runner labels
+  ansible.builtin.debug:
+    msg: "{{ runnner_labels | bodsch.scm.runner_labels() }}"
+"""
+
+RETURN = """
+  _raw:
+    description:
+      - "A list of consolidated entries"
+"""
+
 
 display = Display()
 
@@ -32,7 +74,7 @@ class FilterModule():
               ##- 'lxc:lxc://debian:bullseye'
               ##- 'self-hosted:host://-self-hosted'
         """
-        display.v(f"runner_labels(self, {data})")
+        # display.v(f"runner_labels(self, {data})")
         result = []
 
         if isinstance(data, list) and len(data) > 0:
@@ -51,5 +93,5 @@ class FilterModule():
             else:
                 result = data
 
-        display.v(f"= {result}")
+        # display.v(f"= {result}")
         return result

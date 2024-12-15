@@ -13,12 +13,92 @@ from ansible.module_utils.basic import AnsibleModule
 
 __metaclass__ = type
 
-ANSIBLE_METADATA = {
-    'metadata_version': '0.1',
-    'status': ['preview'],
-    'supported_by': 'community'
-}
+DOCUMENTATION = r"""
+---
+module: forgejo_user
+author: Bodo 'bodsch' Schulz <bodo@boone-schulz.de>
+version_added: 1.0.0
 
+short_description: Forgejo User handling.
+description:
+    - Forgejo User handling.
+
+options:
+  state:
+    description:
+      - (C(present))
+      - (C(absent))
+      - (C(list))
+      - (C(check))
+    required: true
+    default: present
+
+  admin:
+    description: TBD
+    required: false
+    type: bool
+    default: false
+
+  username:
+    description: TBD
+    required: false
+    type: str
+
+  password:
+    description: TBD
+    required: false
+    type: str
+    no_log: true
+
+  email:
+    description: TBD
+    required: false
+    type: str
+
+  working_dir:
+    description: TBD
+    required: true
+    type: str
+
+  config:
+    description: TBD
+    required: false
+    default: /etc/forgejo/forgejo.ini
+    type: str
+"""
+
+EXAMPLES = r"""
+- name: list forgejo users
+  remote_user: "{{ forgejo_system_user }}"
+  become_user: "{{ forgejo_system_user }}"
+  become: true
+  bodsch.scm.forgejo_user:
+    state: list
+
+- name: check forgejo admin user '{{ forgejo_admin_user.username }}'
+  remote_user: "{{ forgejo_system_user }}"
+  become_user: "{{ forgejo_system_user }}"
+  become: true
+  bodsch.scm.forgejo_user:
+    state: check
+    username: "{{ forgejo_admin_user.username }}"
+  register: forgejo_admin_user_present
+
+- name: create admin user
+  remote_user: "{{ forgejo_system_user }}"
+  become_user: "{{ forgejo_system_user }}"
+  become: true
+  bodsch.scm.forgejo_user:
+    admin: true
+    username: "{{ forgejo_admin_user.username }}"
+    password: "{{ forgejo_admin_user.password }}"
+    email: "{{ forgejo_admin_user.email }}"
+"""
+
+RETURN = r"""
+"""
+
+# ----------------------------------------------------------------------
 
 class ForgejoUser(object):
     """

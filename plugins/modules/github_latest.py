@@ -85,7 +85,7 @@ options:
       - defined a list for a filter.
       - all hits are excluded from the final result
     type: list
-    required: false,
+    required: false
     default: []
   cache:
     description:

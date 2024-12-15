@@ -11,14 +11,61 @@ from ansible.module_utils.basic import AnsibleModule
 
 __metaclass__ = type
 
-ANSIBLE_METADATA = {
-    'metadata_version': '0.1',
-    'status': ['preview'],
-    'supported_by': 'community'
-}
+DOCUMENTATION = r"""
+---
+module: forgejo_migrate
+author: Bodo 'bodsch' Schulz <bodo@boone-schulz.de>
+version_added: 1.0.0
 
+short_description: Migrate Forgejo Database.
+description:
+    - Migrate Forgejo Database.
 
-class ForgejoCli(object):
+options:
+  command:
+    description:
+      - (C(migrate))
+    required: true
+    default: migrate
+
+  parameters:
+    description: TBD
+    required: false
+    type: list
+
+  working_dir:
+    description: TBD
+    required: true
+    type: str
+
+  environment:
+    description: TBD
+    required: false
+    default: prod
+    type: str
+
+  config:
+    description: TBD
+    required: false
+    default: /etc/forgejo/forgejo.ini
+    type: str
+"""
+
+EXAMPLES = r"""
+- name: migrate forgejo database
+  remote_user: "{{ forgejo_system_user }}"
+  become_user: "{{ forgejo_system_user }}"
+  become: true
+  bodsch.scm.forgejo_migrate:
+    config: "{{ forgejo_config_dir }}/forgejo.ini"
+"""
+
+RETURN = r"""
+"""
+
+# ----------------------------------------------------------------------
+
+class ForgejoMigrate(object):
     """
     """
     module = None
@@ -123,7 +170,7 @@ def main():
         supports_check_mode=False,
     )
 
-    kc = ForgejoCli(module)
+    kc = ForgejoMigrate(module)
     result = kc.run()
 
     module.log(msg=f"= result : '{result}'")

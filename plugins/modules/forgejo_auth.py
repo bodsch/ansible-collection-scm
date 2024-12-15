@@ -16,12 +16,160 @@ from ansible_collections.bodsch.core.plugins.module_utils.checksum import Checks
 
 __metaclass__ = type
 
-ANSIBLE_METADATA = {
-    'metadata_version': '0.1',
-    'status': ['preview'],
-    'supported_by': 'community'
-}
+DOCUMENTATION = r"""
+---
+module: forgejo_auth
+author: Bodo 'bodsch' Schulz <bodo@boone-schulz.de>
+version_added: 1.0.0
 
+short_description: Forgejo Authentication.
+description:
+    - Forgejo Authentication.
+
+options:
+  state:
+    description:
+      - (C(present))
+      - (C(absent))
+    required: true
+    default: present
+
+  name:
+    description: TBD
+    required: true
+    type: str
+
+  active:
+    description: TBD
+    required: false
+    default: true
+    type: bool
+
+  security_protocol:
+    description:
+      - (C(Unencrypted))
+      - (C(LDAPS))
+      - (C(StartTLS))
+    required: false
+    default: Unencrypted
+    type: str
+
+  skip_tls_verify:
+    description: TBD
+    required: false
+    default: true
+    type: bool
+
+  hostname:
+    description: TBD
+    required: true
+    type: str
+
+  port:
+    description: TBD
+    required: false
+    type: str
+
+  user_search_base:
+    description: TBD
+    required: true
+    type: str
+
+  filters:
+    description: TBD
+    required: false
+    type: dict
+
+  allow_deactivate_all:
+    description: TBD
+    required: false
+    default: false
+    type: bool
+
+  attributes:
+    description: TBD
+    required: true
+    type: dict
+
+  skip_local_2fa:
+    description: TBD
+    required: false
+    default: false
+    type: bool
+
+  bind_dn:
+    description: TBD
+    required: true
+    type: str
+
+  bind_password:
+    description: TBD
+    required: true
+    type: str
+    no_log: true
+
+  attributes_in_bind:
+    description: TBD
+    required: false
+    default: false
+    type: str
+
+  synchronize_users:
+    description: TBD
+    required: false
+    default: false
+    type: bool
+
+  working_dir:
+    description: TBD
+    required: true
+    default: /var/lib/forgejo
+    type: str
+
+  config:
+    description: TBD
+    required: false
+    default: /etc/forgejo/forgejo.ini
+    type: str
+"""
+
+EXAMPLES = r"""
+- name: enable ldap authentication
+  remote_user: "{{ forgejo_system_user }}"
+  become_user: "{{ forgejo_system_user }}"
+  become: true
+  bodsch.scm.forgejo_auth:
+    name: "{{ forgejo_auths.ldap.name | default(omit) }}"
+    state: "{{ forgejo_auths.ldap.state | default(omit) }}"
+    active: "{{ forgejo_auths.ldap.active | default(omit) }}"
+    security_protocol: "{{ forgejo_auths.ldap.security_protocol | default(omit) }}"
+    skip_tls_verify: "{{ forgejo_auths.ldap.skip_tls_verify | default(omit) }}"
+    hostname: "{{ forgejo_auths.ldap.hostname | default(omit) }}"
+    port: "{{ forgejo_auths.ldap.port | default(omit) }}"
+    user_search_base: "{{ forgejo_auths.ldap.user_search_base | default(omit) }}"
+    filters:
+      user: "{{ forgejo_auths.ldap.filters.user | default(omit) }}"
+      admin: "{{ forgejo_auths.ldap.filters.admin | default(omit) }}"
+      restricted: "{{ forgejo_auths.ldap.filters.restricted | default(omit) }}"
+    allow_deactivate_all: "{{ forgejo_auths.ldap.allow_deactivate_all | default(omit) }}"
+    attributes:
+      username: "{{ forgejo_auths.ldap.attributes.username | default(omit) }}"
+      firstname: "{{ forgejo_auths.ldap.attributes.firstname | default(omit) }}"
+      surname: "{{ forgejo_auths.ldap.attributes.surname | default(omit) }}"
+      email: "{{ forgejo_auths.ldap.attributes.email | default(omit) }}"
+      public_ssh_key: "{{ forgejo_auths.ldap.attributes.public_ssh_key | default(omit) }}"
+      avatar: "{{ forgejo_auths.ldap.attributes.avatar | default(omit) }}"
+    skip_local_2fa: "{{ forgejo_auths.ldap.skip_local_2fa | default(omit) }}"
+    bind_dn: "{{ forgejo_auths.ldap.bind_dn | default(omit) }}"
+    bind_password: "{{ forgejo_auths.ldap.bind_password | default(omit) }}"
+    attributes_in_bind: "{{ forgejo_auths.ldap.attributes_in_bind | default(omit) }}"
+    synchronize_users: "{{ forgejo_auths.ldap.synchronize_users | default(omit) }}"
+"""
+
+RETURN = r"""
+"""
+
+# ----------------------------------------------------------------------
 
 class ForgejoAuth(object):
     """

@@ -12,12 +12,62 @@ from ansible_collections.bodsch.core.plugins.module_utils.module_results import 
 
 __metaclass__ = type
 
-ANSIBLE_METADATA = {
-    'metadata_version': '0.1',
-    'status': ['preview'],
-    'supported_by': 'community'
-}
+DOCUMENTATION = r"""
+---
+module: forgejo_cli
+author: Bodo 'bodsch' Schulz <bodo@boone-schulz.de>
+version_added: 1.0.0
 
+short_description: Forgejo CLI
+description:
+    - Forgejo CLI
+
+options:
+  command:
+    description:
+      - (C(register))
+    required: true
+    default: register
+
+  parameters:
+    description: TBD
+    required: false
+    type: list
+
+  working_dir:
+    description: TBD
+    required: true
+    type: str
+
+  config:
+    description: TBD
+    required: false
+    default: /etc/forgejo/forgejo.ini
+    type: str
+
+  runners:
+    description: TBD
+    required: true
+    type: list
+"""
+
+EXAMPLES = r"""
+- name: create runner token on {{ forgejo_runner_controller.hostname }}
+  remote_user: "{{ forgejo_runner_controller.username }}"
+  become_user: "{{ forgejo_runner_controller.username }}"
+  become: true
+  delegate_to: "{{ forgejo_runner_controller.hostname }}"
+  bodsch.scm.forgejo_cli:
+    command: register
+    config: "{{ forgejo_config_dir }}/forgejo.ini"
+    working_dir: "{{ forgejo_working_dir }}"
+    runners: "{{ forgejo_runner_register | default([]) }}"
+"""
+
+RETURN = r"""
+"""
+
+# ----------------------------------------------------------------------
 
 class ForgejoCli(object):
     """

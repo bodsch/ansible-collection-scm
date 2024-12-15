@@ -2,7 +2,7 @@
 
 . hooks/molecule.rc
 
-set -x
+# set -x
 
 if [ -z "${COLLECTION_DIR}" ]
 then
@@ -17,7 +17,7 @@ then
   # ansible-doc --list --list_files -t module ${COLLECTION_NAMESPACE}.${COLLECTION_NAME}
 
   ansible_modules=$(
-    ansible-doc --list ${COLLECTION_NAMESPACE}.${COLLECTION_NAME} --json | jq -r 'keys[]'
+    ansible-doc --list ${COLLECTION_NAMESPACE}.${COLLECTION_NAME} --type module --json | jq -r 'keys[]'
   )
 
   for i in ${ansible_modules}
@@ -26,6 +26,19 @@ then
     PAGER='cat' ansible-doc --type module ${i}
     echo ""
   done
+
+  # -------------------------------------------------
+  ansible_filter=$(
+    ansible-doc --list ${COLLECTION_NAMESPACE}.${COLLECTION_NAME} --type filter --json | jq -r 'keys[]'
+  )
+
+  for i in ${ansible_filter}
+  do
+    # echo " - ${i}"
+    PAGER='cat' ansible-doc --type filter ${i}
+    echo ""
+  done
+
 fi
 
 exit 0

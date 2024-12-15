@@ -13,12 +13,53 @@ from ansible.module_utils.basic import AnsibleModule
 
 __metaclass__ = type
 
-ANSIBLE_METADATA = {
-    'metadata_version': '0.1',
-    'status': ['preview'],
-    'supported_by': 'community'
-}
+DOCUMENTATION = r"""
+---
+module: forgejo_runner
+author: Bodo 'bodsch' Schulz <bodo@boone-schulz.de>
+version_added: 1.0.0
 
+short_description: Append Forgejo Runner to Forgejo Server.
+description:
+    - Append Forgejo Runner to Forgejo Server.
+
+options:
+  command:
+    description:
+      - (C(create_runner))
+    required: true
+    default: create_runner
+
+  parameters:
+    description: TBD
+    required: false
+    type: list
+
+  working_dir:
+    description: TBD
+    required: true
+    type: str
+
+  runners:
+    description: TBD
+    required: true
+    type: list
+"""
+
+EXAMPLES = r"""
+- name: append runner to {{ forgejo_runner_controller.hostname }}
+  become_user: "{{ forgejo_runner_system_user }}"
+  become: true
+  bodsch.scm.forgejo_runner:
+    command: create_runner
+    working_dir: "{{ forgejo_runner_working_dir }}"
+    runners: "{{ forgejo_runner_register | default([]) }}"
+"""
+
+RETURN = r"""
+"""
+
+# ----------------------------------------------------------------------
 
 class ForgeJoRunner(object):
     """
