@@ -74,7 +74,7 @@ container:
     {% if v.docker_host == '-' %}
   docker_host: "-"
     {% else %}
-  {{ print_value('docker_host', value=v.docker_host) }}
+  {{- print_value('docker_host', value=v.docker_host) }}
     {% endif %}
   {% endif %}
   {{- print_value('force_pull', value=v.force_pull) -}}
