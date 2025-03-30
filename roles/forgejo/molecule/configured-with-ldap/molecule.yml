@@ -10,7 +10,7 @@ driver:
 
 platforms:
   - name: instance
-    image: "bodsch/ansible-${DISTRIBUTION:-debian:12}"
+    image: "ghcr.io/bodsch/docker-ansible/ansible-${DISTRIBUTION:-debian:12}"
     command: ${MOLECULE_DOCKER_COMMAND:-""}
     docker_host: "${DOCKER_HOST:-unix://run/docker.sock}"
     privileged: true
@@ -38,7 +38,7 @@ platforms:
         ipv4_address: "10.16.0.11"
 
   # - name: database
-  #   image: "bodsch/ansible-debian:11"
+  #   image: "ghcr.io/bodsch/docker-ansible/ansible-debian:11"
   #   command: ${MOLECULE_DOCKER_COMMAND:-""}
   #   docker_host: "${DOCKER_HOST:-unix://run/docker.sock}"
   #   privileged: true
@@ -63,7 +63,7 @@ platforms:
   #       ipv4_address: "10.16.0.10"
 
   - name: auth
-    image: "bodsch/ansible-${DISTRIBUTION:-debian:12}"
+    image: "ghcr.io/bodsch/docker-ansible/ansible-${DISTRIBUTION:-debian:12}"
     command: ${MOLECULE_DOCKER_COMMAND:-""}
     docker_host: "${DOCKER_HOST:-unix://run/docker.sock}"
     privileged: true
