@@ -37,7 +37,7 @@ provisioner:
   config_options:
     defaults:
       deprecation_warnings: True
-      stdout_callback: yaml
+      callback_result_format: yaml
       callbacks_enabled: profile_tasks
       # remote_tmp: /tmp/ansible-${USER}
 
