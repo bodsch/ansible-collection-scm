@@ -1,0 +1,10 @@
+---
+forgejo_config_dir: /srv/forgejo/config
+forgejo_working_dir: /srv/forgejo
+
+forgejo_admin_user:
+  username: "someuser"
+  password: "foo"
+  email: "root@example.com"
+
+...
