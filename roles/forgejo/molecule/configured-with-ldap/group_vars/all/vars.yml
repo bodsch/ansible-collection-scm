@@ -65,7 +65,7 @@ forgejo_auths:
     filters:
       # (&(objectClass=posixAccount)(|(uid=%[1]s)(mail=%[1]s)))
       user: "(cn=%s)"
-      admin: "ou=admins,ou=groups,dc=molecule,dc=lan"
+      admin: "ou=euwest1-ldap,ou=groups,dc=molecule,dc=lan"
       restricted: "ou=forgejo,ou=groups,dc=molecule,dc=lan"
     attributes:
       username: "cn"

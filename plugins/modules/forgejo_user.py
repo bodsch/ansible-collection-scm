@@ -190,39 +190,24 @@ class ForgejoUser(object):
         # self.module.log(msg=f"  args_list : '{args_list}'")
         rc, out, err = self._exec(args_list)
 
-        outer_pattern = re.compile(r".*ID\s+Username\s+Email\s+IsActive\s+IsAdmin\s+2FA\n(?P<data>.*)", flags=re.MULTILINE | re.DOTALL)
-        inner_pattern = re.compile(r"(?P<ID>\d+)\s+(?P<username>\w+)\s+(?P<email>[a-zA-Z+_\-@\.]+)\s+(?P<active>\w+)\s+(?P<admin>\w+)\s+(?P<twofa>\w+)", flags=re.MULTILINE | re.DOTALL)
-        outer_re_result = re.search(outer_pattern, out)
+        pattern = re.compile(
+            r'^\s*(?P<id>\d+)\s+'
+            r'(?P<username>\S+)\s+'
+            r'(?P<email>\S+)\s+'
+            r'(?P<is_active>true|false)\s+'
+            r'(?P<is_admin>true|false)\s+'
+            r'(?P<two_fa>true|false)\s*$'
+        )
 
-        if outer_re_result:
-            data = outer_re_result.group("data")
-            inner_re_result = re.finditer(inner_pattern, data)
-
-            if inner_re_result:
-                for x in inner_re_result:
-                    if x.group("username"):
-                        username = x.group("username")
-
-                    if x.group("email"):
-                        email = x.group("email")
-                    else:
-                        email = "unknown"
-
-                    if x.group("active"):
-                        active = bool(x.group("active"))
-                    else:
-                        active = False
-
-                    if x.group("admin"):
-                        admin = bool(x.group("admin"))
-                    else:
-                        admin = False
-
-                    result[str(username)] = dict(
-                        email=email,
-                        active=active,
-                        admin=admin
-                    )
+        result = {
+            m.group('username'): {
+                'email': m.group('email'),
+                'active': m.group('is_active') == 'true',
+                'admin': m.group('is_admin') == 'true'
+            }
+            for line in out.splitlines()[1:]  # Zeile 1 ist der Header
+            if (m := pattern.match(line))
+        }
 
         return result
 
