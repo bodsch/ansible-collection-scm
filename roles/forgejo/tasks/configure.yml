@@ -36,14 +36,23 @@
   ansible.builtin.template:
     force: true
     src: conf/forgejo.ini.j2
-    dest: "{{ forgejo_config_dir }}/forgejo.ini"
+    dest: "{{ forgejo_config_dir }}/forgejo.new"
     owner: "{{ forgejo_system_user }}"
     group: "{{ forgejo_system_group }}"
     mode: 0644
+
+- name: create forgejo configuration
+  bodsch.scm.forgejo_config:
+    config: "{{ forgejo_config_dir }}/forgejo.ini"
+    new_config: "{{ forgejo_config_dir }}/forgejo.new"
   register: forgejo_config
-  notify:
-    - restart forgejo
-    - check if forgejo are available
+  #notify:
+  #  - restart forgejo
+  #  - check if forgejo are available
+
+- name: d
+  debug:
+    msg: "{{ forgejo_config }}"
 
 - name: restart forgejo if needed
   ansible.builtin.meta: flush_handlers

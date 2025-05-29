@@ -25,7 +25,7 @@ forgejo_release: {}
 
 forgejo_direct_download: false
 
-forgejo_name: "Forgejo – Beyond coding. We forge."
+forgejo_name: "Forgejo - Beyond coding. We forge."
 # Either "dev", "prod" or "test", default is "prod"
 forgejo_run_mode: "prod"
 
