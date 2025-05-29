@@ -129,6 +129,7 @@ def test_forgejo_files(host, get_vars):
     install_dir = get_vars.get("forgejo_install_path")
     defaults_dir = get_vars.get("forgejo_defaults_directory")
     config_dir = get_vars.get("forgejo_config_dir")
+    working_dir = get_vars.get("forgejo_working_dir")
 
     if 'latest' in install_dir:
         install_dir = install_dir.replace('latest', version)

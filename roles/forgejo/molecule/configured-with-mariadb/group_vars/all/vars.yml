@@ -54,4 +54,14 @@ forgejo_admin_user:
   password: "{{ vault__forgejo.root }}"
   email: "root@example.com"
 
+forgejo_systemd:
+  unit:
+    after:
+      - syslog.target
+      - network.target
+      - mysql.service
+    wants:
+      - mysql.service
+    requires: []
+
 ...

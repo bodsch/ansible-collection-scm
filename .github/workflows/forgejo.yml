@@ -171,6 +171,7 @@ jobs:
           - configured
           - configured-with-mariadb
           - configured-with-ldap
+          - custom-config-directory
           - update
         collection_role:
           - forgejo
