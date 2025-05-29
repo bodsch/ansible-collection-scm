@@ -99,6 +99,7 @@
               become: true
               bodsch.scm.forgejo_migrate:
                 config: "{{ forgejo_config_dir }}/forgejo.ini"
+                working_dir: "{{ forgejo_working_dir }}"
 
       rescue:
         - name: delete install directory
