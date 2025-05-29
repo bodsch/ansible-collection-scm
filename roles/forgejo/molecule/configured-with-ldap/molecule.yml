@@ -114,6 +114,9 @@ scenario:
     - create
     - prepare
     - converge
+    # Running converge twice to test the auths module
+    - side_effect
+    - converge
     - verify
     - destroy
 

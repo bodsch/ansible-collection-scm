@@ -222,6 +222,8 @@ class ForgejoAuth(object):
 
         checksum = Checksum(self.module)
 
+        failed = False
+
         if self.state == "present":
             new_checksum = checksum.checksum(json.dumps(self.module.params, indent=2, sort_keys=False) + "\n")
             old_checksum = checksum.checksum_from_file(self.auth_config_json_file)
@@ -231,23 +233,29 @@ class ForgejoAuth(object):
             msg = "The authentication has not been changed."
 
             # self.module.log(f'{json.dumps(self.module.params, indent=2, sort_keys=False)}' + "\n")
-
+            #
             # self.module.log(f" changed       : {changed}")
             # self.module.log(f" new_checksum  : {new_checksum}")
             # self.module.log(f" old_checksum  : {old_checksum}")
 
-            if changed:
+            # auth_exists, auth_id = self.auth_exists(self.name)
+            #
+            # self.module.log(f" auth_exists   : {auth_exists}")
+            # self.module.log(f" auth_id       : {auth_id}")
 
+            if changed:
                 auth_exists, auth_id = self.auth_exists(self.name)
 
                 if not auth_exists:
-                    self.add_auth()
-                    changed = True
-                    msg = f"LDAP Auth {self.name} successfully created."
+                    _result = self.add_auth()
+                    failed = _result.get("failed")
+                    changed = _result.get("changed")
+                    msg = _result.get("msg")
                 else:
-                    self.update_auth(auth_id)
-                    changed = True
-                    msg = f"LDAP Auth {self.name} successfully updated."
+                    _result = self.update_auth(auth_id)
+                    failed = _result.get("failed")
+                    changed = _result.get("changed")
+                    msg = _result.get("msg")
 
                 self.__write_config(self.auth_config_json_file, self.module.params)
 
@@ -263,7 +271,7 @@ class ForgejoAuth(object):
 
         return dict(
             changed=changed,
-            failed=False,
+            failed=failed,
             msg=msg,
         )
 
@@ -276,31 +284,31 @@ class ForgejoAuth(object):
             "admin",
             "auth",
             "list",
+            "--vertical-bars",
             "--work-path", self.working_dir,
             "--config", self.config,
         ]
 
         result = (False, 0)
-        # self.module.log(msg=f"  args_list : '{args_list}'")
         rc, out, err = self._exec(args_list)
 
-        outer_pattern = re.compile(r".*ID\s+Name\s+Type\s+Enabled\n(?P<data>.*)", flags=re.MULTILINE | re.DOTALL)
-        inner_pattern = re.compile(r"(?P<ID>\d+)\s+(?P<name>\w+)\s+(?P<type>[a-zA-Z+_\-\(\ \)\.]+)\s+(?P<enabled>\w+)", flags=re.MULTILINE | re.DOTALL)
-        outer_re_result = re.search(outer_pattern, out)
+        pattern = re.compile(
+            r'^\s*(?P<id>\d+)\s*\|\s*'
+            r'(?P<name>[^\|]+?)\s*\|\s*'
+            r'(?P<type>[^\|]+?)\s*\|\s*'
+            r'(?P<enabled>\w+)\s*$'
+        )
+        match = next((m.groupdict() for s in out.splitlines()[1:] if (m := pattern.search(s))), None)
 
-        if outer_re_result:
-            data = outer_re_result.group("data")
-            inner_re_result = re.finditer(inner_pattern, data)
-            # self.module.log(msg=f"  inner_re_result : '{inner_re_result}'")
-            if inner_re_result:
-                found_match = [x for x in inner_re_result if x.group("name") == name]
-                # self.module.log(msg=f"  found_match : '{found_match}'")
-                if found_match and len(found_match) > 0:
-                    found_match = found_match[0]
-                    auth_id = found_match.group('ID')
-                    self.module.log(msg=f"  found authentication : {found_match.group('name')} with type {found_match.group('type').strip()}")
+        if match and isinstance(match, dict):
+            auth_id = match.get('id')
+            auth_name = match.get('name')
+            auth_type = match.get('type')
+            # auth_enabled = match.get('enabled')
 
-                    result = (True, auth_id)
+            self.module.log(msg=f"  found authentication : {auth_name} with type {auth_type.strip()}")
+
+            result = (True, auth_id)
 
         return result
 

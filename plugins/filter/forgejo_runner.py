@@ -53,6 +53,7 @@ display = Display()
 class FilterModule():
     """
     """
+
     def filters(self):
 
         return {

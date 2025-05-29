@@ -80,6 +80,15 @@ glauth_users:
       "search":
         object: "dc=molecule,dc=lan"
 
+  euwest1-ldap:
+    given_name: "eu"
+    sn: "west1"
+    mail: "euwest1@matrix.lan"
+    uid: 4001
+    primary_group: 4000
+    other_groups:
+      - 4001
+
 glauth_behaviors:
   ignore_capabilities: true
 

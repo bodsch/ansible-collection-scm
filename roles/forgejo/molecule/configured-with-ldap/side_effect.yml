@@ -1,0 +1,13 @@
+---
+
+- name: side_effect
+  hosts: instance
+  any_errors_fatal: true
+  become: false
+  gather_facts: true
+
+  tasks:
+    - name: Trick the auth module to update the auth config
+      ansible.builtin.file:
+        path: /etc/forgejo/forgejo_auth.json
+        state: absent
