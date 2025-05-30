@@ -1,3 +1,5 @@
+{% set values = forgejo_api | bodsch.core.remove_empty_values %}
+{% if values | count > 0 %}
 
 [api]
   {% if forgejo_api.enable_swagger | default('') | string | length > 0 %}
@@ -15,3 +17,4 @@ DEFAULT_GIT_TREES_PER_PAGE = {{ forgejo_api.default_git_trees_per_page }}
   {% if forgejo_api.default_max_blob_size | default('') | string | length > 0 %}
 DEFAULT_MAX_BLOB_SIZE = {{ forgejo_api.default_max_blob_size }}
   {% endif %}
+{% endif %}

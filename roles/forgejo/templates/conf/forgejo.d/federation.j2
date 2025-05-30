@@ -1,3 +1,6 @@
+{% set values = forgejo_federation | bodsch.core.remove_empty_values %}
+{% if values | count > 0 and
+      values.enabled | default('false') | bool %}
 
 [federation]
 ENABLED = {{ forgejo_federation.enabled | default('false') | bodsch.core.config_bool(true_as='true', false_as='false') }}
@@ -19,3 +22,4 @@ GET_HEADERS = {{ forgejo_federation.get_headers | join(', ') }}
   {% if forgejo_federation.post_headers | default('') | string | length > 0 %}
 POST_HEADERS = {{ forgejo_federation.post_headers | join(', ') }}
   {% endif %}
+{% endif %}

@@ -1,3 +1,6 @@
+{% set values = forgejo_cache | bodsch.core.remove_empty_values %}
+{% if values | count > 0 and
+      values.enabled | default('false') | bool %}
 
 [cache]
 ENABLED = {{ forgejo_cache.enabled | bodsch.core.config_bool(true_as='true', false_as='false') }}
@@ -28,3 +31,4 @@ ITEM_TTL = {{ forgejo_cache.last_commit.item_ttl }}
 COMMITS_COUNT = 1000
     {% endif %}
   {% endif %}
+{% endif %}

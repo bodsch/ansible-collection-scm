@@ -1,3 +1,5 @@
+{% set values = forgejo_time | bodsch.core.remove_empty_values %}
+{% if values | count > 0 %}
 
 [time]
   {% if forgejo_time.format | default('') | string | length > 0 %}
@@ -6,3 +8,4 @@ FORMAT = {{ forgejo_time.format }}
   {% if forgejo_time.default_ui_location | default('') | string | length > 0 %}
 DEFAULT_UI_LOCATION = {{ forgejo_time.default_ui_location }}
   {% endif %}
+{% endif %}

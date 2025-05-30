@@ -42,6 +42,7 @@ forgejo_auths:
   ldap: {}
 forgejo_cache: {}
 forgejo_camo: {}
+forgejo_cors: {}
 forgejo_cron: {}
 forgejo_database: {}
 forgejo_email: {}

@@ -1,3 +1,6 @@
+{% set values = forgejo_cors | bodsch.core.remove_empty_values %}
+{% if values | count > 0 and
+      values.enabled | default('false') | bool %}
 
 [cors]
 ENABLED = {{ forgejo_cors.enabled | bodsch.core.config_bool(true_as='true', false_as='false') }}
@@ -26,3 +29,4 @@ HEADERS = {{ forgejo_cors.headers | join(', ') }}
   {% if forgejo_cors.x_frame_options | default('') | string | length > 0 %}
 X_FRAME_OPTIONS = {{ forgejo_cors.x_frame_options | join(', ') }}
   {% endif %}
+{% endif %}

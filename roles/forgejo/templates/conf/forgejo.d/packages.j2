@@ -1,3 +1,5 @@
+{% set values = forgejo_packages | bodsch.core.remove_empty_values %}
+{% if values | count > 0 and values.enabled | default('false') | bool %}
 
 [packages]
 ENABLED = {{ forgejo_packages.enabled | bodsch.core.config_bool(true_as='true', false_as='false') }}
@@ -95,4 +97,5 @@ MINIO_INSECURE_SKIP_VERIFY = {{ forgejo_packages.minio_insecure_skip_verify | bo
           forgejo_packages.minio_checksum_algorithm in ["default", "md5"] %}
 MINIO_CHECKSUM_ALGORITHM = {{ forgejo_packages.minio_checksum_algorithm }}
     {% endif %}  {% endif %}
+{% endif %}
 {% endif %}

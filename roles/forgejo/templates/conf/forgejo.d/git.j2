@@ -1,3 +1,5 @@
+{% set values = forgejo_git | bodsch.core.remove_empty_values %}
+{% if values | count > 0 %}
 
 [git]
   {% if forgejo_git.path | default('') | string | length > 0 %}
@@ -75,3 +77,4 @@ ENABLED = {{ forgejo_git.reflog.enabled | bodsch.core.config_bool(true_as='true'
 EXPIRATION = {{ forgejo_git.reflog.expiration }}
     {% endif %}
   {% endif %}
+{% endif %}

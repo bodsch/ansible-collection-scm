@@ -1,3 +1,5 @@
+{% set values = forgejo_oauth2 | bodsch.core.remove_empty_values %}
+{% if values | count > 0 and values.enabled | default('false') | bool %}
 
 [oauth2]
 ENABLED = {{ forgejo_oauth2.enabled | default('false') | bodsch.core.config_bool(true_as='true', false_as='false') }}
@@ -25,3 +27,4 @@ INVALIDATE_REFRESH_TOKENS = {{ forgejo_oauth2.invalidate_refresh_tokens | bodsch
   {% if forgejo_oauth2.max_token_length | default('') | string | length > 0 %}
 MAX_TOKEN_LENGTH = {{ forgejo_oauth2.max_token_length }}
   {% endif %}
+{% endif %}

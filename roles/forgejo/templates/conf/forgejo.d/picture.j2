@@ -1,3 +1,5 @@
+{% set values = forgejo_picture | bodsch.core.remove_empty_values %}
+{% if values | count > 0 %}
 
 [picture]
   {% if forgejo_picture.avatar_upload_path | default('') | string | length > 0 %}
@@ -34,3 +36,4 @@ DISABLE_GRAVATAR = {{ forgejo_picture.disable_gravatar | bodsch.core.config_bool
   {% if forgejo_picture.enable_federated_avatar | default('') | string | length > 0 %}
 ENABLE_FEDERATED_AVATAR = {{ forgejo_picture.enable_federated_avatar | bodsch.core.config_bool(true_as='true', false_as='false') }}
   {% endif %}
+{% endif %}

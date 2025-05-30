@@ -1,3 +1,5 @@
+{% set values = forgejo_ssh | bodsch.core.remove_empty_values %}
+{% if values | count > 0 %}
 
   {% if forgejo_ssh.minimum_key_sizes is defined and
         forgejo_ssh.minimum_key_sizes | count > 0 %}
@@ -15,3 +17,4 @@ RSA = {{ forgejo_ssh.minimum_key_sizes.rsa }}
 DSA = {{ forgejo_ssh.minimum_key_sizes.dsa }}
     {% endif %}
   {% endif %}
+{% endif %}

@@ -1,5 +1,6 @@
 {% set admin = forgejo_admin | bodsch.core.remove_empty_values %}
 {% if admin | count > 0 %}
+
 [admin]
   {% if forgejo_admin.disable_regular_org_creation | default('') | string | length > 0 %}
 DISABLE_REGULAR_ORG_CREATION = {{ forgejo_admin.disable_regular_org_creation | bodsch.core.config_bool(true_as='true', false_as='false') }}

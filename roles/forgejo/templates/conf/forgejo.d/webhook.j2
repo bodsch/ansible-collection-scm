@@ -1,3 +1,5 @@
+{% set values = forgejo_webhook | bodsch.core.remove_empty_values %}
+{% if values | count > 0 %}
 
 [webhook]
   {% if forgejo_webhook.queue_length | default('') | string | length > 0 %}
@@ -21,3 +23,4 @@ PROXY_URL = {{ forgejo_webhook.proxy_url }}
   {% if forgejo_webhook.proxy_hosts | count > 0 %}
 PROXY_HOSTS = {{ forgejo_webhook.proxy_hosts | join(', ') }}
   {% endif %}
+{% endif %}

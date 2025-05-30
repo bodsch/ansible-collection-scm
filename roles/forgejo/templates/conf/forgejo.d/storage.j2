@@ -1,3 +1,5 @@
+{% set values = forgejo_storage | bodsch.core.remove_empty_values %}
+{% if values | count > 0 %}
 
 [storage]
   {% if forgejo_storage.storage_type | default('') | string | length > 0 %}
@@ -63,3 +65,4 @@ STORAGE_TYPE = {{ forgejo_storage.packages.storage_type }}
 STORAGE_TYPE = {{ forgejo_storage.actions_log.storage_type }}
     {% endif %}
   {% endif %}
+{% endif %}

@@ -1,3 +1,5 @@
+{% set values = forgejo_i18n | bodsch.core.remove_empty_values %}
+{% if values | count > 0 %}
 
 [i18n]
   {% if forgejo_i18n.langs is defined and
@@ -8,3 +10,4 @@ LANGS = {{ forgejo_i18n.langs | join(', ') }}
         forgejo_i18n.names | count > 0 %}
 NAMES = {{ forgejo_i18n.names | join(', ') }}
   {% endif %}
+{% endif %}

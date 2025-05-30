@@ -1,3 +1,5 @@
+{% set values = forgejo_indexer | bodsch.core.remove_empty_values %}
+{% if values | count > 0 %}
 
   {% if forgejo_indexer.issue_indexer_type | default('') | string | length > 0 and
         forgejo_indexer.issue_indexer_type in ["bleve", "db", "elasticsearch", "meilisearch"] %}
@@ -70,3 +72,4 @@ UPDATE_BUFFER_LEN = {{ forgejo_indexer.update_buffer_len }}
 MAX_FILE_SIZE = {{ forgejo_indexer.max_file_size }}
     {% endif %}
   {% endif %}
+{% endif %}

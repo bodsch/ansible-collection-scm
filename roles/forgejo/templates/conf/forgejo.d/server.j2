@@ -1,3 +1,5 @@
+{% set values = forgejo_server | bodsch.core.remove_empty_values %}
+{% if values | count > 0 %}
 
 [server]
   {% if forgejo_server.protocol | default('') | string | length > 0 and
@@ -235,3 +237,4 @@ STARTUP_TIMEOUT = {{ forgejo_server.startup_timeout }}
   {% if forgejo_server.static_cache_time | default('') | string | length > 0 %}
 STATIC_CACHE_TIME = {{ forgejo_server.static_cache_time }}
   {% endif %}
+{% endif %}

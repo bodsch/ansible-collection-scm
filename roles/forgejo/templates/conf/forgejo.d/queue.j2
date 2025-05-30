@@ -1,3 +1,5 @@
+{% set values = forgejo_queue | bodsch.core.remove_empty_values %}
+{% if values | count > 0 %}
 
 [queue]
   {% set queue_parameters = [
@@ -16,3 +18,4 @@
       Specific queues can be individually configured with [queue.name]. [queue] provides defaults
       ([queue.issue_indexer] is special due to the old configuration described above)
   #}
+{% endif %}

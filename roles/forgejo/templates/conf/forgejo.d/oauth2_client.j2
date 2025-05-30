@@ -1,3 +1,5 @@
+{% set values = forgejo_metrics | bodsch.core.remove_empty_values %}
+{% if values | count > 0 %}
 
 [oauth2_client]
   {% if forgejo_oauth2_client.register_email_confirm | default('') | string | length > 0 %}
@@ -20,3 +22,4 @@ UPDATE_AVATAR = {{ forgejo_oauth2_client.update_avatar | bodsch.core.config_bool
         forgejo_oauth2_client.account_linking in ["disabled", "login", "auto"] %}
 ACCOUNT_LINKING = {{ forgejo_oauth2_client.account_linking }}
   {% endif %}
+{% endif %}

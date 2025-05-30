@@ -1,3 +1,5 @@
+{% set values = forgejo_metrics | bodsch.core.remove_empty_values %}
+{% if values | count > 0 %}
 
 [migrations]
   {% if forgejo_migrations.max_attempts | default('') | string | length > 0 %}
@@ -15,3 +17,4 @@ BLOCKED_DOMAINS = {{ forgejo_migrations.blocked_domains | join(', ') }}
   {% if forgejo_migrations.allow_localnetworks | default('') | string | length > 0 %}
 ALLOW_LOCALNETWORKS = {{ forgejo_migrations.allow_localnetworks | default('false') | bodsch.core.config_bool(true_as='true', false_as='false') }}
   {% endif %}
+{% endif %}

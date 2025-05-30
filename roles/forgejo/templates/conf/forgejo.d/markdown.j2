@@ -1,3 +1,5 @@
+{% set values = forgejo_markdown | bodsch.core.remove_empty_values %}
+{% if values | count > 0 %}
 
 [markdown]
   {% if forgejo_markdown.enable_hard_line_break_in_comments | default('') | string | length > 0 %}
@@ -15,3 +17,4 @@ FILE_EXTENSIONS = {{ forgejo_markdown.file_extensions | join(', ') }}
   {% if forgejo_markdown.enable_math | default('') | string | length > 0 %}
 ENABLE_MATH = {{ forgejo_markdown.enable_math | bodsch.core.config_bool(true_as='true', false_as='false') }}
   {% endif %}
+{% endif %}

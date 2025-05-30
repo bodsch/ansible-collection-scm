@@ -1,3 +1,5 @@
+{% set values = forgejo_security | bodsch.core.remove_empty_values %}
+{% if values | count > 0 %}
 
 [security]
   {% if forgejo_security.install_lock | default('') | string | length > 0 %}
@@ -79,3 +81,4 @@ PASSWORD_CHECK_PWN = {{ forgejo_security.password_check_pwn | bodsch.core.config
   {% if forgejo_security.successful_tokens_cache_size | default('') | string | length > 0 %}
 SUCCESSFUL_TOKENS_CACHE_SIZE = {{ forgejo_security.successful_tokens_cache_size }}
   {% endif %}
+{% endif %}

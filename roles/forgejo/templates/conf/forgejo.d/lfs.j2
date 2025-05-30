@@ -1,3 +1,5 @@
+{% set values = forgejo_lfs | bodsch.core.remove_empty_values %}
+{% if values | count > 0 %}
 
 [lfs]
 {% if forgejo_lfs.storage_type | default('') | string | length > 0 and
@@ -38,4 +40,5 @@ MINIO_INSECURE_SKIP_VERIFY = {{ forgejo_lfs.minio_insecure_skip_verify | bool | 
 MINIO_CHECKSUM_ALGORITHM = {{ forgejo_lfs.minio_checksum_algorithm }}
     {% endif %}
   {% endif %}
+{% endif %}
 {% endif %}

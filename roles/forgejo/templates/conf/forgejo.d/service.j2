@@ -1,3 +1,5 @@
+{% set values = forgejo_service | bodsch.core.remove_empty_values %}
+{% if values | count > 0 %}
 
 [service]
   {% if forgejo_service.active_code_live_minutes | default('') | string | length > 0 %}
@@ -158,3 +160,4 @@ USER_DELETE_WITH_COMMENTS_MAX_TIME = {{ forgejo_service.user_delete_with_comment
   {% if forgejo_service.valid_site_url_schemes | count > 0 %}
 VALID_SITE_URL_SCHEMES = {{ forgejo_service.valid_site_url_schemes | join(', ') }}
   {% endif %}
+{% endif %}

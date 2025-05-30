@@ -1,3 +1,5 @@
+{% set values = forgejo_ui | bodsch.core.remove_empty_values %}
+{% if values | count > 0 %}
 
 [ui]
   {% if forgejo_ui.explore_paging_num | default('') | string | length > 0 %}
@@ -126,3 +128,4 @@ ENABLE_RENDER = {{ forgejo_ui.svg.enable_render | bodsch.core.config_bool(true_a
 MAX_FILE_SIZE = {{ forgejo_ui.csv.max_file_size }}
     {% endif %}
   {% endif %}
+{% endif %}

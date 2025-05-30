@@ -1,3 +1,6 @@
+{% set values = forgejo_camo | bodsch.core.remove_empty_values %}
+{% if values | count > 0 and
+      values.enabled | default('false') | bool %}
 
 [camo]
   {#
@@ -24,3 +27,4 @@ HMAC_KEY = {{ forgejo_camo.hmac_key }}
   {% if forgejo_camo.allways | default('') | string | length > 0 %}
 ALLWAYS = {{ forgejo_camo.allways | bodsch.core.config_bool(true_as='true', false_as='false') }}
   {% endif %}
+{% endif %}

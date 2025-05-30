@@ -1,7 +1,7 @@
+{% set values = forgejo_email | bodsch.core.remove_empty_values %}
+{% if values | count > 0 and
+      values.incoming.enabled | default('false') | bool %}
 
-  {% if forgejo_email.incoming is defined and
-        forgejo_email.incoming | count > 0 and
-        forgejo_email.incoming.enabled | bool %}
 [email.incoming]
 ENABLED = {{ forgejo_email.incoming.enabled | bodsch.core.config_bool(true_as='true', false_as='false') }}
     {% if forgejo_email.incoming.reply_to_address | default('') | string | length > 0 %}
@@ -34,4 +34,4 @@ DELETE_HANDLED_MESSAGE = {{ forgejo_email.incoming.delete_handled_message | bods
     {% if forgejo_email.incoming.maximum_message_size | default('') | string | length > 0 %}
 MAXIMUM_MESSAGE_SIZE = {{ forgejo_email.incoming.maximum_message_size }}
     {% endif %}
-  {% endif %}
+{% endif %}

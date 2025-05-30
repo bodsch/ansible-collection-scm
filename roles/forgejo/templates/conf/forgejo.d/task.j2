@@ -1,3 +1,5 @@
+{% set values = forgejo_task | bodsch.core.remove_empty_values %}
+{% if values | count > 0 %}
 
 [task]
   {% if forgejo_task.queue_type | default('') | string | length > 0 and
@@ -12,3 +14,4 @@ QUEUE_LENGTH = {{ forgejo_task.queue_length }}
 QUEUE_CONN_STR = {{ forgejo_task.queue_conn_str }}
     {% endif %}
   {% endif %}
+{% endif %}

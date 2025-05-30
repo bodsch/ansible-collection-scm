@@ -1,3 +1,5 @@
+{% set values = forgejo_other | bodsch.core.remove_empty_values %}
+{% if values | count > 0 %}
 
 [other]
   {% if forgejo_other.show_footer_branding | default('') | string | length > 0 %}
@@ -15,3 +17,4 @@ ENABLE_SITEMAP = {{ forgejo_other.enable_sitemap | bodsch.core.config_bool(true_
   {% if forgejo_other.enable_feed | default('') | string | length > 0 %}
 ENABLE_FEED = {{ forgejo_other.enable_feed | bodsch.core.config_bool(true_as='true', false_as='false') }}
   {% endif %}
+{% endif %}

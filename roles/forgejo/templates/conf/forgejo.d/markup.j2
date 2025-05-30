@@ -1,3 +1,5 @@
+{% set values = forgejo_markup | bodsch.core.remove_empty_values %}
+{% if values | count > 0 %}
 
 [markup]
   {% if forgejo_markup.mermaid_max_source_characters | default('') | string | length > 0 %}
@@ -38,3 +40,4 @@ IS_INPUT_FILE = {{ forgejo_markup.asciidoc.is_input_file | bodsch.core.config_bo
 RENDER_CONTENT_MODE = {{ forgejo_markup.asciidoc.render_content_mode }}
     {% endif %}
   {% endif %}
+{% endif %}

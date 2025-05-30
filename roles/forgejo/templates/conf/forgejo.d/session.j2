@@ -1,3 +1,5 @@
+{% set values = forgejo_session | bodsch.core.remove_empty_values %}
+{% if values | count > 0 %}
 
 [session]
   {% if forgejo_session.provider | default('') | string | length > 0 and
@@ -24,3 +26,4 @@ SESSION_LIFE_TIME = {{ forgejo_session.session_life_time }}
         forgejo_session.same_site in ["none", "lax", "strict"] %}
 SAME_SITE = {{ forgejo_session.same_site }}
   {% endif %}
+{% endif %}

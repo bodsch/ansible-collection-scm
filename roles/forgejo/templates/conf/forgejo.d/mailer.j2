@@ -1,3 +1,5 @@
+{% set values = forgejo_mailer | bodsch.core.remove_empty_values %}
+{% if values | count > 0 and values.enabled | default('false') | bool %}
 
 [mailer]
 ENABLED = {{ forgejo_mailer.enabled | default('false') | bodsch.core.config_bool(true_as='true', false_as='false') }}
@@ -59,3 +61,4 @@ SENDMAIL_TIMEOUT = {{ forgejo_mailer.sendmail_timeout }}
   {% if forgejo_mailer.sendmail_convert_crlf | default('') | string | length > 0 %}
 SENDMAIL_CONVERT_CRLF = {{ forgejo_mailer.sendmail_convert_crlf | bodsch.core.config_bool(true_as='true', false_as='false') }}
   {% endif %}
+{% endif %}

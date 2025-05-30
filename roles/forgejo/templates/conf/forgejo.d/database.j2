@@ -1,3 +1,6 @@
+{% set values = forgejo_database | bodsch.core.remove_empty_values %}
+{% if values | count > 0 %}
+
   {% if forgejo_database.db_type | default('') | string | length > 0 and
         forgejo_database.db_type in ["mysql", "postgres", "mssql", "sqlite3"] %}
 [database]
@@ -84,3 +87,4 @@ AUTO_MIGRATION = {{ forgejo_database.auto_migration | bodsch.core.config_bool(tr
   {% else %}
 ;; unkown database type
   {% endif %}
+{% endif %}

@@ -1,3 +1,5 @@
+{% set values = forgejo_repository | bodsch.core.remove_empty_values %}
+{% if values | count > 0 %}
 
 [repository]
   {% if forgejo_repository.root | default('') | string | length > 0 %}
@@ -239,4 +241,4 @@ MERGES = {{ valid_merges | join(', ') }}
 {{ k }} = {{ v }}
     {% endfor %}
   {% endif %}
-
+{% endif %}

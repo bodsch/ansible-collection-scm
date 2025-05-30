@@ -1,3 +1,5 @@
+{% set values = forgejo_openid | bodsch.core.remove_empty_values %}
+{% if values | count > 0 %}
 
 [openid]
   {% if forgejo_openid.enable_openid_signin | default('') | string | length > 0 %}
@@ -12,3 +14,4 @@ WHITELISTED_URIS = {{ forgejo_openid.whitelisted_uris | join(' ') }}
   {% if forgejo_openid.blacklisted_uris | count > 0 %}
 BLACKLISTED_URIS = {{ forgejo_openid.blacklisted_uris | join(' ') }}
   {% endif %}
+{% endif %}

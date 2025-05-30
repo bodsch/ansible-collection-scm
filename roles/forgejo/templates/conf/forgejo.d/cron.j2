@@ -1,3 +1,6 @@
+{% set values = forgejo_cron | bodsch.core.remove_empty_values %}
+{% if values | count > 0 and
+      values.enabled | default('false') | bool %}
 
 [cron]
 ENABLED = {{ forgejo_cron.enabled | bodsch.core.config_bool(true_as='true', false_as='false') }}
@@ -34,3 +37,4 @@ RUN_AT_START = {{ forgejo_cron.run_at_start | bool | ternary('true', 'false') }}
       {% endfor %}
     {% endif %}
   {% endfor %}
+{% endif %}

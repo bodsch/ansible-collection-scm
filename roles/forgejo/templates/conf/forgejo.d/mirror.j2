@@ -1,3 +1,5 @@
+{% set values = forgejo_metrics | bodsch.core.remove_empty_values %}
+{% if values | count > 0 and values.enabled | default('false') | bool %}
 
 [mirror]
 ENABLED = {{ forgejo_mirror.enabled | default('false') | bodsch.core.config_bool(true_as='true', false_as='false') }}
@@ -13,3 +15,4 @@ DEFAULT_INTERVAL = {{ forgejo_mirror.default_interval }}
   {% if forgejo_mirror.min_interval | default('') | string | length > 0 %}
 MIN_INTERVAL = {{ forgejo_mirror.min_interval }}
   {% endif %}
+{% endif %}

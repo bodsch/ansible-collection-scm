@@ -1,3 +1,6 @@
+{% set values = forgejo_attachment | bodsch.core.remove_empty_values %}
+{% if values | count > 0 and
+      values.enabled | default('false') | bool %}
 
 [attachment]
 ENABLED = {{ forgejo_attachment.enabled | bodsch.core.config_bool(true_as='true', false_as='false') }}
@@ -58,3 +61,4 @@ MINIO_INSECURE_SKIP_VERIFY = {{ forgejo_attachment.minio.insecure_skip_verify | 
 MINIO_CHECKSUM_ALGORITHM = {{ forgejo_attachment.minio.checksum_algorithm }}
     {% endif %}
   {% endif %}
+{% endif %}
