@@ -55,15 +55,9 @@ RUN_MODE = {{ run_mod }}
       forgejo_working_dir | string | length > 0 %}
 WORK_PATH = {{ forgejo_working_dir }}
 {% endif %}
-{% if forgejo_actions is defined and
-      forgejo_actions | count > 0 and
-      forgejo_actions.enabled | default('false') | bool %}
 {% include('forgejo.d/actions.j2') %}
-{% endif %}
-{% if forgejo_admin is defined and
-      forgejo_admin | count > 0 %}
 {% include('forgejo.d/admin.j2') %}
-{% endif %}
+
 {% if forgejo_api is defined and
       forgejo_api | count > 0 %}
 {% include('forgejo.d/api.j2') %}

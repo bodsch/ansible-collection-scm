@@ -1,4 +1,6 @@
-
+{% set actions = forgejo_actions | bodsch.core.remove_empty_values %}
+{% if actions | count > 0 and
+      actions.enabled | default('false') | bool %}
 [actions]
 ENABLED = {{ forgejo_actions.enabled | bodsch.core.config_bool(true_as='true', false_as='false') }}
   {% if forgejo_actions.default_actions_url is defined and
@@ -22,3 +24,4 @@ ABANDONED_JOB_TIMEOUT: {{ forgejo_actions.abandoned_job_timeout }}
         forgejo_actions.skip_workflow_strings | count > 0 %}
 SKIP_WORKFLOW_STRINGS: {{ forgejo_actions.skip_workflow_strings | join(', ') }}
   {% endif %}
+{% endif %}
