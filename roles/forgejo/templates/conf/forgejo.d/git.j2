@@ -1,6 +1,7 @@
 {% set git = forgejo_git | bodsch.core.remove_empty_values %}
 {% set _ = git.pop('timeout') %}
 {% set _ = git.pop('reflog') %}
+{% set _ = git.pop('config') %}
 {% if git | count > 0 %}
 
 [git]
@@ -91,3 +92,16 @@ ENABLED = {{ reflog.enabled | bodsch.core.config_bool(true_as='true', false_as='
 EXPIRATION = {{ reflog.expiration }}
     {% endif %}
 {% endif %}
+{% set config = forgejo_git.config | bodsch.core.remove_empty_values %}
+{% if config | count > 0 %}
+
+[git.config]
+  {% for k, v in config.items() %}
+    {% if v | bodsch.core.type == 'bool' %}
+{{ k }} = {{ v | bodsch.core.config_bool(true_as='true', false_as='false') }}
+    {% else %}
+{{ k }} = {{ v }}
+    {% endif %}
+  {% endfor %}
+{% endif %}
+

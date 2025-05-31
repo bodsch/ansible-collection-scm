@@ -123,10 +123,12 @@ class ForgejoConfig(object):
     def read_ini_with_global_section(self, path, global_section="__global__"):
         """
         """
+        self.module.log(f"ForgejoConfig::read_ini_with_global_section({path}, {global_section})")
+
         with open(path, 'r', encoding='utf-8') as f:
             lines = f.readlines()
 
-        self.module.log(f"{lines}")
+        # self.module.log(f"{lines}")
 
         modified_lines = []
         section_started = False
@@ -148,15 +150,11 @@ class ForgejoConfig(object):
         else:
             modified_lines = lines
 
-        self.module.log(f"{modified_lines}")
+        # self.module.log(f"{modified_lines}")
 
         config = ConfigParser()
         config.optionxform = str
-
-        try:
-            config.read_file(StringIO(''.join(modified_lines)))
-        except Exception as e:
-            self.module.log(f"ERROR {e}")
+        config.read_file(StringIO(''.join(modified_lines)))
 
         return config
 
@@ -171,13 +169,28 @@ class ForgejoConfig(object):
         all_sections = set(config1.sections()) | set(config2.sections())
 
         for section in all_sections:
-            if section not in config1 or section not in config2:
-                continue
+            self.module.log(f"  - {section}")
 
             ignore_keys = set(ignore_map.get(section, []))
 
-            checksum1 = self.section_checksum(config1, section, ignore_keys)
-            checksum2 = self.section_checksum(config2, section, ignore_keys)
+            if section not in config1:
+                self.module.log(f"    - missing in {self.config}")
+                checksum1 = ""
+            else:
+                checksum1 = self.section_checksum(config1, section, ignore_keys)
+
+            if section not in config2:
+                self.module.log(f"    - missing in {self.new_config}")
+                checksum2 = ""
+            else:
+                checksum2 = self.section_checksum(config2, section, ignore_keys)
+
+            #if section not in config1 or section not in config2:
+            #    continue
+            # checksum1 = self.section_checksum(config1, section, ignore_keys)
+            # checksum2 = self.section_checksum(config2, section, ignore_keys)
+
+            self.module.log(f"  - '{checksum1}' vs '{checksum2}'")
 
             if checksum1 != checksum2:
                 changed = True
@@ -209,24 +222,26 @@ class ForgejoConfig(object):
     def transfer_keys(self, file1, file2, section_keys_to_transfer, output_file):
         """
         """
-        config1 = self.read_ini_with_global_section(file1)
-        config2 = self.read_ini_with_global_section(file2)
+        self.module.log(f"ForgejoConfig::transfer_keys({file1}, {file2}, {section_keys_to_transfer}, {output_file})")
+
+        config_ini = self.read_ini_with_global_section(file1) # .ini
+        config_new = self.read_ini_with_global_section(file2) # .new
 
         for section, keys in section_keys_to_transfer.items():
-            if not config1.has_section(section):
+            if not config_ini.has_section(section):
                 continue
 
-            if not config2.has_section(section):
-                config2.add_section(section)
+            if not config_new.has_section(section):
+                config_new.add_section(section)
 
             for key in keys:
-                if config1.has_option(section, key):
-                    value = config1.get(section, key)
-                    config2.set(section, key, value)
+                if config_ini.has_option(section, key):
+                    value = config_ini.get(section, key)
+                    config_new.set(section, key, value)
 
         # Datei schreiben
         with open(output_file, 'w', encoding='utf-8') as f:
-            config2.write(f)
+            config_new.write(f)
 
     def diff_section(self, config1, config2, section, ignore_keys=None):
         ignore_keys = set(ignore_keys or [])

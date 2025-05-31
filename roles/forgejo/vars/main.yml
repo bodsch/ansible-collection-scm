@@ -386,6 +386,10 @@ forgejo_defaults_git:
   reflog:
     enabled: ""                                   # true
     expiration: ""                                # 90
+  config:
+    diff.algorithm: histogram
+    core.logAllRefUpdates: true
+    gc.reflogExpire: 90
 
 forgejo_defaults_highlight:
   mapping: {}
