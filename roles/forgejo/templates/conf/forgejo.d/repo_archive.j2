@@ -1,0 +1,14 @@
+{% set values = forgejo_repo_archive | bodsch.core.remove_empty_values %}
+{% if values | count > 0 %}
+
+[repo-archive]
+  {% if values.storage_type | default('') | string | length > 0 %}
+STORAGE_TYPE = {{ values.storage_type }}
+  {% endif %}
+  {% if values.path | default('') | string | length > 0 %}
+PATH = {{ values.path }}
+  {% endif %}
+  {% if values.minio_base_path | default('') | string | length > 0 %}
+MINIO_BASE_PATH = {{ values.minio_base_path }}
+  {% endif %}
+{% endif %}

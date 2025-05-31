@@ -1,0 +1,8 @@
+{% set values = forgejo_f3 | bodsch.core.remove_empty_values %}
+{% if values | count > 0 and
+      values.enabled | default('false') | bool %}
+
+[F3]
+ENABLED = {{ values.enabled | bodsch.core.config_bool(true_as='true', false_as='false') }}
+
+{% endif %}
