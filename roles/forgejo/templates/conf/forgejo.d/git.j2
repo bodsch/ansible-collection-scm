@@ -1,80 +1,93 @@
-{% set values = forgejo_git | bodsch.core.remove_empty_values %}
-{% if values | count > 0 %}
+{% set git = forgejo_git | bodsch.core.remove_empty_values %}
+{% set _ = git.pop('timeout') %}
+{% set _ = git.pop('reflog') %}
+{% if git | count > 0 %}
 
 [git]
-  {% if forgejo_git.path | default('') | string | length > 0 %}
-PATH = {{ forgejo_git.path }}
+  {% if git.path | default('') | string | length > 0 %}
+PATH = {{ git.path }}
   {% endif %}
-  {% if forgejo_git.home_path | default('') | string | length > 0 %}
-HOME_PATH = {{ forgejo_git.home_path }}
+  {% if git.home_path | default('') | string | length > 0 %}
+HOME_PATH = {{ git.home_path }}
   {% endif %}
-  {% if forgejo_git.disable_diff_highlight | default('') | string | length > 0 %}
-DISABLE_DIFF_HIGHLIGHT = {{ forgejo_git.disable_diff_highlight | bodsch.core.config_bool(true_as='true', false_as='false') }}
+  {% if git.disable_diff_highlight | default('') | string | length > 0 %}
+DISABLE_DIFF_HIGHLIGHT = {{ git.disable_diff_highlight | bodsch.core.config_bool(true_as='true', false_as='false') }}
   {% endif %}
-  {% if forgejo_git.max_git_diff_lines | default('') | string | length > 0 %}
-MAX_GIT_DIFF_LINES = {{ forgejo_git.max_git_diff_lines }}
+  {% if git.max_git_diff_lines | default('') | string | length > 0 %}
+MAX_GIT_DIFF_LINES = {{ git.max_git_diff_lines }}
   {% endif %}
-  {% if forgejo_git.max_git_diff_line_characters | default('') | string | length > 0 %}
-MAX_GIT_DIFF_LINE_CHARACTERS = {{ forgejo_git.max_git_diff_line_characters }}
+  {% if git.max_git_diff_line_characters | default('') | string | length > 0 %}
+MAX_GIT_DIFF_LINE_CHARACTERS = {{ git.max_git_diff_line_characters }}
   {% endif %}
-  {% if forgejo_git.max_git_diff_files | default('') | string | length > 0 %}
-MAX_GIT_DIFF_FILES = {{ forgejo_git.max_git_diff_files }}
+  {% if git.max_git_diff_files | default('') | string | length > 0 %}
+MAX_GIT_DIFF_FILES = {{ git.max_git_diff_files }}
   {% endif %}
-  {% if forgejo_git.commits_range_size | default('') | string | length > 0 %}
-COMMITS_RANGE_SIZE = {{ forgejo_git.commits_range_size }}
+  {% if git.commits_range_size | default('') | string | length > 0 %}
+COMMITS_RANGE_SIZE = {{ git.commits_range_size }}
   {% endif %}
-  {% if forgejo_git.branches_range_size | default('') | string | length > 0 %}
-BRANCHES_RANGE_SIZE = {{ forgejo_git.branches_range_size }}
+  {% if git.branches_range_size | default('') | string | length > 0 %}
+BRANCHES_RANGE_SIZE = {{ git.branches_range_size }}
   {% endif %}
-  {% if forgejo_git.gc_args | default('') | string | length > 0 %}
-GC_ARGS = {{ forgejo_git.gc_args }}
+  {% if git.gc_args | default('') | string | length > 0 %}
+GC_ARGS = {{ git.gc_args }}
   {% endif %}
-  {% if forgejo_git.enable_auto_git_wire_protocol | default('') | string | length > 0 %}
-ENABLE_AUTO_GIT_WIRE_PROTOCOL = {{ forgejo_git.enable_auto_git_wire_protocol | bodsch.core.config_bool(true_as='true', false_as='false') }}
+  {% if git.enable_auto_git_wire_protocol | default('') | string | length > 0 %}
+ENABLE_AUTO_GIT_WIRE_PROTOCOL = {{ git.enable_auto_git_wire_protocol | bodsch.core.config_bool(true_as='true', false_as='false') }}
   {% endif %}
-  {% if forgejo_git.pull_request_push_message | default('') | string | length > 0 %}
-PULL_REQUEST_PUSH_MESSAGE = {{ forgejo_git.pull_request_push_message | bodsch.core.config_bool(true_as='true', false_as='false') }}
+  {% if git.pull_request_push_message | default('') | string | length > 0 %}
+PULL_REQUEST_PUSH_MESSAGE = {{ git.pull_request_push_message | bodsch.core.config_bool(true_as='true', false_as='false') }}
   {% endif %}
-  {% if forgejo_git.large_object_threshold | default('') | string | length > 0 %}
-LARGE_OBJECT_THRESHOLD = {{ forgejo_git.large_object_threshold }}
+  {% if git.large_object_threshold | default('') | string | length > 0 %}
+LARGE_OBJECT_THRESHOLD = {{ git.large_object_threshold }}
   {% endif %}
-  {% if forgejo_git.disable_core_protect_ntfs | default('') | string | length > 0 %}
-DISABLE_CORE_PROTECT_NTFS = {{ forgejo_git.disable_core_protect_ntfs | bodsch.core.config_bool(true_as='true', false_as='false') }}
+  {% if git.disable_core_protect_ntfs | default('') | string | length > 0 %}
+DISABLE_CORE_PROTECT_NTFS = {{ git.disable_core_protect_ntfs | bodsch.core.config_bool(true_as='true', false_as='false') }}
   {% endif %}
-  {% if forgejo_git.disable_partial_clone | default('') | string | length > 0 %}
-DISABLE_PARTIAL_CLONE = {{  forgejo_git.disable_partial_clone | bodsch.core.config_bool(true_as='true', false_as='false') }}
+  {% if git.disable_partial_clone | default('') | string | length > 0 %}
+DISABLE_PARTIAL_CLONE = {{  git.disable_partial_clone | bodsch.core.config_bool(true_as='true', false_as='false') }}
   {% endif %}
-  {% if forgejo_git.timeout is defined and
-        forgejo_git.timeout | count > 0 %}
+  {% if forgejo_version is version_compare('1.20', '>=') %}
+    {% if git.grep | default('') | string | length > 0 %}
+GREP = {{ git.grep }}
+    {% endif %}
+    {% if git.verbose_push | default('') | string | length > 0 %}
+VERBOSE_PUSH = {{ git.verbose_push | bodsch.core.config_bool(true_as='true', false_as='false') }}
+    {% endif %}
+    {% if git.verbose_push_delay | default('') | string | length > 0 %}
+VERBOSE_PUSH_DELAY = {{ git.verbose_push_delay }}
+    {% endif %}
+  {% endif %}
+{% endif %}
+{% set timeout = forgejo_git.timeout | bodsch.core.remove_empty_values %}
+{% if timeout | count > 0 %}
 
 [git.timeout]
-    {% if forgejo_git.timeout.default | default('') | string | length > 0 %}
-DEFAULT = {{ forgejo_git.timeout.default }}
+    {% if timeout.default | default('') | string | length > 0 %}
+DEFAULT = {{ timeout.default }}
     {% endif %}
-    {% if forgejo_git.timeout.migrate | default('') | string | length > 0 %}
-MIGRATE = {{ forgejo_git.timeout.migrate }}
+    {% if timeout.migrate | default('') | string | length > 0 %}
+MIGRATE = {{ timeout.migrate }}
     {% endif %}
-    {% if forgejo_git.timeout.mirror | default('') | string | length > 0 %}
-MIRROR = {{ forgejo_git.timeout.mirror }}
+    {% if timeout.mirror | default('') | string | length > 0 %}
+MIRROR = {{ timeout.mirror }}
     {% endif %}
-    {% if forgejo_git.timeout.clone | default('') | string | length > 0 %}
-CLONE = {{ forgejo_git.timeout.clone }}
+    {% if timeout.clone | default('') | string | length > 0 %}
+CLONE = {{ timeout.clone }}
     {% endif %}
-    {% if forgejo_git.timeout.pull | default('') | string | length > 0 %}
-PULL = {{ forgejo_git.timeout.pull }}
+    {% if timeout.pull | default('') | string | length > 0 %}
+PULL = {{ timeout.pull }}
     {% endif %}
-    {% if forgejo_git.timeout.gc | default('') | string | length > 0 %}
-GC = {{ forgejo_git.timeout.gc }}
+    {% if timeout.gc | default('') | string | length > 0 %}
+GC = {{ timeout.gc }}
     {% endif %}
-  {% endif %}
-  {% if forgejo_git.reflog is defined and
-        forgejo_git.reflog | count > 0 and
-        forgejo_git.reflog.enabled | default('false') | bool %}
+{% endif %}
+{% set reflog = forgejo_git.reflog | bodsch.core.remove_empty_values %}
+{% if reflog | count > 0 and
+      reflog.enabled | default('false') | bool %}
 
 [git.reflog]
-ENABLED = {{ forgejo_git.reflog.enabled | bodsch.core.config_bool(true_as='true', false_as='false') }}
-    {% if forgejo_git.reflog.expiration | default('') | string | length > 0 %}
-EXPIRATION = {{ forgejo_git.reflog.expiration }}
+ENABLED = {{ reflog.enabled | bodsch.core.config_bool(true_as='true', false_as='false') }}
+    {% if reflog.expiration | default('') | string | length > 0 %}
+EXPIRATION = {{ reflog.expiration }}
     {% endif %}
-  {% endif %}
 {% endif %}

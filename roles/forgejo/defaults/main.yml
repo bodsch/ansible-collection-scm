@@ -26,6 +26,10 @@ forgejo_release: {}
 forgejo_direct_download: false
 
 forgejo_name: "Forgejo - Beyond coding. We forge."
+forgejo_app:
+  display_name_format: !unsafe "{APP_NAME}: {APP_SLOGAN}"
+  slogan: ""
+
 # Either "dev", "prod" or "test", default is "prod"
 forgejo_run_mode: "prod"
 
@@ -40,12 +44,14 @@ forgejo_api: {}
 forgejo_attachment: {}
 forgejo_auths:
   ldap: {}
+forgejo_badges: {}
 forgejo_cache: {}
 forgejo_camo: {}
 forgejo_cors: {}
 forgejo_cron: {}
 forgejo_database: {}
 forgejo_email: {}
+forgejo_f3: {}
 forgejo_federation: {}
 forgejo_git: {}
 forgejo_highlight: {}
@@ -68,6 +74,7 @@ forgejo_picture: {}
 forgejo_project: {}
 forgejo_proxy: {}
 forgejo_queue: {}
+forgejo_repo_archive: {}
 forgejo_repository: {}
 forgejo_security: {}
 forgejo_server: {}

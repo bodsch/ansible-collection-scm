@@ -2,162 +2,167 @@
 {% if values | count > 0 %}
 
 [service]
-  {% if forgejo_service.active_code_live_minutes | default('') | string | length > 0 %}
-ACTIVE_CODE_LIVE_MINUTES = {{ forgejo_service.active_code_live_minutes }}
+  {% if values.active_code_live_minutes | default('') | string | length > 0 %}
+ACTIVE_CODE_LIVE_MINUTES = {{ values.active_code_live_minutes }}
   {% endif %}
-  {% if forgejo_service.reset_passwd_code_live_minutes | default('') | string | length > 0 %}
-RESET_PASSWD_CODE_LIVE_MINUTES = {{ forgejo_service.reset_passwd_code_live_minutes }}
+  {% if values.reset_passwd_code_live_minutes | default('') | string | length > 0 %}
+RESET_PASSWD_CODE_LIVE_MINUTES = {{ values.reset_passwd_code_live_minutes }}
   {% endif %}
-  {% if forgejo_service.register_email_confirm | default('') | string | length > 0 %}
-REGISTER_EMAIL_CONFIRM = {{ forgejo_service.register_email_confirm | bodsch.core.config_bool(true_as='true', false_as='false') }}
+  {% if values.register_email_confirm | default('') | string | length > 0 %}
+REGISTER_EMAIL_CONFIRM = {{ values.register_email_confirm | bodsch.core.config_bool(true_as='true', false_as='false') }}
   {% endif %}
-  {% if forgejo_service.register_manual_confirm | default('') | string | length > 0 %}
-REGISTER_MANUAL_CONFIRM = {{ forgejo_service.register_manual_confirm | bodsch.core.config_bool(true_as='true', false_as='false') }}
+  {% if values.register_manual_confirm | default('') | string | length > 0 %}
+REGISTER_MANUAL_CONFIRM = {{ values.register_manual_confirm | bodsch.core.config_bool(true_as='true', false_as='false') }}
   {% endif %}
-  {% if forgejo_service.email_domain_whitelist | count > 0 %}
-EMAIL_DOMAIN_WHITELIST = {{ forgejo_service.email_domain_whitelist | join(', ') }}
+  {% if values.email_domain_whitelist | default([]) | count > 0 %}
+EMAIL_DOMAIN_WHITELIST = {{ values.email_domain_whitelist | join(', ') }}
   {% endif %}
-  {% if forgejo_service.email_domain_blocklist | count > 0 %}
-EMAIL_DOMAIN_BLOCKLIST = {{ forgejo_service.email_domain_blocklist | join(', ') }}
+  {% if values.email_domain_blocklist | default([]) | count > 0 %}
+EMAIL_DOMAIN_BLOCKLIST = {{ values.email_domain_blocklist | join(', ') }}
   {% endif %}
-  {% if forgejo_service.disable_registration | default('') | string | length > 0 %}
-DISABLE_REGISTRATION = {{ forgejo_service.disable_registration | bodsch.core.config_bool(true_as='true', false_as='false') }}
+  {% if values.disable_registration | default('') | string | length > 0 %}
+DISABLE_REGISTRATION = {{ values.disable_registration | bodsch.core.config_bool(true_as='true', false_as='false') }}
   {% endif %}
-  {% if forgejo_service.allow_only_internal_registration | default('') | string | length > 0 %}
-ALLOW_ONLY_INTERNAL_REGISTRATION = {{ forgejo_service.allow_only_internal_registration | bodsch.core.config_bool(true_as='true', false_as='false') }}
+  {% if values.allow_only_internal_registration | default('') | string | length > 0 %}
+ALLOW_ONLY_INTERNAL_REGISTRATION = {{ values.allow_only_internal_registration | bodsch.core.config_bool(true_as='true', false_as='false') }}
   {% endif %}
-  {% if forgejo_service.allow_only_external_registration | default('') | string | length > 0 %}
-ALLOW_ONLY_EXTERNAL_REGISTRATION = {{ forgejo_service.allow_only_external_registration | bodsch.core.config_bool(true_as='true', false_as='false') }}
+  {% if values.allow_only_external_registration | default('') | string | length > 0 %}
+ALLOW_ONLY_EXTERNAL_REGISTRATION = {{ values.allow_only_external_registration | bodsch.core.config_bool(true_as='true', false_as='false') }}
   {% endif %}
-  {% if forgejo_service.require_signin_view | default('') | string | length > 0 %}
-REQUIRE_SIGNIN_VIEW = {{ forgejo_service.require_signin_view | bodsch.core.config_bool(true_as='true', false_as='false') }}
+  {% if values.require_signin_view | default('') | string | length > 0 %}
+REQUIRE_SIGNIN_VIEW = {{ values.require_signin_view | bodsch.core.config_bool(true_as='true', false_as='false') }}
   {% endif %}
-  {% if forgejo_service.enable_notify_mail | default('') | string | length > 0 %}
-ENABLE_NOTIFY_MAIL = {{ forgejo_service.enable_notify_mail | bodsch.core.config_bool(true_as='true', false_as='false') }}
+  {% if values.enable_notify_mail | default('') | string | length > 0 %}
+ENABLE_NOTIFY_MAIL = {{ values.enable_notify_mail | bodsch.core.config_bool(true_as='true', false_as='false') }}
   {% endif %}
-  {% if forgejo_service.enable_basic_authentication | default('') | string | length > 0 %}
-ENABLE_BASIC_AUTHENTICATION = {{ forgejo_service.enable_basic_authentication | bodsch.core.config_bool(true_as='true', false_as='false') }}
+  {% if values.enable_basic_authentication | default('') | string | length > 0 %}
+ENABLE_BASIC_AUTHENTICATION = {{ values.enable_basic_authentication | bodsch.core.config_bool(true_as='true', false_as='false') }}
   {% endif %}
-  {% if forgejo_service.enable_reverse_proxy_authentication | default('') | string | length > 0 %}
-ENABLE_REVERSE_PROXY_AUTHENTICATION = {{ forgejo_service.enable_reverse_proxy_authentication | bodsch.core.config_bool(true_as='true', false_as='false') }}
+  {% if values.enable_reverse_proxy_authentication | default('') | string | length > 0 %}
+ENABLE_REVERSE_PROXY_AUTHENTICATION = {{ values.enable_reverse_proxy_authentication | bodsch.core.config_bool(true_as='true', false_as='false') }}
   {% endif %}
-  {% if forgejo_service.enable_reverse_proxy_auto_registration | default('') | string | length > 0 %}
-ENABLE_REVERSE_PROXY_AUTO_REGISTRATION = {{ forgejo_service.enable_reverse_proxy_auto_registration | bodsch.core.config_bool(true_as='true', false_as='false') }}
+  {% if values.enable_reverse_proxy_auto_registration | default('') | string | length > 0 %}
+ENABLE_REVERSE_PROXY_AUTO_REGISTRATION = {{ values.enable_reverse_proxy_auto_registration | bodsch.core.config_bool(true_as='true', false_as='false') }}
   {% endif %}
-  {% if forgejo_service.enable_reverse_proxy_email | default('') | string | length > 0 %}
-ENABLE_REVERSE_PROXY_EMAIL = {{ forgejo_service.enable_reverse_proxy_email | bodsch.core.config_bool(true_as='true', false_as='false') }}
+  {% if values.enable_reverse_proxy_email | default('') | string | length > 0 %}
+ENABLE_REVERSE_PROXY_EMAIL = {{ values.enable_reverse_proxy_email | bodsch.core.config_bool(true_as='true', false_as='false') }}
   {% endif %}
-  {% if forgejo_service.enable_reverse_proxy_full_name | default('') | string | length > 0 %}
-ENABLE_REVERSE_PROXY_FULL_NAME = {{ forgejo_service.enable_reverse_proxy_full_name | bodsch.core.config_bool(true_as='true', false_as='false') }}
+  {% if values.enable_reverse_proxy_full_name | default('') | string | length > 0 %}
+ENABLE_REVERSE_PROXY_FULL_NAME = {{ values.enable_reverse_proxy_full_name | bodsch.core.config_bool(true_as='true', false_as='false') }}
   {% endif %}
-  {% if forgejo_service.enable_captcha | default('') | string | length > 0 %}
-ENABLE_CAPTCHA = {{ forgejo_service.enable_captcha | bodsch.core.config_bool(true_as='true', false_as='false') }}
+  {% if values.enable_captcha | default('') | string | length > 0 %}
+ENABLE_CAPTCHA = {{ values.enable_captcha | bodsch.core.config_bool(true_as='true', false_as='false') }}
   {% endif %}
-  {% if forgejo_service.require_captcha_for_login | default('') | string | length > 0 %}
-REQUIRE_CAPTCHA_FOR_LOGIN = {{ forgejo_service.require_captcha_for_login | bodsch.core.config_bool(true_as='true', false_as='false') }}
+  {% if values.require_captcha_for_login | default('') | string | length > 0 %}
+REQUIRE_CAPTCHA_FOR_LOGIN = {{ values.require_captcha_for_login | bodsch.core.config_bool(true_as='true', false_as='false') }}
   {% endif %}
-  {% if forgejo_service.captcha_type | default('') | string | length > 0 and
-        forgejo_service.captcha_type in ["image", "recaptcha", "hcaptcha", "mcaptcha", "cfturnstile"] %}
-CAPTCHA_TYPE = {{ forgejo_service.captcha_type }}
-    {% if forgejo_service.captcha_type == "recaptcha" %}
-      {% if forgejo_service.recaptcha_url | default('') | string | length > 0 %}
-RECAPTCHA_URL = {{ forgejo_service.recaptcha_url }}
+  {% if values.captcha_type | default('') | string | length > 0 and
+        values.captcha_type in ["image", "recaptcha", "hcaptcha", "mcaptcha", "cfturnstile"] %}
+CAPTCHA_TYPE = {{ values.captcha_type }}
+    {% if values.captcha_type == "recaptcha" %}
+      {% if values.recaptcha_url | default('') | string | length > 0 %}
+RECAPTCHA_URL = {{ values.recaptcha_url }}
       {% endif %}
-      {% if forgejo_service.recaptcha_secret | default('') | string | length > 0 %}
-RECAPTCHA_SECRET = {{ forgejo_service.recaptcha_secret }}
+      {% if values.recaptcha_secret | default('') | string | length > 0 %}
+RECAPTCHA_SECRET = {{ values.recaptcha_secret }}
       {% endif %}
-      {% if forgejo_service.recaptcha_sitekey | default('') | string | length > 0 %}
-RECAPTCHA_SITEKEY = {{ forgejo_service.recaptcha_sitekey }}
-      {% endif %}
-    {% endif %}
-    {% if forgejo_service.captcha_type == "hcaptcha" %}
-      {% if forgejo_service.hcaptcha_secret | default('') | string | length > 0 %}
-HCAPTCHA_SECRET = {{ forgejo_service.hcaptcha_secret }}
-      {% endif %}
-      {% if forgejo_service.hcaptcha_sitekey | default('') | string | length > 0 %}
-HCAPTCHA_SITEKEY = {{ forgejo_service.hcaptcha_sitekey }}
+      {% if values.recaptcha_sitekey | default('') | string | length > 0 %}
+RECAPTCHA_SITEKEY = {{ values.recaptcha_sitekey }}
       {% endif %}
     {% endif %}
-    {% if forgejo_service.captcha_type == "mcaptcha" %}
-      {% if forgejo_service.mcaptcha_url | default('') | string | length > 0 %}
-MCAPTCHA_URL = {{ forgejo_service.mcaptcha_url }}
+    {% if values.captcha_type == "hcaptcha" %}
+      {% if values.hcaptcha_secret | default('') | string | length > 0 %}
+HCAPTCHA_SECRET = {{ values.hcaptcha_secret }}
       {% endif %}
-      {% if forgejo_service.mcaptcha_secret | default('') | string | length > 0 %}
-MCAPTCHA_SECRET = {{ forgejo_service.mcaptcha_secret }}
-      {% endif %}
-      {% if forgejo_service.mcaptcha_sitekey | default('') | string | length > 0 %}
-MCAPTCHA_SITEKEY = {{ forgejo_service.mcaptcha_sitekey }}
+      {% if values.hcaptcha_sitekey | default('') | string | length > 0 %}
+HCAPTCHA_SITEKEY = {{ values.hcaptcha_sitekey }}
       {% endif %}
     {% endif %}
-    {% if forgejo_service.captcha_type == "cfturnstile" %}
-      {% if forgejo_service.cf_turnstile_sitekey | default('') | string | length > 0 %}
-CF_TURNSTILE_SITEKEY = {{ forgejo_service.cf_turnstile_sitekey }}
+    {% if values.captcha_type == "mcaptcha" %}
+      {% if values.mcaptcha_url | default('') | string | length > 0 %}
+MCAPTCHA_URL = {{ values.mcaptcha_url }}
       {% endif %}
-      {% if forgejo_service.cf_turnstile_secret | default('') | string | length > 0 %}
-CF_TURNSTILE_SECRET = {{ forgejo_service.cf_turnstile_secret }}
+      {% if values.mcaptcha_secret | default('') | string | length > 0 %}
+MCAPTCHA_SECRET = {{ values.mcaptcha_secret }}
+      {% endif %}
+      {% if values.mcaptcha_sitekey | default('') | string | length > 0 %}
+MCAPTCHA_SITEKEY = {{ values.mcaptcha_sitekey }}
+      {% endif %}
+    {% endif %}
+    {% if values.captcha_type == "cfturnstile" %}
+      {% if values.cf_turnstile_sitekey | default('') | string | length > 0 %}
+CF_TURNSTILE_SITEKEY = {{ values.cf_turnstile_sitekey }}
+      {% endif %}
+      {% if values.cf_turnstile_secret | default('') | string | length > 0 %}
+CF_TURNSTILE_SECRET = {{ values.cf_turnstile_secret }}
       {% endif %}
     {% endif %}
   {% endif %}
-  {% if forgejo_service.default_keep_email_private | default('') | string | length > 0 %}
-DEFAULT_KEEP_EMAIL_PRIVATE = {{ forgejo_service.default_keep_email_private | bodsch.core.config_bool(true_as='true', false_as='false') }}
+  {% if values.default_keep_email_private | default('') | string | length > 0 %}
+DEFAULT_KEEP_EMAIL_PRIVATE = {{ values.default_keep_email_private | bodsch.core.config_bool(true_as='true', false_as='false') }}
   {% endif %}
-  {% if forgejo_service.default_allow_create_organization | default('') | string | length > 0 %}
-DEFAULT_ALLOW_CREATE_ORGANIZATION = {{ forgejo_service.default_allow_create_organization | bodsch.core.config_bool(true_as='true', false_as='false') }}
+  {% if values.default_allow_create_organization | default('') | string | length > 0 %}
+DEFAULT_ALLOW_CREATE_ORGANIZATION = {{ values.default_allow_create_organization | bodsch.core.config_bool(true_as='true', false_as='false') }}
   {% endif %}
-  {% if forgejo_service.default_user_is_restricted | default('') | string | length > 0 %}
-DEFAULT_USER_IS_RESTRICTED = {{ forgejo_service.default_user_is_restricted | bodsch.core.config_bool(true_as='true', false_as='false') }}
+  {% if values.default_user_is_restricted | default('') | string | length > 0 %}
+DEFAULT_USER_IS_RESTRICTED = {{ values.default_user_is_restricted | bodsch.core.config_bool(true_as='true', false_as='false') }}
   {% endif %}
-  {% if forgejo_service.default_user_visibility | default('') | string | length > 0 and
-        forgejo_service.default_user_visibility in ["public", "limited", "private"] %}
-DEFAULT_USER_VISIBILITY = {{ forgejo_service.default_user_visibility }}
+  {% if values.default_user_visibility | default('') | string | length > 0 and
+        values.default_user_visibility in ["public", "limited", "private"] %}
+DEFAULT_USER_VISIBILITY = {{ values.default_user_visibility }}
   {% endif %}
-  {% if forgejo_service.allowed_user_visibility_modes | count > 0 %}
-ALLOWED_USER_VISIBILITY_MODES = {{ forgejo_service.allowed_user_visibility_modes | join(', ') }}
+  {% if values.allowed_user_visibility_modes | default([]) | count > 0 %}
+ALLOWED_USER_VISIBILITY_MODES = {{ values.allowed_user_visibility_modes | join(', ') }}
   {% endif %}
-  {% if forgejo_service.default_org_visibility | default('') | string | length > 0 and
-        forgejo_service.default_org_visibility in ["public", "limited", "private"] %}
-DEFAULT_ORG_VISIBILITY = {{ forgejo_service.default_org_visibility }}
+  {% if values.default_org_visibility | default('') | string | length > 0 and
+        values.default_org_visibility in ["public", "limited", "private"] %}
+DEFAULT_ORG_VISIBILITY = {{ values.default_org_visibility }}
   {% endif %}
-  {% if forgejo_service.default_org_member_visible | default('') | string | length > 0 %}
-DEFAULT_ORG_MEMBER_VISIBLE = {{ forgejo_service.default_org_member_visible | bodsch.core.config_bool(true_as='true', false_as='false') }}
+  {% if values.default_org_member_visible | default('') | string | length > 0 %}
+DEFAULT_ORG_MEMBER_VISIBLE = {{ values.default_org_member_visible | bodsch.core.config_bool(true_as='true', false_as='false') }}
   {% endif %}
-  {% if forgejo_service.default_enable_dependencies | default('') | string | length > 0 %}
-DEFAULT_ENABLE_DEPENDENCIES = {{ forgejo_service.default_enable_dependencies | bodsch.core.config_bool(true_as='true', false_as='false') }}
+  {% if values.default_enable_dependencies | default('') | string | length > 0 %}
+DEFAULT_ENABLE_DEPENDENCIES = {{ values.default_enable_dependencies | bodsch.core.config_bool(true_as='true', false_as='false') }}
   {% endif %}
-  {% if forgejo_service.allow_cross_repository_dependencies | default('') | string | length > 0 %}
-ALLOW_CROSS_REPOSITORY_DEPENDENCIES = {{ forgejo_service.allow_cross_repository_dependencies | bodsch.core.config_bool(true_as='true', false_as='false') }}
+  {% if values.allow_cross_repository_dependencies | default('') | string | length > 0 %}
+ALLOW_CROSS_REPOSITORY_DEPENDENCIES = {{ values.allow_cross_repository_dependencies | bodsch.core.config_bool(true_as='true', false_as='false') }}
   {% endif %}
-  {% if forgejo_service.enable_user_heatmap | default('') | string | length > 0 %}
-ENABLE_USER_HEATMAP = {{ forgejo_service.enable_user_heatmap | bodsch.core.config_bool(true_as='true', false_as='false') }}
+  {% if values.enable_user_heatmap | default('') | string | length > 0 %}
+ENABLE_USER_HEATMAP = {{ values.enable_user_heatmap | bodsch.core.config_bool(true_as='true', false_as='false') }}
   {% endif %}
-  {% if forgejo_service.enable_timetracking | default('') | string | length > 0 %}
-ENABLE_TIMETRACKING = {{ forgejo_service.enable_timetracking | bodsch.core.config_bool(true_as='true', false_as='false') }}
+  {% if values.enable_timetracking | default('') | string | length > 0 %}
+ENABLE_TIMETRACKING = {{ values.enable_timetracking | bodsch.core.config_bool(true_as='true', false_as='false') }}
   {% endif %}
-  {% if forgejo_service.default_enable_timetracking | default('') | string | length > 0 %}
-DEFAULT_ENABLE_TIMETRACKING = {{ forgejo_service.default_enable_timetracking | bodsch.core.config_bool(true_as='true', false_as='false') }}
+  {% if values.default_enable_timetracking | default('') | string | length > 0 %}
+DEFAULT_ENABLE_TIMETRACKING = {{ values.default_enable_timetracking | bodsch.core.config_bool(true_as='true', false_as='false') }}
   {% endif %}
-  {% if forgejo_service.default_allow_only_contributors_to_track_time | default('') | string | length > 0 %}
-DEFAULT_ALLOW_ONLY_CONTRIBUTORS_TO_TRACK_TIME = {{ forgejo_service.default_allow_only_contributors_to_track_time | bodsch.core.config_bool(true_as='true', false_as='false') }}
+  {% if values.default_allow_only_contributors_to_track_time | default('') | string | length > 0 %}
+DEFAULT_ALLOW_ONLY_CONTRIBUTORS_TO_TRACK_TIME = {{ values.default_allow_only_contributors_to_track_time | bodsch.core.config_bool(true_as='true', false_as='false') }}
   {% endif %}
-  {% if forgejo_service.no_reply_address | default('') | string | length > 0 %}
-NO_REPLY_ADDRESS = {{ forgejo_service.no_reply_address }}
+  {% if values.no_reply_address | default('') | string | length > 0 %}
+NO_REPLY_ADDRESS = {{ values.no_reply_address }}
   {% endif %}
-  {% if forgejo_service.show_registration_button | default('') | string | length > 0 %}
-SHOW_REGISTRATION_BUTTON = {{ forgejo_service.show_registration_button | bodsch.core.config_bool(true_as='true', false_as='false') }}
+  {% if values.show_registration_button | default('') | string | length > 0 %}
+SHOW_REGISTRATION_BUTTON = {{ values.show_registration_button | bodsch.core.config_bool(true_as='true', false_as='false') }}
   {% endif %}
-  {% if forgejo_service.show_milestones_dashboard_page | default('') | string | length > 0 %}
-SHOW_MILESTONES_DASHBOARD_PAGE = {{ forgejo_service.show_milestones_dashboard_page | bodsch.core.config_bool(true_as='true', false_as='false') }}
+  {% if values.show_milestones_dashboard_page | default('') | string | length > 0 %}
+SHOW_MILESTONES_DASHBOARD_PAGE = {{ values.show_milestones_dashboard_page | bodsch.core.config_bool(true_as='true', false_as='false') }}
   {% endif %}
-  {% if forgejo_service.auto_watch_new_repos | default('') | string | length > 0 %}
-AUTO_WATCH_NEW_REPOS = {{ forgejo_service.auto_watch_new_repos | bodsch.core.config_bool(true_as='true', false_as='false') }}
+  {% if values.auto_watch_new_repos | default('') | string | length > 0 %}
+AUTO_WATCH_NEW_REPOS = {{ values.auto_watch_new_repos | bodsch.core.config_bool(true_as='true', false_as='false') }}
   {% endif %}
-  {% if forgejo_service.auto_watch_on_changes | default('') | string | length > 0 %}
-AUTO_WATCH_ON_CHANGES = {{ forgejo_service.auto_watch_on_changes | bodsch.core.config_bool(true_as='true', false_as='false') }}
+  {% if values.auto_watch_on_changes | default('') | string | length > 0 %}
+AUTO_WATCH_ON_CHANGES = {{ values.auto_watch_on_changes | bodsch.core.config_bool(true_as='true', false_as='false') }}
   {% endif %}
-  {% if forgejo_service.user_delete_with_comments_max_time | default('') | string | length > 0 %}
-USER_DELETE_WITH_COMMENTS_MAX_TIME = {{ forgejo_service.user_delete_with_comments_max_time }}
+  {% if values.user_delete_with_comments_max_time | default('') | string | length > 0 %}
+USER_DELETE_WITH_COMMENTS_MAX_TIME = {{ values.user_delete_with_comments_max_time }}
   {% endif %}
-  {% if forgejo_service.valid_site_url_schemes | count > 0 %}
-VALID_SITE_URL_SCHEMES = {{ forgejo_service.valid_site_url_schemes | join(', ') }}
+  {% if values.valid_site_url_schemes | default([]) | count > 0 %}
+VALID_SITE_URL_SCHEMES = {{ values.valid_site_url_schemes | join(', ') }}
+  {% endif %}
+  {% if forgejo_version is version_compare('1.20', '>=') %}
+    {% if values.domain_endpoint | default('') | string | length > 0 %}
+DOMAIN_ENDPOINT = {{ values.domain_endpoint }}
+    {% endif %}
   {% endif %}
 {% endif %}

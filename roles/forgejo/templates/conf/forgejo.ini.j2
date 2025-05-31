@@ -42,6 +42,15 @@
 ;;
 ;; In addition there is _`StaticRootPath`_ which can be set as a built-in at build time, but will otherwise default to _`AppWorkPath`_
 #}
+
+{% if forgejo_version is version_compare('1.20', '>=') %}
+  {% if forgejo_app.display_name_format | default('') | string | length > 0 %}
+APP_DISPLAY_NAME_FORMAT = {{ forgejo_app.display_name_format }}
+  {% endif %}
+  {% if forgejo_app.slogan | default('') | string | length > 0 %}
+APP_SLOGAN = {{ forgejo_app.slogan }}
+  {% endif %}
+{% endif %}
 APP_NAME = {{ forgejo_name }}
 RUN_USER = {{ forgejo_system_user }}
 {% set run_mod = "prod" %}
@@ -60,12 +69,14 @@ WORK_PATH = {{ forgejo_working_dir }}
 {% include('forgejo.d/admin.j2') %}
 {% include('forgejo.d/api.j2') %}
 {% include('forgejo.d/attachment.j2') %}
+{% include('forgejo.d/badges.j2') %}
 {% include('forgejo.d/cache.j2') %}
 {% include('forgejo.d/camo.j2') %}
 {% include('forgejo.d/cors.j2') %}
 {% include('forgejo.d/cron.j2') %}
 {% include('forgejo.d/database.j2') %}
 {% include('forgejo.d/email.j2') %}
+{% include('forgejo.d/f3.j2') %}
 {% include('forgejo.d/federation.j2') %}
 {% include('forgejo.d/git.j2') %}
 {% include('forgejo.d/highlight.j2') %}
@@ -88,6 +99,7 @@ WORK_PATH = {{ forgejo_working_dir }}
 {% include('forgejo.d/project.j2') %}
 {% include('forgejo.d/proxy.j2') %}
 {% include('forgejo.d/queue.j2') %}
+{% include('forgejo.d/repo_archive.j2') %}
 {% include('forgejo.d/repository.j2') %}
 {% include('forgejo.d/security.j2') %}
 {% include('forgejo.d/server.j2') %}
@@ -108,6 +120,7 @@ WORK_PATH = {{ forgejo_working_dir }}
 ;[badges]
 ;[cache]
 ;[cache.last_commit]
+[camo]
 ;[cors]
 ;[cron]
 ;[cron.archive_cleanup]
@@ -132,9 +145,11 @@ WORK_PATH = {{ forgejo_working_dir }}
 ;[cron.update_checker]
 ;[cron.update_migration_poster_id]
 ;[cron.update_mirrors]
+[database]
 ;[email.incoming]
 ;[F3]
 ;[federation]
+[git]
 ;[git.config]
 ;[git.timeout]
 ;[highlight.mapping]
@@ -142,6 +157,7 @@ WORK_PATH = {{ forgejo_working_dir }}
 ;[indexer]
 ;[lfs]
 ;[lfs_client]
+[log]
 ;[log.conn]
 ;[log.console]
 ;[log.file]
@@ -155,6 +171,7 @@ WORK_PATH = {{ forgejo_working_dir }}
 ;[metrics]
 ;[migrations]
 ;[mirror]
+[oauth2]
 ;[oauth2_client]
 ;[openid]
 ;[other]
@@ -173,6 +190,9 @@ WORK_PATH = {{ forgejo_working_dir }}
 ;[repository.release]
 ;[repository.signing]
 ;[repository.upload]
+[security]
+[server]
+[service]
 ;[service.explore]
 ;[session]
 ;[ssh.minimum_key_sizes]

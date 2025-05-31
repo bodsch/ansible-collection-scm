@@ -6,6 +6,10 @@
 
 from __future__ import absolute_import, division, print_function
 import hashlib
+import os
+import shutil
+import grp
+import pwd
 
 from ansible.module_utils.basic import AnsibleModule
 
@@ -38,6 +42,8 @@ EXAMPLES = """
   bodsch.scm.forgejo_config:
     config: "{{ forgejo_config_dir }}/forgejo.ini"
     new_config: "{{ forgejo_config_dir }}/forgejo.new"
+    owner: forgejo
+    group: forgejo
   register: forgejo_config
   notify:
     - restart forgejo
@@ -62,6 +68,8 @@ class ForgejoConfig(object):
 
         self.config = module.params.get("config")
         self.new_config = module.params.get("new_config")
+        self.owner = module.params.get("owner")
+        self.group = module.params.get("group")
 
     def run(self):
         """
@@ -73,9 +81,23 @@ class ForgejoConfig(object):
         )
 
         ignore_map = {
-            '__global__': ['JWT_SECRET'],
+            'oauth2': ['JWT_SECRET'],
             'security': ['INTERNAL_TOKEN']
         }
+
+        if not os.path.exists(self.config):
+
+            # uid, gid = self.get_file_ownership(self.new_config)
+            # self.module.log(msg=f"  {uid} :: {gid}")
+
+            shutil.copyfile(self.new_config, self.config)
+            shutil.chown(self.config, self.owner, self.group)
+
+            return dict(
+                failed=False,
+                changed=True,
+                msg="forgejo.ini was created successfully."
+            )
 
         changed = self.compare_configs(self.config, self.new_config, ignore_map=ignore_map)
 
@@ -104,6 +126,8 @@ class ForgejoConfig(object):
         with open(path, 'r', encoding='utf-8') as f:
             lines = f.readlines()
 
+        self.module.log(f"{lines}")
+
         modified_lines = []
         section_started = False
 
@@ -124,9 +148,16 @@ class ForgejoConfig(object):
         else:
             modified_lines = lines
 
+        self.module.log(f"{modified_lines}")
+
         config = ConfigParser()
         config.optionxform = str
-        config.read_file(StringIO(''.join(modified_lines)))
+
+        try:
+            config.read_file(StringIO(''.join(modified_lines)))
+        except Exception as e:
+            self.module.log(f"ERROR {e}")
+
         return config
 
     def compare_configs(self, file1, file2, ignore_map=None):
@@ -151,15 +182,17 @@ class ForgejoConfig(object):
             if checksum1 != checksum2:
                 changed = True
                 self.module.log(f"Difference in section [{section}]")
-                added, removed, changed = self.diff_section(config1, config2, section)
+                _added, _removed, _changed = self.diff_section(config1, config2, section)
 
-                if added or removed or changed:
-                    for k, v in added:
+                if _added or _removed or _changed:
+                    for k, v in _added:
                         self.module.log(f"  + added  : {k} = {v}")
-                    for k, v in removed:
+                    for k, v in _removed:
                         self.module.log(f"  - removed: {k} = {v}")
-                    for k, v1, v2 in changed:
+                    for k, v1, v2 in _changed:
                         self.module.log(f"  ~ changed: {k} = {v1} → {v2}")
+
+        self.module.log(f"= changed: {changed}")
 
         return changed
 
@@ -218,6 +251,11 @@ class ForgejoConfig(object):
 
         return added, removed, changed
 
+    def get_file_ownership(self, filename):
+        return (
+            pwd.getpwuid(os.stat(filename).st_uid).pw_name,
+            grp.getgrgid(os.stat(filename).st_gid).gr_name
+        )
 
 def main():
     """
@@ -232,6 +270,16 @@ def main():
             required=False,
             default="/etc/forgejo/forgejo.new",
             type=str
+        ),
+        owner=dict(
+            required=False,
+            type='str',
+            default="forgejo"
+        ),
+        group=dict(
+            required=False,
+            type='str',
+            default="forgejo"
         ),
     )
 

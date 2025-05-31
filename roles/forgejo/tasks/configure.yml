@@ -6,6 +6,7 @@
     forgejo_admin: "{{ forgejo_defaults_admin | combine(forgejo_admin, recursive=True) }}"
     forgejo_api: "{{ forgejo_defaults_api | combine(forgejo_api, recursive=True) }}"
     forgejo_attachment: "{{ forgejo_defaults_attachment | combine(forgejo_attachment, recursive=True) }}"
+    forgejo_badges: "{{ forgejo_defaults_badges | combine(forgejo_badges, recursive=True) }}"
     forgejo_auths: "{{ forgejo_defaults_auths | combine(forgejo_auths, recursive=True) }}"
     forgejo_cache: "{{ forgejo_defaults_cache | combine(forgejo_cache, recursive=True) }}"
     forgejo_camo: "{{ forgejo_defaults_camo | combine(forgejo_camo, recursive=True) }}"
@@ -13,6 +14,7 @@
     forgejo_cron: "{{ forgejo_defaults_cron | combine(forgejo_cron, recursive=True) }}"
     forgejo_database: "{{ forgejo_defaults_database | combine(forgejo_database, recursive=True) }}"
     forgejo_email: "{{ forgejo_defaults_email | combine(forgejo_email, recursive=True) }}"
+    forgejo_f3: "{{ forgejo_defaults_f3 | combine(forgejo_f3, recursive=True) }}"
     forgejo_federation: "{{ forgejo_defaults_federation | combine(forgejo_federation, recursive=True) }}"
     forgejo_git: "{{ forgejo_defaults_git | combine(forgejo_git, recursive=True) }}"
     forgejo_highlight: "{{ forgejo_defaults_highlight | combine(forgejo_highlight, recursive=True) }}"
@@ -35,6 +37,7 @@
     forgejo_project: "{{ forgejo_defaults_project | combine(forgejo_project, recursive=True) }}"
     forgejo_proxy: "{{ forgejo_defaults_proxy | combine(forgejo_proxy, recursive=True) }}"
     forgejo_queue: "{{ forgejo_defaults_queue | combine(forgejo_queue, recursive=True) }}"
+    forgejo_repo_archive: "{{ forgejo_defaults_repo_archive | combine(forgejo_repo_archive, recursive=True) }}"
     forgejo_repository: "{{ forgejo_defaults_repository | combine(forgejo_repository, recursive=True) }}"
     forgejo_security: "{{ forgejo_defaults_security | combine(forgejo_security, recursive=True) }}"
     forgejo_server: "{{ forgejo_defaults_server | combine(forgejo_server, recursive=True) }}"
@@ -93,9 +96,9 @@
     config: "{{ forgejo_config_dir }}/forgejo.ini"
     new_config: "{{ forgejo_config_dir }}/forgejo.new"
   register: forgejo_config
-  #notify:
-  #  - restart forgejo
-  #  - check if forgejo are available
+  notify:
+    - restart forgejo
+    - check if forgejo are available
 
 - name: d
   debug:

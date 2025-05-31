@@ -81,4 +81,9 @@ PASSWORD_CHECK_PWN = {{ forgejo_security.password_check_pwn | bodsch.core.config
   {% if forgejo_security.successful_tokens_cache_size | default('') | string | length > 0 %}
 SUCCESSFUL_TOKENS_CACHE_SIZE = {{ forgejo_security.successful_tokens_cache_size }}
   {% endif %}
+  {% if forgejo_version is version_compare('1.20', '>=') %}
+    {% if forgejo_security.disable_query_auth_token | default('') | string | length > 0 %}
+DISABLE_QUERY_AUTH_TOKEN = {{ forgejo_security.disable_query_auth_token | bodsch.core.config_bool(true_as='true', false_as='false') }}
+    {% endif %}
+  {% endif %}
 {% endif %}

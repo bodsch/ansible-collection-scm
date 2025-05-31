@@ -42,6 +42,14 @@ ISSUE_INDEXER_QUEUE_BATCH_NUMBER = {{ forgejo_indexer.issue_indexer_queue_batch_
     {% if forgejo_indexer.repo_indexer_enabled | default('') | string | length > 0 %}
 REPO_INDEXER_ENABLED = {{ forgejo_indexer.repo_indexer_enabled | bodsch.core.config_bool(true_as='true', false_as='false') }}
     {% endif %}
+    {% if forgejo_indexer.repo_indexer_repo_types | default([]) | count > 0 %}
+REPO_INDEXER_REPO_TYPES = {{ orgejo_indexer.repo_indexer_repo_types | join(', ') }}
+{#
+;; repo indexer units, the items to index, could be `sources`, `forks`, `mirrors`, `templates` or any combination of them separated by a comma.
+;; If empty then it defaults to `sources` only, as if you'd like to disable fully please see REPO_INDEXER_ENABLED.
+;REPO_INDEXER_REPO_TYPES = sources,forks,mirrors,templates
+#}
+    {% endif %}
     {% if forgejo_indexer.issue_indexer_type in ["bleve", "elasticsearch"] and
           forgejo_indexer.issue_indexer_type | default('') | string | length > 0 %}
 REPO_INDEXER_TYPE = {{ forgejo_indexer.issue_indexer_type }}

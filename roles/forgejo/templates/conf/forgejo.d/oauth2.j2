@@ -27,4 +27,12 @@ INVALIDATE_REFRESH_TOKENS = {{ forgejo_oauth2.invalidate_refresh_tokens | bodsch
   {% if forgejo_oauth2.max_token_length | default('') | string | length > 0 %}
 MAX_TOKEN_LENGTH = {{ forgejo_oauth2.max_token_length }}
   {% endif %}
+  {% if forgejo_version is version_compare('1.20', '>=') %}
+    {% if forgejo_oauth2.default_applications | default([]) | count > 0 %}
+DEFAULT_APPLICATIONS = {{ forgejo_oauth2.default_applications | join(', ') }} ; git-credential-oauth, git-credential-manager, tea
+    {% endif %}
+    {% if forgejo_oauth2.jwt_secret_uri | default('') | string | length > 0 %}
+JWT_SECRET_URI = {{ forgejo_oauth2.jwt_secret_uri }} ; file:/etc/gitea/oauth2_jwt_secret
+    {% endif %}
+  {% endif %}
 {% endif %}

@@ -30,8 +30,17 @@ SSL_MODE = {{ forgejo_database.ssl_mode | bodsch.core.config_bool(true_as='true'
 SSL_MODE = {{ forgejo_database.ssl_mode }}
         {% endif %}
       {% endif %}
+      {# removed between v1.20 and v9.0 #}
+
+      {% if forgejo_version is version_compare('1.20', '=<') %}
       {% if forgejo_database.charset | default('') | string | length > 0 %}
 CHARSET = {{ forgejo_database.charset }}
+      {% endif %}
+      {% endif %}
+      {% if forgejo_version is version_compare('1.20', '>=') %}
+        {% if forgejo_database.charset_collation | default('') | string | length > 0 %}
+CHARSET_COLLATION = {{ forgejo_database.charset_collation }}
+        {% endif %}
       {% endif %}
     {% endif %}
     {# postgres #}
@@ -59,6 +68,7 @@ SQLITE_JOURNAL_MODE = {{ forgejo_database.sqlite_journal_mode }}
     {# mssql #}
     {% if forgejo_database.db_type == "mssql" %}
       {# #}
+; mssql are unsupported db type
     {% endif %}
     {% if forgejo_database.iterate_buffer_size | default('') | string | length > 0 %}
 ITERATE_BUFFER_SIZE = {{ forgejo_database.iterate_buffer_size }}
@@ -83,6 +93,14 @@ MAX_OPEN_CONNS = {{ forgejo_database.max_open_conns }}
     {% endif %}
     {% if forgejo_database.auto_migration | default('') | string | length > 0 %}
 AUTO_MIGRATION = {{ forgejo_database.auto_migration | bodsch.core.config_bool(true_as='true', false_as='false') }}
+    {% endif %}
+    {% if forgejo_version is version_compare('1.20', '>=') %}
+      {% if forgejo_database.conn_max_idletime | default('') | string | length > 0 %}
+CONN_MAX_IDLETIME = {{ forgejo_database.conn_max_idletime }}
+      {% endif %}
+      {% if forgejo_database.slow_query_threshold | default('') | string | length > 0 %}
+SLOW_QUERY_THRESHOLD = {{ forgejo_database.slow_query_threshold }}
+      {% endif %}
     {% endif %}
   {% else %}
 ;; unkown database type

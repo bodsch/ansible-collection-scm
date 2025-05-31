@@ -92,6 +92,10 @@ forgejo_defaults_auths:
     attributes_in_bind: ""                        # Fetch attributes in bind DN context.
     synchronize_users: ""                         # Enable/ Disable user synchronization.
 
+forgejo_defaults_badges:
+  enabled: true                                   # Enable repository badges (via shields.io or a similar generator)
+  generator_url_template: !unsafe "https://img.shields.io/badge/{{.label}}-{{.text}}-{{.color}}" # Template for the badge generator.
+
 forgejo_defaults_cache:
   enabled: ""                                     # true
   adapter: ""                                     # memory ("memory", "redis", "memcache", or "twoqueue")
@@ -112,6 +116,9 @@ forgejo_defaults_camo:
   server_url: ""
   hmac_key: ""
   allways: ""                                     # false
+  # changes between 1.20 and 9.0
+  # - ALLWAYS = false
+  # + ALWAYS = false
 
 forgejo_defaults_cors:
   enabled: ""                                     # false
@@ -316,6 +323,11 @@ forgejo_defaults_database:
   conn_max_lifetime: ""                           # 3s
   max_open_conns: ""                              # 0
   auto_migration: ""                              # true
+  # changes between 1.20 and 9.0
+  # - CHARSET = utf8mb4 ;either "utf8" or "utf8mb4", default is "utf8mb4".
+  charset_collation: ""                           # ""; Empty as default, Gitea will try to find a case-sensitive collation. Don't change it unless you clearly know what you need.
+  conn_max_idletime: ""                           # 0
+  slow_query_threshold: "5s"
 
 forgejo_defaults_email:
   incoming:
@@ -330,6 +342,9 @@ forgejo_defaults_email:
     mailbox: inbox
     delete_handled_message: true
     maximum_message_size: 10485760
+
+forgejo_defaults_f3:
+  enabled: false
 
 forgejo_defaults_federation:
   enabled: ""                                     # false
@@ -355,6 +370,10 @@ forgejo_defaults_git:
   large_object_threshold: ""                      # 1048576
   disable_core_protect_ntfs: ""                   # false
   disable_partial_clone: ""                       # false
+  # changes between 1.20 and 9.0
+  grep: ""                                        # 2
+  verbose_push: ""                                # true
+  verbose_push_delay: ""                          # 5s
   # git operation timeout in seconds
   timeout:
     default: ""                                   # 360
@@ -392,6 +411,14 @@ forgejo_defaults_indexer:
   # ; **DEPRECATED** use settings in `[queue.issue_indexer]`.
   issue_indexer_queue_batch_number: ""            # 20
   repo_indexer_enabled: ""                        # false
+  # changes between 1.20 and 9.0
+  # repo indexer units, the items to index, could be `sources`, `forks`, `mirrors`, `templates` or any combination of them separated by a comma.
+  # If empty then it defaults to `sources` only, as if you'd like to disable fully please see REPO_INDEXER_ENABLED.
+  repo_indexer_repo_types:
+    - sources
+    - forks
+    - mirrors
+    - templates
   repo_indexer_type: ""                           # bleve
   repo_indexer_path: ""                           # indexers/repos.bleve
   repo_indexer_conn_str: ""
@@ -471,6 +498,7 @@ forgejo_defaults_log:
     user: ""
     passwd: ""
     receivers: []
+  # changes between 1.20 and 9.0
 
 forgejo_defaults_mailer:
   enabled: ""                                     # false
@@ -556,6 +584,12 @@ forgejo_defaults_oauth2:
   refresh_token_expiration_time: ""               # 730
   invalidate_refresh_tokens: ""                   # false
   max_token_length: ""                            # 32767
+  # changes between 1.20 and 9.0
+  default_applications:
+    - git-credential-oauth
+    - git-credential-manager
+    - tea
+  jwt_secret_uri: ""                              # file:/etc/gitea/oauth2_jwt_secret
 
 forgejo_defaults_oauth2_client:
   register_email_confirm: ""
@@ -658,6 +692,11 @@ forgejo_defaults_queue:
     boost_timeout: ""                             # 5m
     boost_workers: ""                             # 1
 
+forgejo_defaults_repo_archive:
+  storage_type: local
+  path: data/repo-archive
+  minio_base_path: repo-archive/
+
 forgejo_defaults_repository:
   root: ""
   script_type: bash
@@ -749,6 +788,8 @@ forgejo_defaults_security:
   csrf_cookie_http_only: ""                       # true
   password_check_pwn: ""                          # false
   successful_tokens_cache_size: ""                # 20
+  # changes between 1.20 and 9.0
+  disable_query_auth_token: ""                    # false
 
 forgejo_defaults_server:
   protocol: ""                                    # http
@@ -829,6 +870,11 @@ forgejo_defaults_server:
   graceful_hammer_time: ""                        # 60s
   startup_timeout: ""                             # 0
   static_cache_time: ""                           # 6h
+  # changes between 1.20 and 9.0
+  # + LFS_JWT_SECRET_URI = file:/etc/gitea/lfs_jwt_secret
+  # + SSH_AUTHORIZED_KEYS_COMMAND_TEMPLATE = {{.AppPath}} --config={{.CustomConf}} serv key-{{.Key.ID}}
+  # changes between v9 and v10
+  # + LFS_MAX_BATCH_SIZE = 0
 
 forgejo_defaults_service:
   active_code_live_minutes: ""                    # 180
@@ -880,6 +926,64 @@ forgejo_defaults_service:
   auto_watch_on_changes: ""                       # false
   user_delete_with_comments_max_time: ""          # 0
   valid_site_url_schemes: []                      # [http, https]
+  # added in version 1.20
+  domain_endpoint: "release.forgejo.org"
+  # changes between 1.20 and 9.0
+  # + ABANDONED_JOB_TIMEOUT = 24h
+  # + ALLOW_DOTS_IN_USERNAMES = true
+  # - ALLOW_SUBDOMAIN = false
+  # + AMBIGUOUS_UNICODE_DETECTION = true
+  # + ARTIFACT_RETENTION_DAYS = 90
+  # - AVATAR_UPLOAD_PATH = data/avatars
+  # + Content-Type = text/html; charset=utf-8
+  # + DEFAULT_CLOSE_ISSUES_VIA_COMMITS_IN_ANY_BRANCH = false
+  # + DEFAULT_RPM_SIGN_ENABLED = false
+  # + DISABLE_FORKS = false
+  # + DOMAIN =
+  # + DOMAIN_ENDPOINT = release.forgejo.org
+  # + ENABLE_OPENID_SIGNUP = true
+  # + ENABLE_PUSH_CREATE_ORG = false
+  # + ENABLE_PUSH_CREATE_USER = false
+  # + ENABLE_REVERSE_PROXY_AUTHENTICATION_API = false
+  # + ENDLESS_TASK_TIMEOUT = 3h
+  # + EXPLORE_PAGING_DEFAULT_SORT = recentupdate
+  # + FILEPREVIEW_MAX_LINES = 50
+  # + FROM_DISPLAY_NAME_FORMAT = {{ .DisplayName }}
+  # + GENERATOR_URL_TEMPLATE = https://img.shields.io/badge/{{.label}}-{{.text}}-{{.color}}
+  # + In-Reply-To =
+  # + LIMIT_DISPATCH_INPUTS = 10
+  # + LOG_COMPRESSION = zstd
+  # + LOG_RETENTION_DAYS = 365
+  # + MAX_ROWS = 2500
+  # + MEMBERS_PAGING_NUM = 20
+  # + MINIO_BUCKET_LOOKUP =
+  # + PACKAGES_PAGING_NUM = 20
+  # + POPULATE_SQUASH_COMMENT_WITH_COMMIT_MESSAGES = false
+  # + PREFERRED_TIMESTAMP_TENSE = mixed
+  # - QUEUE_CONN_STR = "redis://127.0.0.1:6379/0?pool_size=100&idle_timeout=180s"
+  # - QUEUE_TYPE = channel
+  # + REACTION_MAX_USER_NUM = 10
+  # - REPOSITORY_AVATAR_UPLOAD_PATH = data/repo-avatars
+  # + REPO_INDEXER_EXCLUDE_VENDORED = true
+  # + REPO_SEARCH_PAGING_NUM = 20
+  # + REQUIRE_EXTERNAL_REGISTRATION_CAPTCHA = false
+  # + REQUIRE_EXTERNAL_REGISTRATION_PASSWORD = false
+  # + RETARGET_CHILDREN_ON_MERGE = true
+  # + Reply-To = test@example.com, test2@example.com
+  # - SCHEME = http
+  # + SEND_NOTIFICATION_EMAIL_ON_NEW_USER = false
+  # + SHOW_FOOTER_POWERED_BY = true
+  # + SKIP_WORKFLOW_STRINGS = [skip ci],[ci skip],[no ci],[skip actions],[actions skip]
+  # + USER_DISABLED_FEATURES =
+  # + USER_LOCATION_MAP_URL = https://www.openstreetmap.org/search?query=
+  # + ZOMBIE_TASK_TIMEOUT = 10m
+  # changes between v9 and v10
+  # + BATCH_OPERATION_CONCURRENCY = 8
+  # + BATCH_SIZE = 20
+  # + DISABLE_CODE_PAGE = false
+  # + DISABLE_ORGANIZATIONS_PAGE = false
+  # + DISABLE_USERS_PAGE = false
+  # + ENABLE_INTERNAL_SIGNIN = true
 
 forgejo_defaults_session:
   provider: ""                                    # memory
