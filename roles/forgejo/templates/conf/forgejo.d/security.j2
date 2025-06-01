@@ -20,9 +20,13 @@ INTERNAL_TOKEN_URI = {{ forgejo_security.internal_token_uri }}
   {% if forgejo_security.login_remember_days | default('') | string | length > 0 %}
 LOGIN_REMEMBER_DAYS = {{ forgejo_security.login_remember_days }}
   {% endif %}
-  {% if forgejo_security.cookie_username | default('') | string | length > 0 %}
+  {# ------------------------------------------------------------------------- #}
+  {% if forgejo_version is version_compare('1.21.11', '<') %}
+    {% if forgejo_security.cookie_username | default('') | string | length > 0 %}
 COOKIE_USERNAME = {{ forgejo_security.cookie_username }}
+    {% endif %}
   {% endif %}
+  {# ------------------------------------------------------------------------- #}
   {% if forgejo_security.cookie_remember_name | default('') | string | length > 0 %}
 COOKIE_REMEMBER_NAME = {{ forgejo_security.cookie_remember_name }}
   {% endif %}
@@ -81,7 +85,7 @@ PASSWORD_CHECK_PWN = {{ forgejo_security.password_check_pwn | bodsch.core.config
   {% if forgejo_security.successful_tokens_cache_size | default('') | string | length > 0 %}
 SUCCESSFUL_TOKENS_CACHE_SIZE = {{ forgejo_security.successful_tokens_cache_size }}
   {% endif %}
-  {% if forgejo_version is version_compare('1.20', '>=') %}
+  {% if forgejo_version is version_compare('7.0', '>=') %}
     {% if forgejo_security.disable_query_auth_token | default('') | string | length > 0 %}
 DISABLE_QUERY_AUTH_TOKEN = {{ forgejo_security.disable_query_auth_token | bodsch.core.config_bool(true_as='true', false_as='false') }}
     {% endif %}

@@ -1,9 +1,16 @@
 {% set values = forgejo_cache | bodsch.core.remove_empty_values %}
-{% if values | count > 0 and
-      values.enabled | default('false') | bool %}
+{% if forgejo_version is version_compare('1.21.11', '<') %}
+  {% if forgejo_cache.enabled | default('') | string | length > 0 %}
+    {% set _ = values.pop("enabled") %}
+  {% endif %}
+{% endif %}
+{% set _ = values.pop("last_commit") %}
+{% if values | count > 0 %}
 
 [cache]
+  {% if forgejo_cache.enabled | default('') | string | length > 0 %}
 ENABLED = {{ forgejo_cache.enabled | bodsch.core.config_bool(true_as='true', false_as='false') }}
+  {% endif %}
   {% if forgejo_cache.adapter  | default('') | string | length > 0 and
         forgejo_cache.adapter in ["memory", "redis", "memcache", "twoqueue"] %}
 ADAPTER = {{ forgejo_cache.adapter }}
@@ -19,16 +26,23 @@ HOST = {{ forgejo_cache.host }}
   {% if forgejo_cache.item_ttl | default('') | string | length > 0 %}
 ITEM_TTL = {{ forgejo_cache.item_ttl }}
   {% endif %}
-  {% if forgejo_cache.last_commit | default('') | string | length > 0 and
-        forgejo_cache.last_commit.enabled | default('false') | bool %}
+{% endif %}
+{% set values = forgejo_cache.last_commit | bodsch.core.remove_empty_values %}
+{% if forgejo_version is version_compare('1.21.11', '<') %}
+  {% if forgejo_cache.last_commit.enabled | default('') | string | length > 0 %}
+    {% set _ = values.last_commit.pop("enabled") %}
+  {% endif %}
+{% endif %}
+{% if values | count > 0 %}
 
 [cache.last_commit]
+  {% if forgejo_cache.last_commit.enabled | default('') | string | length > 0 %}
 ENABLED = {{ forgejo_cache.last_commit.enabled | bodsch.core.config_bool(true_as='true', false_as='false') }}
-    {% if forgejo_cache.last_commit.item_ttl | default('') | string | length > 0 %}
+  {% endif %}
+  {% if forgejo_cache.last_commit.item_ttl | default('') | string | length > 0 %}
 ITEM_TTL = {{ forgejo_cache.last_commit.item_ttl }}
-    {% endif %}
-    {% if forgejo_cache.last_commit.commits_count | default('') | string | length > 0 %}
+  {% endif %}
+  {% if forgejo_cache.last_commit.commits_count | default('') | string | length > 0 %}
 COMMITS_COUNT = 1000
-    {% endif %}
   {% endif %}
 {% endif %}

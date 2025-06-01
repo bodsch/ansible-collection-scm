@@ -76,6 +76,13 @@ REPO_INDEXER_EXCLUDE = {{ forgejo_indexer.repo_indexer_exclude | join(', ') }}
 ;; **DEPRECATED** use settings in `[queue.issue_indexer]`.
 UPDATE_BUFFER_LEN = {{ forgejo_indexer.update_buffer_len }}
     {% endif %}
+    {# ------------------------------------------------------------------------- #}
+    {% if forgejo_version is version_compare('1.21.11', '>=') %}
+      {% if forgejo_indexer.repo_indexer_exclude_vendored | default('') | string | length > 0 %}
+REPO_INDEXER_EXCLUDE_VENDORED = {{ forgejo_indexer.repo_indexer_exclude_vendored | bodsch.core.config_bool(true_as='true', false_as='false') }}
+      {% endif %}
+    {% endif %}
+    {# ------------------------------------------------------------------------- #}
     {% if forgejo_indexer.max_file_size | default('') | string | length > 0 %}
 MAX_FILE_SIZE = {{ forgejo_indexer.max_file_size }}
     {% endif %}

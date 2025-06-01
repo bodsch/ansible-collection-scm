@@ -1,244 +1,300 @@
 {% set values = forgejo_repository | bodsch.core.remove_empty_values %}
+{% set _ = values.pop("editor") %}
+{% set _ = values.pop("local") %}
+{% set _ = values.pop("upload") %}
+{% set _ = values.pop("pull_request") %}
+{% set _ = values.pop("issue") %}
+{% set _ = values.pop("release") %}
+{% set _ = values.pop("signing") %}
+{% if values.mimetype_mapping is defined %}
+  {% set _ = values.pop("mimetype_mapping") %}
+{% endif %}
 {% if values | count > 0 %}
 
 [repository]
-  {% if forgejo_repository.root | default('') | string | length > 0 %}
-ROOT = {{ forgejo_repository.root }}
+  {% if values.root | default('') | string | length > 0 %}
+ROOT = {{ values.root }}
   {% endif %}
-  {% if forgejo_repository.root | default('') | string | length > 0 %}
-SCRIPT_TYPE = bash
+  {% if values.script_type | default('') | string | length > 0 %}
+SCRIPT_TYPE = {{ values.script_type }}
   {% endif %}
-  {% if forgejo_repository.detected_charsets_order | count > 0 %}
-DETECTED_CHARSETS_ORDER = {{ forgejo_repository.detected_charsets_order | join(', ') }}
+  {% if values.detected_charsets_order | default([]) | count > 0 %}
+DETECTED_CHARSETS_ORDER = {{ values.detected_charsets_order | join(', ') }}
   {% endif %}
-  {% if forgejo_repository.ansi_charset | default('') | string | length > 0 %}
-ANSI_CHARSET = {{ forgejo_repository.ansi_charset }}
+  {% if values.ansi_charset | default('') | string | length > 0 %}
+ANSI_CHARSET = {{ values.ansi_charset }}
   {% endif %}
-  {% if forgejo_repository.force_private | default('') | string | length > 0 %}
-FORCE_PRIVATE = {{ forgejo_repository.force_private | bodsch.core.config_bool(true_as='true', false_as='false') }}
+  {% if values.force_private | default('') | string | length > 0 %}
+FORCE_PRIVATE = {{ values.force_private | bodsch.core.config_bool(true_as='true', false_as='false') }}
   {% endif %}
-  {% if forgejo_repository.default_private | default('') | string | length > 0 and
-        forgejo_repository.default_private in ["last", "private", "public"] %}
-DEFAULT_PRIVATE = {{ forgejo_repository.default_private }}
+  {% if values.default_private | default('') | string | length > 0 and
+        values.default_private in ["last", "private", "public"] %}
+DEFAULT_PRIVATE = {{ values.default_private }}
   {% endif %}
-  {% if forgejo_repository.default_push_create_private | default('') | string | length > 0 %}
-DEFAULT_PUSH_CREATE_PRIVATE = {{ forgejo_repository.default_push_create_private | bodsch.core.config_bool(true_as='true', false_as='false') }}
+  {% if values.default_push_create_private | default('') | string | length > 0 %}
+DEFAULT_PUSH_CREATE_PRIVATE = {{ values.default_push_create_private | bodsch.core.config_bool(true_as='true', false_as='false') }}
   {% endif %}
-  {% if forgejo_repository.max_creation_limit | default('') | string | length > 0 %}
-MAX_CREATION_LIMIT = {{ forgejo_repository.max_creation_limit }}
+  {% if values.max_creation_limit | default('') | string | length > 0 %}
+MAX_CREATION_LIMIT = {{ values.max_creation_limit }}
   {% endif %}
-  {% if forgejo_repository.mirror_queue_length | default('') | string | length > 0 %}
+  {% if values.mirror_queue_length | default('') | string | length > 0 %}
 ;; (DEPRECATED: please use [queue.mirror] LENGTH instead)
-MIRROR_QUEUE_LENGTH = {{ forgejo_repository.mirror_queue_length }}
+MIRROR_QUEUE_LENGTH = {{ values.mirror_queue_length }}
   {% endif %}
-  {% if forgejo_repository.pull_request_queue_length | default('') | string | length > 0 %}
+  {% if values.pull_request_queue_length | default('') | string | length > 0 %}
 ;; (DEPRECATED: please use [queue.pr_patch_checker] LENGTH instead)
-PULL_REQUEST_QUEUE_LENGTH = {{ forgejo_repository.pull_request_queue_length }}
+PULL_REQUEST_QUEUE_LENGTH = {{ values.pull_request_queue_length }}
   {% endif %}
-  {% if forgejo_repository.preferred_licenses | count > 0 %}
-PREFERRED_LICENSES = {{ forgejo_repository.preferred_licenses | join (', ') }}
+  {% if values.preferred_licenses | default([])| count > 0 %}
+PREFERRED_LICENSES = {{ values.preferred_licenses | join (', ') }}
   {% endif %}
-  {% if forgejo_repository.disable_http_git | default('') | string | length > 0 %}
-DISABLE_HTTP_GIT = {{ forgejo_repository.disable_http_git | bodsch.core.config_bool(true_as='true', false_as='false') }}
+  {% if values.disable_http_git | default('') | string | length > 0 %}
+DISABLE_HTTP_GIT = {{ values.disable_http_git | bodsch.core.config_bool(true_as='true', false_as='false') }}
   {% endif %}
-  {% if forgejo_repository.access_control_allow_origin | default('') | string | length > 0 %}
-ACCESS_CONTROL_ALLOW_ORIGIN = {{ forgejo_repository.access_control_allow_origin }}
+  {% if values.access_control_allow_origin | default('') | string | length > 0 %}
+ACCESS_CONTROL_ALLOW_ORIGIN = {{ values.access_control_allow_origin }}
   {% endif %}
-  {% if forgejo_repository.use_compat_ssh_uri | default('') | string | length > 0 %}
-USE_COMPAT_SSH_URI = {{ forgejo_repository.use_compat_ssh_uri | bodsch.core.config_bool(true_as='true', false_as='false') }}
+  {% if values.use_compat_ssh_uri | default('') | string | length > 0 %}
+USE_COMPAT_SSH_URI = {{ values.use_compat_ssh_uri | bodsch.core.config_bool(true_as='true', false_as='false') }}
   {% endif %}
-  {% if forgejo_repository.disabled_repo_units | count > 0 %}
+  {% if values.go_get_clone_url_protocol | default('') | string | length > 0 %}
+GO_GET_CLONE_URL_PROTOCOL = {{ values.go_get_clone_url_protocol }}
+  {% endif %}
+  {# ------------------------------------------------------------------------- #}
+  {% if forgejo_version is version_compare('1.21.11', '>=') %}
+    {% if values.default_close_issues_via_commits_in_any_branch | default('') | string | length > 0 %}
+DEFAULT_CLOSE_ISSUES_VIA_COMMITS_IN_ANY_BRANCH = {{ values.default_close_issues_via_commits_in_any_branch | bodsch.core.config_bool(true_as='true', false_as='false') }}
+    {% endif %}
+    {% if values.enable_push_create_user | default('') | string | length > 0 %}
+ENABLE_PUSH_CREATE_USER = {{ values.enable_push_create_user | bodsch.core.config_bool(true_as='true', false_as='false') }}
+    {% endif %}
+    {% if values.enable_push_create_org | default('') | string | length > 0 %}
+ENABLE_PUSH_CREATE_ORG = {{ values.enable_push_create_org | bodsch.core.config_bool(true_as='true', false_as='false') }}
+    {% endif %}
+  {% endif %}
+  {# ------------------------------------------------------------------------- #}
+  {% if values.disabled_repo_units | default([]) | count > 0 %}
   {#
       TODO
       allowed values: repo.issues, repo.ext_issues, repo.pulls, repo.wiki, repo.ext_wiki, repo.projects, repo.packages, repo.actions.
   #}
-DISABLED_REPO_UNITS = {{ forgejo_repository.disabled_repo_units | join(', ') }}
+DISABLED_REPO_UNITS = {{ values.disabled_repo_units | join(', ') }}
   {% endif %}
-  {% if forgejo_repository.default_repo_units | default([]) | count > 0 %}
+  {% if values.default_repo_units | default([]) | count > 0 %}
   {#
       TODO
       allowed values: repo.code, repo.releases, repo.issues, repo.pulls, repo.wiki, repo.projects, repo.packages, repo.actions.
   #}
-DEFAULT_REPO_UNITS = {{ forgejo_repository.default_repo_units | join(', ') }}
+DEFAULT_REPO_UNITS = {{ values.default_repo_units | join(', ') }}
   {% endif %}
-  {% if forgejo_repository.default_fork_repo_units | default([]) | count > 0 %}
+  {% if values.default_fork_repo_units | default([]) | count > 0 %}
   {#
       TODO
-      the set of allowed values and rules are the same as default_REPO_UNITS.
+      the set of allowed values and rules are the same as DEFAULT_REPO_UNITS.
   #}
-  ;; Comma separated list of default forked repo units.
-DEFAULT_FORK_REPO_UNITS = {{ forgejo_repository.default_fork_repo_units | join(', ') }}
+DEFAULT_FORK_REPO_UNITS = {{ values.default_fork_repo_units | join(', ') }}
   {% endif %}
-  {% if forgejo_repository.prefix_archive_files | default('') | string | length > 0 %}
-PREFIX_ARCHIVE_FILES = {{ forgejo_repository.prefix_archive_files | bodsch.core.config_bool(true_as='true', false_as='false') }}
+  {% if values.prefix_archive_files | default('') | string | length > 0 %}
+PREFIX_ARCHIVE_FILES = {{ values.prefix_archive_files | bodsch.core.config_bool(true_as='true', false_as='false') }}
   {% endif %}
-  {% if forgejo_repository.disable_migrations | default('') | string | length > 0 %}
-DISABLE_MIGRATIONS = {{ forgejo_repository.disable_migrations | bodsch.core.config_bool(true_as='true', false_as='false') }}
+  {% if values.disable_migrations | default('') | string | length > 0 %}
+DISABLE_MIGRATIONS = {{ values.disable_migrations | bodsch.core.config_bool(true_as='true', false_as='false') }}
   {% endif %}
-  {% if forgejo_repository.disable_stars | default('') | string | length > 0 %}
-DISABLE_STARS = {{ forgejo_repository.disable_stars | bodsch.core.config_bool(true_as='true', false_as='false') }}
+  {% if values.disable_stars | default('') | string | length > 0 %}
+DISABLE_STARS = {{ values.disable_stars | bodsch.core.config_bool(true_as='true', false_as='false') }}
   {% endif %}
-  {% if forgejo_repository.default_branch | default('') | string | length > 0 %}
-DEFAULT_BRANCH = {{ forgejo_repository.default_branch }}
+  {# ------------------------------------------------------------------------- #}
+  {% if forgejo_version is version_compare('1.21.11', '>=') %}
+    {% if values.disable_forks | default('') | string | length > 0 %}
+DISABLE_FORKS = {{ values.disable_forks | bodsch.core.config_bool(true_as='true', false_as='false') }}
+    {% endif %}
   {% endif %}
-  {% if forgejo_repository.allow_adoption_of_unadopted_repositories | default('') | string | length > 0 %}
-ALLOW_ADOPTION_OF_UNADOPTED_REPOSITORIES = {{ forgejo_repository.allow_adoption_of_unadopted_repositories | bodsch.core.config_bool(true_as='true', false_as='false') }}
+  {# ------------------------------------------------------------------------- #}
+  {% if values.default_branch | default('') | string | length > 0 %}
+DEFAULT_BRANCH = {{ values.default_branch }}
   {% endif %}
-  {% if forgejo_repository.allow_deletion_of_unadopted_repositories | default('') | string | length > 0 %}
-ALLOW_DELETION_OF_UNADOPTED_REPOSITORIES = {{ forgejo_repository.allow_deletion_of_unadopted_repositories | bodsch.core.config_bool(true_as='true', false_as='false') }}
+  {% if values.allow_adoption_of_unadopted_repositories | default('') | string | length > 0 %}
+ALLOW_ADOPTION_OF_UNADOPTED_REPOSITORIES = {{ values.allow_adoption_of_unadopted_repositories | bodsch.core.config_bool(true_as='true', false_as='false') }}
   {% endif %}
-  {% if forgejo_repository.disable_download_source_archives | default('') | string | length > 0 %}
-DISABLE_DOWNLOAD_SOURCE_ARCHIVES = {{ forgejo_repository.disable_download_source_archives | bodsch.core.config_bool(true_as='true', false_as='false') }}
+  {% if values.allow_deletion_of_unadopted_repositories | default('') | string | length > 0 %}
+ALLOW_DELETION_OF_UNADOPTED_REPOSITORIES = {{ values.allow_deletion_of_unadopted_repositories | bodsch.core.config_bool(true_as='true', false_as='false') }}
   {% endif %}
-  {% if forgejo_repository.allow_fork_without_maximum_limit | default('') | string | length > 0 %}
-ALLOW_FORK_WITHOUT_MAXIMUM_LIMIT = {{ forgejo_repository.allow_fork_without_maximum_limit | bodsch.core.config_bool(true_as='true', false_as='false') }}
+  {% if values.disable_download_source_archives | default('') | string | length > 0 %}
+DISABLE_DOWNLOAD_SOURCE_ARCHIVES = {{ values.disable_download_source_archives | bodsch.core.config_bool(true_as='true', false_as='false') }}
   {% endif %}
-  {# [repository.editor] #}
-  {% if forgejo_repository.editor is defined and
-        forgejo_repository.editor | count > 0 %}
+  {% if values.allow_fork_without_maximum_limit | default('') | string | length > 0 %}
+ALLOW_FORK_WITHOUT_MAXIMUM_LIMIT = {{ values.allow_fork_without_maximum_limit | bodsch.core.config_bool(true_as='true', false_as='false') }}
+  {% endif %}
+{% endif %}
+{# ------------------------------------------------------------------------- #}
+{# [repository.editor] #}
+{% set values = forgejo_repository.editor | bodsch.core.remove_empty_values %}
+{% if values | count > 0 %}
 
 [repository.editor]
-    {% if forgejo_repository.editor.line_wrap_extensions | count > 0 %}
-LINE_WRAP_EXTENSIONS = {{ forgejo_repository.editor.line_wrap_extensions | join(', ') }}
-    {% endif %}
+  {% if values.line_wrap_extensions | default([]) | count > 0 %}
+LINE_WRAP_EXTENSIONS = {{ values.line_wrap_extensions | join(', ') }}
   {% endif %}
-  {# [repository.local] #}
-  {% if forgejo_repository.local is defined and
-        forgejo_repository.local | count > 0 %}
+{% endif %}
+{# ------------------------------------------------------------------------- #}
+{# [repository.local] #}
+{% set values = forgejo_repository.local | bodsch.core.remove_empty_values %}
+{% if values | count > 0 %}
 
 [repository.local]
-    {% if forgejo_repository.local.local_copy_path | default('') | string | length > 0 %}
-LOCAL_COPY_PATH = {{ forgejo_repository.local.local_copy_path }}
+    {% if values.local_copy_path | default('') | string | length > 0 %}
+LOCAL_COPY_PATH = {{ values.local_copy_path }}
     {% endif %}
-  {% endif %}
-  {# [repository.upload] #}
-  {% if forgejo_repository.upload is defined and
-        forgejo_repository.upload | count > 0 and
-        forgejo_repository.upload.enabled | bool  %}
+{% endif %}
+{# ------------------------------------------------------------------------- #}
+{# [repository.upload] #}
+{% set values = forgejo_repository.upload | bodsch.core.remove_empty_values %}
+{% if values | count > 0 and
+      values.enabled | bool  %}
 
 [repository.upload]
-ENABLED = {{ forgejo_repository.upload.enabled | bodsch.core.config_bool(true_as='true', false_as='false') }}
-    {% if forgejo_repository.upload.temp_path | default('') | string | length > 0 %}
-TEMP_PATH = {{ forgejo_repository.upload.temp_path }}
+ENABLED = {{ values.enabled | bodsch.core.config_bool(true_as='true', false_as='false') }}
+    {% if values.temp_path | default('') | string | length > 0 %}
+TEMP_PATH = {{ values.temp_path }}
     {% endif %}
-    {% if forgejo_repository.upload.allowed_types | count > 0 %}
-ALLOWED_TYPES = {{ forgejo_repository.upload.allowed_types | join(', ') }}
+    {% if values.allowed_types | count > 0 %}
+ALLOWED_TYPES = {{ values.allowed_types | join(', ') }}
     {% endif %}
-    {% if forgejo_repository.upload.file_max_size | default('') | string | length > 0 %}
-FILE_MAX_SIZE = {{ forgejo_repository.upload.file_max_size }}
+    {% if values.file_max_size | default('') | string | length > 0 %}
+FILE_MAX_SIZE = {{ values.file_max_size }}
     {% endif %}
-    {% if forgejo_repository.upload.max_files | default('') | string | length > 0 %}
-MAX_FILES = {{ forgejo_repository.upload.max_files }}
+    {% if values.max_files | default('') | string | length > 0 %}
+MAX_FILES = {{ values.max_files }}
     {% endif %}
-  {% endif %}
-  {# [repository.pull-request] #}
-  {% if forgejo_repository.pull_request is defined and
-        forgejo_repository.pull_request | count > 0 %}
+{% endif %}
+{# ------------------------------------------------------------------------- #}
+{# [repository.pull-request] #}
+{% set values = forgejo_repository.pull_request | bodsch.core.remove_empty_values %}
+{% if values | count > 0 %}
 
 [repository.pull-request]
-    {% if forgejo_repository.pull_request.work_in_progress_prefixes | count > 0 %}
-WORK_IN_PROGRESS_PREFIXES = {{ forgejo_repository.pull_request.work_in_progress_prefixes | join(', ') }}
+    {% if values.work_in_progress_prefixes | default([]) | count > 0 %}
+WORK_IN_PROGRESS_PREFIXES = {{ values.work_in_progress_prefixes | join(', ') }}
     {% endif %}
-    {% if forgejo_repository.pull_request.close_keywords | count > 0 %}
-CLOSE_KEYWORDS = {{ forgejo_repository.pull_request.close_keywords | join(', ') }}
+    {% if values.close_keywords | default([]) | count > 0 %}
+CLOSE_KEYWORDS = {{ values.close_keywords | join(', ') }}
     {% endif %}
-    {% if forgejo_repository.pull_request.reopen_keywords | count > 0 %}
-REOPEN_KEYWORDS = {{ forgejo_repository.pull_request.reopen_keywords | join(', ') }}
+    {% if values.reopen_keywords | default([]) | count > 0 %}
+REOPEN_KEYWORDS = {{ values.reopen_keywords | join(', ') }}
     {% endif %}
-    {% if forgejo_repository.pull_request.default_merge_style | default('') | string | length > 0 and
-          forgejo_repository.pull_request.default_merge_style in ["merge", "rebase", "rebase-merge", "squash"] %}
-DEFAULT_MERGE_STYLE = {{ forgejo_repository.pull_request.default_merge_style }}
+    {% if values.default_merge_style | default('') | string | length > 0 and
+          values.default_merge_style in ["merge", "rebase", "rebase-merge", "squash"] %}
+DEFAULT_MERGE_STYLE = {{ values.default_merge_style }}
     {% endif %}
-    {% if forgejo_repository.pull_request.default_merge_message_commits_limit | default('') | string | length > 0 %}
-DEFAULT_MERGE_MESSAGE_COMMITS_LIMIT = {{ forgejo_repository.pull_request.default_merge_message_commits_limit }}
+    {% if values.default_merge_message_commits_limit | default('') | string | length > 0 %}
+DEFAULT_MERGE_MESSAGE_COMMITS_LIMIT = {{ values.default_merge_message_commits_limit }}
     {% endif %}
-    {% if forgejo_repository.pull_request.default_merge_message_size | default('') | string | length > 0 %}
-DEFAULT_MERGE_MESSAGE_SIZE = {{ forgejo_repository.pull_request.default_merge_message_size }}
+    {% if values.default_merge_message_size | default('') | string | length > 0 %}
+DEFAULT_MERGE_MESSAGE_SIZE = {{ values.default_merge_message_size }}
     {% endif %}
-    {% if forgejo_repository.pull_request.default_merge_message_all_authors | default('') | string | length > 0 %}
-DEFAULT_MERGE_MESSAGE_ALL_AUTHORS = {{ forgejo_repository.pull_request.default_merge_message_all_authors | bodsch.core.config_bool(true_as='true', false_as='false') }}
+    {% if values.default_merge_message_all_authors | default('') | string | length > 0 %}
+DEFAULT_MERGE_MESSAGE_ALL_AUTHORS = {{ values.default_merge_message_all_authors | bodsch.core.config_bool(true_as='true', false_as='false') }}
     {% endif %}
-    {% if forgejo_repository.pull_request.default_merge_message_max_approvers | default('') | string | length > 0 %}
-DEFAULT_MERGE_MESSAGE_MAX_APPROVERS = {{ forgejo_repository.pull_request.default_merge_message_max_approvers }}
+    {% if values.default_merge_message_max_approvers | default('') | string | length > 0 %}
+DEFAULT_MERGE_MESSAGE_MAX_APPROVERS = {{ values.default_merge_message_max_approvers }}
     {% endif %}
-    {% if forgejo_repository.pull_request.default_merge_message_official_approvers_only | default('') | string | length > 0 %}
-DEFAULT_MERGE_MESSAGE_OFFICIAL_APPROVERS_ONLY = {{ forgejo_repository.pull_request.default_merge_message_official_approvers_only | bodsch.core.config_bool(true_as='true', false_as='false') }}
+    {% if values.default_merge_message_official_approvers_only | default('') | string | length > 0 %}
+DEFAULT_MERGE_MESSAGE_OFFICIAL_APPROVERS_ONLY = {{ values.default_merge_message_official_approvers_only | bodsch.core.config_bool(true_as='true', false_as='false') }}
     {% endif %}
-    {% if forgejo_repository.pull_request.add_co_committer_trailers | default('') | string | length > 0 %}
-ADD_CO_COMMITTER_TRAILERS = {{ forgejo_repository.pull_request.add_co_committer_trailers | bodsch.core.config_bool(true_as='true', false_as='false') }}
+    {# ------------------------------------------------------------------------- #}
+    {% if forgejo_version is version_compare('1.21.11', '>=') %}
+      {% if values.populate_squash_comment_with_commit_messages | default('') | string | length > 0 %}
+POPULATE_SQUASH_COMMENT_WITH_COMMIT_MESSAGES = {{ values.populate_squash_comment_with_commit_messages | bodsch.core.config_bool(true_as='true', false_as='false') }}
+      {% endif %}
+      {% if values.retarget_children_on_merge | default('') | string | length > 0 %}
+RETARGET_CHILDREN_ON_MERGE = {{ values.retarget_children_on_merge | bodsch.core.config_bool(true_as='true', false_as='false') }}
+      {% endif %}
     {% endif %}
-    {% if forgejo_repository.pull_request.test_conflicting_patches_with_git_apply | default('') | string | length > 0 %}
-TEST_CONFLICTING_PATCHES_WITH_GIT_APPLY = {{ forgejo_repository.pull_request.test_conflicting_patches_with_git_apply | bodsch.core.config_bool(true_as='true', false_as='false') }}
+    {# ------------------------------------------------------------------------- #}
+    {% if values.add_co_committer_trailers | default('') | string | length > 0 %}
+ADD_CO_COMMITTER_TRAILERS = {{ values.add_co_committer_trailers | bodsch.core.config_bool(true_as='true', false_as='false') }}
     {% endif %}
-  {% endif %}
-  {# [repository.issue] #}
-  {% if forgejo_repository.issue is defined and
-        forgejo_repository.issue | count > 0 %}
+    {% if values.test_conflicting_patches_with_git_apply | default('') | string | length > 0 %}
+TEST_CONFLICTING_PATCHES_WITH_GIT_APPLY = {{ values.test_conflicting_patches_with_git_apply | bodsch.core.config_bool(true_as='true', false_as='false') }}
+    {% endif %}
+{% endif %}
+{# ------------------------------------------------------------------------- #}
+{# [repository.issue] #}
+{% set values = forgejo_repository.issue | bodsch.core.remove_empty_values %}
+{% if values | count > 0 %}
 
 [repository.issue]
-    {% if forgejo_repository.issue.lock_reasons | count > 0 %}
-LOCK_REASONS = {{ forgejo_repository.issue.lock_reasons | join(', ') }}
-    {% endif %}
+  {% if values.lock_reasons | count > 0 %}
+LOCK_REASONS = {{ values.lock_reasons | join(', ') }}
   {% endif %}
-  {# [repository.release] #}
-  {% if forgejo_repository.release is defined and
-        forgejo_repository.release | count > 0 %}
+{% endif %}
+{# ------------------------------------------------------------------------- #}
+{# [repository.release] #}
+{% set values = forgejo_repository.release | bodsch.core.remove_empty_values %}
+{% if values | count > 0 %}
 
 [repository.release]
-    {% if forgejo_repository.release.allowed_types | count > 0 %}
-ALLOWED_TYPES = {{ forgejo_repository.release.allowed_types | join(', ') }}
-    {% endif %}
-    {% if forgejo_repository.release.default_paging_num | default('') | string | length > 0 %}
-DEFAULT_PAGING_NUM = {{ forgejo_repository.release.default_paging_num }}
-    {% endif %}
+  {% if values.allowed_types | count > 0 %}
+ALLOWED_TYPES = {{ values.allowed_types | join(', ') }}
   {% endif %}
-  {# [repository.signing] #}
-  {% if forgejo_repository.signing is defined and
-        forgejo_repository.signing | count > 0 %}
+  {% if values.default_paging_num | default('') | string | length > 0 %}
+DEFAULT_PAGING_NUM = {{ values.default_paging_num }}
+  {% endif %}
+{% endif %}
+{# ------------------------------------------------------------------------- #}
+{# [repository.signing] #}
+{% set values = forgejo_repository.signing | bodsch.core.remove_empty_values %}
+{% if values | count > 0 %}
 
 [repository.signing]
-    {% if forgejo_repository.signing.signing_key | default('') | string | length > 0 %}
-SIGNING_KEY = {{ forgejo_repository.signing.signing_key }}
+    {% if values.signing_key | default('') | string | length > 0 %}
+SIGNING_KEY = {{ values.signing_key }}
     {% else %}
-      {% if forgejo_repository.signing.signing_name | default('') | string | length > 0 %}
-SIGNING_NAME = {{ forgejo_repository.signing.signing_name }}
+      {% if values.signing_name | default('') | string | length > 0 %}
+SIGNING_NAME = {{ values.signing_name }}
       {% endif %}
-      {% if forgejo_repository.signing.signing_email | default('') | string | length > 0 %}
-SIGNING_EMAIL = {{ forgejo_repository.signing.signing_email }}
+      {% if values.signing_email | default('') | string | length > 0 %}
+SIGNING_EMAIL = {{ values.signing_email }}
       {% endif %}
     {% endif %}
-    {% if forgejo_repository.signing.default_trust_model | default('') | string | length > 0 and
-          forgejo_repository.signing.default_trust_model in ["collaborator", "committer", "collaboratorcommitter"] %}
-DEFAULT_TRUST_MODEL = {{ forgejo_repository.signing.default_trust_model }}
+    {% if values.default_trust_model | default('') | string | length > 0 and
+          values.default_trust_model in ["collaborator", "committer", "collaboratorcommitter"] %}
+DEFAULT_TRUST_MODEL = {{ values.default_trust_model }}
     {% endif %}
-    {% if forgejo_repository.signing.initial_commit | count > 0 %}
+    {% if values.initial_commit | count > 0 %}
       {% set valid_comit = ["never", "pubkey", "twofa", "always"] %}
-      {% set valid_comit = forgejo_repository.signing.initial_commit | bodsch.core.compare_list(compare_to_list=valid_comit) %}
+      {% set valid_comit = values.initial_commit | bodsch.core.compare_list(compare_to_list=valid_comit) %}
 INITIAL_COMMIT = {{ valid_comit | join(', ') }}
     {% endif %}
-    {% if forgejo_repository.signing.crud_actions | default('') | string | length > 0 %}
+    {% if values.crud_actions | default('') | string | length > 0 %}
       {% set valid_actions = ["never", "pubkey", "twofa", "always", "parentsigned"] %}
-      {% set valid_actions = forgejo_repository.signing.crud_actions | bodsch.core.compare_list(compare_to_list=valid_actions) %}
+      {% set valid_actions = values.crud_actions | bodsch.core.compare_list(compare_to_list=valid_actions) %}
 CRUD_ACTIONS = {{ valid_actions | join(', ') }}
     {% endif %}
-    {% if forgejo_repository.signing.wiki | count > 0 %}
+    {% if values.wiki | count > 0 %}
       {% set valid_wiki = ["never", "pubkey", "twofa", "always"] %}
-      {% set valid_wiki = forgejo_repository.signing.wiki | bodsch.core.compare_list(compare_to_list=valid_wiki) %}
+      {% set valid_wiki = values.wiki | bodsch.core.compare_list(compare_to_list=valid_wiki) %}
 WIKI = {{ valid_wiki | join(', ') }}
-    {% endif %}
+    {% endif  %}
     {% if forgejo_repository.signing.merges | count > 0 %}
       {% set valid_merges = ["never", "pubkey", "twofa", "always", "basesigned", "commitssigned", "approved"] %}
       {% set valid_merges = forgejo_repository.signing.merges | bodsch.core.compare_list(compare_to_list=valid_merges) %}
 MERGES = {{ valid_merges | join(', ') }}
     {% endif %}
-  {% endif %}
-  {# [repository.mimetype_mapping] #}
-  {% if forgejo_repository.mimetype_mapping is defined and
-        forgejo_repository.mimetype_mapping | count > 0 %}
+{% endif %}
+{# ------------------------------------------------------------------------- #}
+{# [repository.mimetype_mapping] #}
+{% set values = forgejo_repository.mimetype_mapping | bodsch.core.remove_empty_values %}
+{% if values | count > 0 %}
 
 [repository.mimetype_mapping]
-    {% for k, v in forgejo_repository.mimetype_mapping.items() %}
+  {% for k, v in forgejo_repository.mimetype_mapping.items() %}
 {{ k }} = {{ v }}
-    {% endfor %}
-  {% endif %}
+  {% endfor %}
 {% endif %}
+{# ------------------------------------------------------------------------- #}
+
+
+
+
+{# ------------------------------------------------------------------------- #}

@@ -2,7 +2,7 @@
 {% if values | count > 0 %}
 
   {% if forgejo_database.db_type | default('') | string | length > 0 and
-        forgejo_database.db_type in ["mysql", "postgres", "mssql", "sqlite3"] %}
+        forgejo_database.db_type in ["mysql", "postgres", "sqlite3"] %}
 [database]
 DB_TYPE = {{ forgejo_database.db_type }}
     {% if forgejo_database.host | default('') | string | length > 0 %}
@@ -30,18 +30,23 @@ SSL_MODE = {{ forgejo_database.ssl_mode | bodsch.core.config_bool(true_as='true'
 SSL_MODE = {{ forgejo_database.ssl_mode }}
         {% endif %}
       {% endif %}
-      {# removed between v1.20 and v9.0 #}
-
-      {% if forgejo_version is version_compare('1.20', '=<') %}
-      {% if forgejo_database.charset | default('') | string | length > 0 %}
+      {# ------------------------------------------------------------------------- #}
+      {% if forgejo_version is version_compare('1.21.11', '=<') %}
+        {% if forgejo_database.charset | default('') | string | length > 0 %}
 CHARSET = {{ forgejo_database.charset }}
-      {% endif %}
+        {% endif %}
       {% endif %}
       {% if forgejo_version is version_compare('1.20', '>=') %}
+        {% if forgejo_database.slow_query_treshold | default('') | string | length > 0 %}
+SLOW_QUERY_TRESHOLD = {{ forgejo_database.slow_query_treshold }}
+        {% endif %}
+      {% endif %}
+      {% if forgejo_version is version_compare('7.0', '>=') %}
         {% if forgejo_database.charset_collation | default('') | string | length > 0 %}
 CHARSET_COLLATION = {{ forgejo_database.charset_collation }}
         {% endif %}
       {% endif %}
+      {# ------------------------------------------------------------------------- #}
     {% endif %}
     {# postgres #}
     {% if forgejo_database.db_type == "postgres" %}
@@ -65,11 +70,6 @@ SQLITE_TIMEOUT = {{ forgejo_database.sqlite_timeout }}
 SQLITE_JOURNAL_MODE = {{ forgejo_database.sqlite_journal_mode }}
       {% endif %}
     {% endif %}
-    {# mssql #}
-    {% if forgejo_database.db_type == "mssql" %}
-      {# #}
-; mssql are unsupported db type
-    {% endif %}
     {% if forgejo_database.iterate_buffer_size | default('') | string | length > 0 %}
 ITERATE_BUFFER_SIZE = {{ forgejo_database.iterate_buffer_size }}
     {% endif %}
@@ -87,6 +87,11 @@ MAX_IDLE_CONNS = {{ forgejo_database.max_idle_conns }}
     {% endif %}
     {% if forgejo_database.conn_max_lifetime | default('') | string | length > 0 %}
 CONN_MAX_LIFETIME = {{ forgejo_database.conn_max_lifetime }}
+    {% endif %}
+    {% if forgejo_version is version_compare('7.0', '>=') %}
+      {% if forgejo_database.conn_max_idletime | default('') | string | length > 0 %}
+CONN_MAX_IDLETIME = {{ forgejo_database.conn_max_idletime }}
+      {% endif %}
     {% endif %}
     {% if forgejo_database.max_open_conns | default('') | string | length > 0 %}
 MAX_OPEN_CONNS = {{ forgejo_database.max_open_conns }}

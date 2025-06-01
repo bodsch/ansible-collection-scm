@@ -2,28 +2,35 @@
 {% if values | count > 0 %}
 
 [session]
-  {% if forgejo_session.provider | default('') | string | length > 0 and
-        forgejo_session.provider in ["memory", "file", "redis", "db", "mysql", "couchbase", "memcache", "postgres"] %}
-PROVIDER = {{ forgejo_session.provider }}
+  {% if values.provider | default('') | string | length > 0 and
+        values.provider in ["memory", "file", "redis", "db", "mysql", "couchbase", "memcache", "postgres"] %}
+PROVIDER = {{ values.provider }}
   {% endif %}
-  {% if forgejo_session.provider_config | default('') | string | length > 0 and
-        forgejo_session.provider_config != "memory" %}
-PROVIDER_CONFIG = {{ forgejo_session.provider_config }}
+  {% if values.provider_config | default('') | string | length > 0 and
+        values.provider_config != "memory" %}
+PROVIDER_CONFIG = {{ values.provider_config }}
   {% endif %}
-  {% if forgejo_session.cookie_name | default('') | string | length > 0 %}
-COOKIE_NAME = {{ forgejo_session.cookie_name }}
+  {% if values.cookie_name | default('') | string | length > 0 %}
+COOKIE_NAME = {{ values.cookie_name }}
   {% endif %}
-  {% if forgejo_session.cookie_secure | default('') | string | length > 0 %}
-COOKIE_SECURE = {{ forgejo_session.cookie_secure | bodsch.core.config_bool(true_as='true', false_as='false') }}
+  {% if values.cookie_secure | default('') | string | length > 0 %}
+COOKIE_SECURE = {{ values.cookie_secure | bodsch.core.config_bool(true_as='true', false_as='false') }}
   {% endif %}
-  {% if forgejo_session.gc_interval_time | default('') | string | length > 0 %}
-GC_INTERVAL_TIME = {{ forgejo_session.gc_interval_time }}
+  {% if values.gc_interval_time | default('') | string | length > 0 %}
+GC_INTERVAL_TIME = {{ values.gc_interval_time }}
   {% endif %}
-  {% if forgejo_session.session_life_time | default('') | string | length > 0 %}
-SESSION_LIFE_TIME = {{ forgejo_session.session_life_time }}
+  {% if values.session_life_time | default('') | string | length > 0 %}
+SESSION_LIFE_TIME = {{ values.session_life_time }}
   {% endif %}
-  {% if forgejo_session.same_site | default('') | string | length > 0 and
-        forgejo_session.same_site in ["none", "lax", "strict"] %}
-SAME_SITE = {{ forgejo_session.same_site }}
+  {# ------------------------------------------------------------------------- #}
+  {% if forgejo_version is version_compare('7.0.7', '>=') %}
+    {% if values.domain | default('') | string | length > 0 %}
+DOMAIN = {{ values.domain }}
+    {% endif %}
+  {% endif %}
+  {# ------------------------------------------------------------------------- #}
+  {% if values.same_site | default('') | string | length > 0 and
+        values.same_site in ["none", "lax", "strict"] %}
+SAME_SITE = {{ values.same_site }}
   {% endif %}
 {% endif %}

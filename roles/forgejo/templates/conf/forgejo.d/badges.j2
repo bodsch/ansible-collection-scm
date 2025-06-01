@@ -1,10 +1,12 @@
 {% set values = forgejo_badges | bodsch.core.remove_empty_values %}
 {% if values | count > 0 and
       values.enabled | default('false') | bool %}
-
+  {# ------------------------------------------------------------------------- #}
+  {% if forgejo_version is version_compare('1.21.11', '>=') %}
 [badges]
 ENABLED = {{ values.enabled | bodsch.core.config_bool(true_as='true', false_as='false') }}
-  {% if values.generator_url_template | default('') | string | length > 0 %}
+    {% if values.generator_url_template | default('') | string | length > 0 %}
 GENERATOR_URL_TEMPLATE = {{ values.generator_url_template }}
+    {% endif %}
   {% endif %}
 {% endif %}

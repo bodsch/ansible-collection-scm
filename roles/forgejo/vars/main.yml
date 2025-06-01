@@ -19,20 +19,29 @@ forgejo_requirements:
   - git
 
 forgejo_defaults_actions:
-  enabled: false
-  default_actions_url: ""
-  artifact_retention_days: ""                     # 90
-  zombie_task_timeout: ""
-  endless_task_timeout: ""
-  abandoned_job_timeout: ""
-  skip_workflow_strings: []
+  enabled: true                                   #
+  default_actions_url: ""                         #
+  artifact_retention_days: 90                     # 90
+  zombie_task_timeout: ""                         #
+  endless_task_timeout: ""                        #
+  abandoned_job_timeout: ""                       #
+  skip_workflow_strings:                          #
+    - "[skip ci]"
+    - "[ci skip]"
+    - "[no ci]"
+    - "[skip actions]"
+    - "[actions skip]"
+  # changes between 1.20 and 9.0
+  log_compression: zstd                           #
+  log_retention_days: 365                         #
+  limit_dispatch_inputs: 10                       #
 
 forgejo_defaults_admin:
   disable_regular_org_creation: ""                # false
   default_email_notifications: ""                 # enabled
-  user_disabled_features: []
-  external_user_disable_features: []
-  send_notification_email_on_new_user: ""
+  user_disabled_features: []                      #
+  external_user_disable_features: []              #
+  send_notification_email_on_new_user: ""         #
 
 forgejo_defaults_api:
   enable_swagger: ""                              # true
@@ -58,6 +67,7 @@ forgejo_defaults_attachment:
     access_key_id: ""
     secret_access_key: ""
     bucket: ""                                    # forgejo
+    bucket_lookup: ""                             # auto, dns, path
     location: ""                                  # us-east-1
     base_path: ""                                 # attachments/
     use_ssl: ""                                   # false
@@ -132,7 +142,7 @@ forgejo_defaults_cors:
 
 forgejo_defaults_cron:
   enabled: true                                   # true
-  run_at_start: false                             # false
+  run_at_start: true                              # true
   # Note: ``SCHEDULE`` accept formats
   #    - Full crontab specs, e.g. "* * * * * ?"
   #    - Descriptors, e.g. "@midnight", "@every 1h30m"
@@ -180,6 +190,11 @@ forgejo_defaults_cron:
     notice_on_success: false
     schedule: "@midnight"
     update_existing: true
+  cleanup_actions:
+    comment: Cleanup expired actions assets
+    enabled: true
+    run_at_start: false
+    schedule: "@midnight"
   deleted_branches_cleanup:
     comment: clean-up deleted branches
     enabled: true
@@ -288,7 +303,7 @@ forgejo_defaults_cron:
     proportion_to_check_per_repo: 0.6
 
 forgejo_defaults_database:
-  db_type: sqlite3                                # sqlite2, mysql, postgres, mssql
+  db_type: sqlite3                                # sqlite2, mysql, postgres
   # mariadb configuration
   host: ""                                        # 127.0.0.1:3306 ; can use socket e.g. /var/run/mysqld/mysqld.sock
   name: ""                                        # forgejo
@@ -308,12 +323,6 @@ forgejo_defaults_database:
   path: data/forgejo.db                             #
   sqlite_timeout: ""                              # query timeout defaults to: 500
   sqlite_journal_mode: ""                         # defaults to sqlite database default (often delete), can be used to enable wal mode.
-  # mssql configuration
-  # db_type: mssql
-  # host: 172.17.0.2:1433
-  # name: forgejo
-  # user: sa
-  # passwd: ""
   iterate_buffer_size: ""                         # 50
   log_sql: ""                                     # false
   db_retries: ""                                  # 10
@@ -327,6 +336,7 @@ forgejo_defaults_database:
   charset_collation: ""                           # ""; Empty as default, Gitea will try to find a case-sensitive collation. Don't change it unless you clearly know what you need.
   conn_max_idletime: ""                           # 0
   slow_query_threshold: "5s"
+  slow_query_treshold: "5s"
 
 forgejo_defaults_email:
   incoming:
@@ -431,19 +441,24 @@ forgejo_defaults_indexer:
   # **DEPRECATED** use settings in `[queue.issue_indexer]`.
   update_buffer_len: ""                           # 20
   max_file_size: ""                               # 1048576
+  repo_indexer_exclude_vendored: ""               # true
 
 forgejo_defaults_lfs:
   storage_type: "local"                           # local, minio
   path: ""                                        # data/lfs
   minio_base_path: ""
-  minio_endpoint: ""
-  minio_access_key_id: ""
-  minio_secret_access_key: ""
-  minio_bucket: ""
-  minio_location: ""
-  minio_use_ssl: ""
-  minio_insecure_skip_verify: ""
-  minio_checksum_algorithm: ""
+  # minio_endpoint: ""
+  # minio_access_key_id: ""
+  # minio_secret_access_key: ""
+  # minio_bucket: ""
+  # minio_location: ""
+  # minio_use_ssl: ""
+  # minio_insecure_skip_verify: ""
+  # minio_checksum_algorithm: ""
+  client:
+    batch_size: ""                                # 20
+    batch_operation_concurrency: ""               # 8
+
 
 forgejo_defaults_log:
   root_path: ""
@@ -525,6 +540,15 @@ forgejo_defaults_mailer:
   sendmail_args: ""
   sendmail_timeout: ""                            # 5m
   sendmail_convert_crlf: ""                       # true
+  from_display_name_format: !unsafe "{{ .DisplayName }}" # Available Variables: `.DisplayName`, `.AppName` and `.Domain`.
+  override_header:
+    reply_to:
+      - test@example.com
+      - test2@example.com
+    content_type:
+      - text/html
+      - charset=utf-8
+    in_reply_to: []
 
 forgejo_defaultforgejo_emails_markdown:
   enable_hard_line_break_in_comments: ""          # true
@@ -535,6 +559,7 @@ forgejo_defaultforgejo_emails_markdown:
 
 forgejo_defaults_markup:
   mermaid_max_source_characters: ""               # 5000
+  filepreview_max_lines: ""                       # 50
   sanitizer: []
   #  - id: 1
   #    element: span
@@ -570,6 +595,7 @@ forgejo_defaults_migrations:
   allowed_domains: []
   blocked_domains: []
   allow_localnetworks: ""                         # false
+  skip_tls_verify: false
 
 forgejo_defaults_mirror:
   enabled: ""                                     # true
@@ -614,9 +640,12 @@ forgejo_defaults_other:
   show_footer_template_load_time: ""              # true
   enable_sitemap: ""                              # true
   enable_feed: ""                                 # true
+  show_footer_powered_by: ""                      # true
 
 forgejo_defaults_packages:
   enabled: ""                                     # true
+  # storage_type: "local"                           # local, minio
+  # minio_base_path: ""
   chunked_upload_path: ""                         # tmp/package-upload
   limit_total_owner_count: ""                     # -1 (`-1` means no limits)
   limit_total_owner_size: ""                      # -1 (`-1` means no limits, format `1000`, `1 MB`, `1 GiB`)
@@ -636,20 +665,21 @@ forgejo_defaults_packages:
   limit_size_rubygems: ""                         # -1
   limit_size_swift: ""                            # -1
   limit_size_vagrant: ""                          # -1
-  storage_type: "local"                           # local, minio
-  path: ""                                        # data/packages
-  minio_base_path: ""
-  minio_endpoint: ""
-  minio_access_key_id: ""
-  minio_secret_access_key: ""
-  minio_bucket: ""
-  minio_location: ""
-  minio_use_ssl: ""
-  minio_insecure_skip_verify: ""
-  minio_checksum_algorithm: ""
+  # path: ""                                        # data/packages
+  # minio_endpoint: ""
+  # minio_access_key_id: ""
+  # minio_secret_access_key: ""
+  # minio_bucket: ""
+  # minio_location: ""
+  # minio_use_ssl: ""
+  # minio_insecure_skip_verify: ""
+  # minio_checksum_algorithm: ""
+  default_rpm_sign_enabled: ""                    # false
 
 forgejo_defaults_picture:
+  # removed in 1.21
   avatar_upload_path: ""                          # data/avatars
+  # removed in 1.21
   repository_avatar_upload_path: ""               # data/repo-avatars
   repository_avatar_fallback: ""                  # none (none: no avatar will be displayed; random = random avatar will be displayed; image = default image will be used)
   repository_avatar_fallback_image: ""            # /img/repo_default.png
@@ -660,6 +690,8 @@ forgejo_defaults_picture:
   gravatar_source: ""                             # gravatar
   disable_gravatar: ""                            # true
   enable_federated_avatar: ""                     # false
+
+  #
 
 forgejo_defaults_project:
   project_board_basic_kanban_type:
@@ -696,9 +728,9 @@ forgejo_defaults_queue:
     boost_workers: ""                             # 1
 
 forgejo_defaults_repo_archive:
-  storage_type: local
-  path: data/repo-archive
-  minio_base_path: repo-archive/
+  storage_type: ""                                # local
+  path: ""                                        # data/repo-archive
+  minio_base_path: ""                             # repo-archive/
 
 forgejo_defaults_repository:
   root: ""
@@ -715,12 +747,17 @@ forgejo_defaults_repository:
   disable_http_git: ""                            # false
   access_control_allow_origin: ""
   use_compat_ssh_uri: ""                          # false
+  go_get_clone_url_protocol: ""                   # https
+  default_close_issues_via_commits_in_any_branch: "" # false
+  enable_push_create_user: ""                     # false
+  enable_push_create_org: ""                      # false
   disabled_repo_units: []                         # allowed values: repo.issues, repo.ext_issues, repo.pulls, repo.wiki, repo.ext_wiki, repo.projects, repo.packages, repo.actions.
   default_repo_units: []                          # allowed values: repo.code, repo.releases, repo.issues, repo.pulls, repo.wiki, repo.projects, repo.packages, repo.actions.
   default_fork_repo_units: []                     # [repo.code, repo.pulls]
   prefix_archive_files: ""                        # true
   disable_migrations: ""                          # false
   disable_stars: ""                               # false
+  disable_forks: ""                               # false
   default_branch: ""                              # main
   allow_adoption_of_unadopted_repositories: ""    # false
   allow_deletion_of_unadopted_repositories: ""    # false
@@ -748,6 +785,9 @@ forgejo_defaults_repository:
     default_merge_message_official_approvers_only: "" # true
     add_co_committer_trailers: ""                 # true
     test_conflicting_patches_with_git_apply: ""   # false
+    populate_squash_comment_with_commit_messages: "" # true
+    retarget_children_on_merge: ""                # true
+
   issue:
     lock_reasons: []                              # [Too heated, Off-topic, Resolved, Spam]
   release:
@@ -877,7 +917,7 @@ forgejo_defaults_server:
   lfs_jwt_secret_uri: ""                          # file:/etc/gitea/lfs_jwt_secret
   ssh_authorized_keys_command_template: ""        # !unsafe "{{.AppPath}} --config={{.CustomConf}} serv key-{{.Key.ID}}"
   # changes between v9 and v10
-  lfs_max_batch_size: ""
+  lfs_max_batch_size: ""                          # 0
 
 forgejo_defaults_service:
   active_code_live_minutes: ""                    # 180
@@ -898,6 +938,8 @@ forgejo_defaults_service:
   enable_reverse_proxy_full_name: ""              # false
   enable_captcha: ""                              # false
   require_captcha_for_login: ""                   # false
+  require_external_registration_captcha: ""       # false
+  require_external_registration_password: ""       # false
   captcha_type: ""                                # image
   recaptcha_url: ""                               # https://www.google.com/recaptcha/
   recaptcha_secret: ""
@@ -932,61 +974,15 @@ forgejo_defaults_service:
   # added in version 1.20
   domain_endpoint: "release.forgejo.org"
   # changes between 1.20 and 9.0
-  abandoned_job_timeout: 24h
   allow_dots_in_usernames: true
-  # - ALLOW_SUBDOMAIN: false
-  ambiguous_unicode_detection: true
-  artifact_retention_days: 90
-  # - AVATAR_UPLOAD_PATH: data/avatars
-  # + Content-Type: text/html; charset=utf-8
-  default_close_issues_via_commits_in_any_branch: false
-  # + DEFAULT_RPM_SIGN_ENABLED: false
-  # + DISABLE_FORKS: false
-  # + DOMAIN =
-  # + DOMAIN_ENDPOINT: release.forgejo.org
-  # + ENABLE_OPENID_SIGNUP: true
-  # + ENABLE_PUSH_CREATE_ORG: false
-  # + ENABLE_PUSH_CREATE_USER: false
-  # + ENABLE_REVERSE_PROXY_AUTHENTICATION_API: false
-  # + ENDLESS_TASK_TIMEOUT: 3h
-  # + EXPLORE_PAGING_DEFAULT_SORT: recentupdate
-  # + FILEPREVIEW_MAX_LINES: 50
-  # + FROM_DISPLAY_NAME_FORMAT: {{ .DisplayName }}
-  # + GENERATOR_URL_TEMPLATE: https://img.shields.io/badge/{{.label}}-{{.text}}-{{.color}}
-  # + In-Reply-To =
-  # + LIMIT_DISPATCH_INPUTS: 10
-  # + LOG_COMPRESSION: zstd
-  # + LOG_RETENTION_DAYS: 365
-  # + MAX_ROWS: 2500
-  # + MEMBERS_PAGING_NUM: 20
-  # + MINIO_BUCKET_LOOKUP =
-  # + PACKAGES_PAGING_NUM: 20
-  # + POPULATE_SQUASH_COMMENT_WITH_COMMIT_MESSAGES: false
-  # + PREFERRED_TIMESTAMP_TENSE: mixed
-  # - QUEUE_CONN_STR: "redis://127.0.0.1:6379/0?pool_size=100&idle_timeout=180s"
-  # - QUEUE_TYPE: channel
-  # + REACTION_MAX_USER_NUM: 10
-  # - REPOSITORY_AVATAR_UPLOAD_PATH: data/repo-avatars
-  # + REPO_INDEXER_EXCLUDE_VENDORED: true
-  # + REPO_SEARCH_PAGING_NUM: 20
-  # + REQUIRE_EXTERNAL_REGISTRATION_CAPTCHA: false
-  # + REQUIRE_EXTERNAL_REGISTRATION_PASSWORD: false
-  # + RETARGET_CHILDREN_ON_MERGE: true
-  # + Reply-To: test@example.com, test2@example.com
-  # - SCHEME: http
-  # + SEND_NOTIFICATION_EMAIL_ON_NEW_USER: false
-  # + SHOW_FOOTER_POWERED_BY: true
-  # + SKIP_WORKFLOW_STRINGS: [skip ci],[ci skip],[no ci],[skip actions],[actions skip]
-  # + USER_DISABLED_FEATURES =
-  # + USER_LOCATION_MAP_URL: https://www.openstreetmap.org/search?query=
-  # + ZOMBIE_TASK_TIMEOUT: 10m
-  # changes between v9 and v10
-  batch_operation_concurrency: 8
-  batch_size: 20
-  disable_code_page: false
-  disable_organizations_page: false
-  disable_users_page: false
-  enable_internal_signin: true
+  enable_reverse_proxy_authentication_api: false
+  user_location_map_url: https://www.openstreetmap.org/search?query=
+  # changes between 10.0.0 and 10.0.3
+  explore:
+    require_signin_view: false
+    disable_users_page: false
+    disable_organizations_page: false
+    disable_code_page: false
 
 forgejo_defaults_session:
   provider: ""                                    # memory
@@ -996,6 +992,7 @@ forgejo_defaults_session:
   gc_interval_time: ""                            # 86400
   session_life_time: ""                           # 86400
   same_site: ""                                   # lax
+  domain: ""                                      #
 
 forgejo_defaults_ssh:
   minimum_key_sizes: {}
@@ -1006,22 +1003,25 @@ forgejo_defaults_ssh:
 
 forgejo_defaults_storage:
   storage_type: ""                                # local, minio
-  path: ""
-  serve_direct: ""                              # false
-  minio_endpoint: ""                            # localhost:9000
-  minio_access_key_id: ""
-  minio_secret_access_key: ""
-  minio_bucket: ""                              # forgejo
-  minio_location: ""                            # us-east-1
-  minio_use_ssl: ""                             # false
-  minio_insecure_skip_verify: ""                # false
-  minio_checksum_algorithm: ""                  # false
   repo_archive:
     storage_type: ""                              # local
   packages:
     storage_type: ""                              # local
   actions_log:
     storage_type: ""                              # local
+  actions_artifacts:
+    storage_type: ""                              # local
+  minio: []
+  #   - name: my_minio
+  #     storage_type: minio
+  #     endpoint: localhost:9000
+  #     access_key_id: ""
+  #     secret_access_key: ""
+  #     bucket: gitea
+  #     bucket_lookup: ""
+  #     location: us-east-1
+  #     use_ssl: false
+  #     insecure_skip_verify: false
 
 forgejo_defaults_task:
   queue_type: ""                                  # channel
@@ -1051,6 +1051,13 @@ forgejo_defaults_ui:
   search_repo_description: ""                     # true
   use_service_worker: ""                          # false
   only_show_relevant_repos: ""                    # false
+  ambiguous_unicode_detection: ""                 # true
+  reaction_max_user_num: ""                       # 10
+  explore_paging_default_sort: ""                 # "recentupdate" or "alphabetically", "reverselastlogin", "newest", "oldest"
+  preferred_timestamp_tense: ""                   # `absolute` time (i.e. 1970-01-01, 11:59) | `mixed` means most timestamps are rendered in relative time (i.e. 2 days ago)
+  repo_search_paging_num: ""                      # 20
+  members_paging_num: ""                          # 20
+  packages_paging_num: ""                         # 20
   admin:
     user_paging_num: ""                           # 50
     repo_paging_num: ""                           # 50
@@ -1071,6 +1078,7 @@ forgejo_defaults_ui:
     enable_render: ""                             # true
   csv:
     max_file_size: ""                             # 524288
+    max_rows: ""                                  # 2500
 
 forgejo_defaults_webhook:
   queue_length: ""                                # 1000

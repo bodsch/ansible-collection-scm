@@ -1,68 +1,84 @@
 {% set values = forgejo_storage | bodsch.core.remove_empty_values %}
+{% set _ = values.pop("repo_archive") %}
+{% set _ = values.pop("packages") %}
+{% set _ = values.pop("actions_log") %}
+{% set _ = values.pop("actions_artifacts") %}
+{% if values.minio is defined %}
+  {% set _ = values.pop("minio") %}
+{% endif %}
 {% if values | count > 0 %}
 
 [storage]
-  {% if forgejo_storage.storage_type | default('') | string | length > 0 %}
-STORAGE_TYPE = {{ forgejo_storage.storage_type }}
+  {% if values.storage_type | default('') | string | length > 0 %}
+STORAGE_TYPE = {{ values.storage_type }}
   {% endif %}
-  {% if forgejo_storage.storage_type == "local" %}
-    {% if forgejo_storage.path | default('') | string | length > 0 %}
-PATH = {{ forgejo_storage.path }}
-    {% endif %}
-  {% endif %}
-
-  {% if forgejo_storage.storage_type == "minio" %}
-    {% if forgejo_storage.serve_direct | default('') | string | length > 0 %}
-SERVE_DIRECT = {{ forgejo_storage.serve_direct | bodsch.core.config_bool(true_as='true', false_as='false') }}
-    {% endif %}
-    {% if forgejo_storage.minio_endpoint | default('') | string | length > 0 %}
-MINIO_ENDPOINT = {{ forgejo_storage.minio_endpoint }}
-    {% endif %}
-    {% if forgejo_storage.minio_access_key_id | default('') | string | length > 0 %}
-MINIO_ACCESS_KEY_ID = {{ forgejo_storage.minio_access_key_id }}
-    {% endif %}
-    {% if forgejo_storage.minio_secret_access_key | default('') | string | length > 0 %}
-MINIO_SECRET_ACCESS_KEY = {{ forgejo_storage.minio_secret_access_key }}
-    {% endif %}
-    {% if forgejo_storage.minio_bucket | default('') | string | length > 0 %}
-MINIO_BUCKET = {{ forgejo_storage.minio_bucket }}
-    {% endif %}
-    {% if forgejo_storage.minio_location | default('') | string | length > 0 %}
-MINIO_LOCATION = {{ forgejo_storage.minio_location }}
-    {% endif %}
-    {% if forgejo_storage.minio_use_ssl | default('') | string | length > 0 %}
-MINIO_USE_SSL = {{ forgejo_storage.minio_use_ssl | bodsch.core.config_bool(true_as='true', false_as='false') }}
-    {% endif %}
-    {% if forgejo_storage.minio_insecure_skip_verify | default('') | string | length > 0 %}
-MINIO_INSECURE_SKIP_VERIFY = {{ forgejo_storage.minio_insecure_skip_verify | bodsch.core.config_bool(true_as='true', false_as='false') }}
-    {% endif %}
-    {% if forgejo_storage.minio_checksum_algorithm | default('') | string | length > 0 %}
-MINIO_CHECKSUM_ALGORITHM = {{ forgejo_storage.minio_checksum_algorithm | bodsch.core.config_bool(true_as='true', false_as='false') }}
-    {% endif %}
-  {% endif %}
-  {% if forgejo_storage.repo_archive is defined and
-        forgejo_storage.repo_archive | count > 0 %}
+{% endif %}
+{# ------------------------------------------------------------------------- #}
+{# [storage.repo-archive] #}
+{% set values = forgejo_storage.repo_archive | bodsch.core.remove_empty_values %}
+{% if values | count > 0 %}
 
 [storage.repo-archive]
-    {% if forgejo_storage.repo_archive.storage_type | default('') | string | length > 0 %}
-STORAGE_TYPE = {{ forgejo_storage.repo_archive.storage_type }}
-    {% endif %}
+  {% if values.storage_type | default('') | string | length > 0 %}
+STORAGE_TYPE = {{ values.storage_type }}
   {% endif %}
-  {% if forgejo_storage.packages is defined and
-        forgejo_storage.packages | count > 0 %}
+{% endif %}
+{# ------------------------------------------------------------------------- #}
+{% set values = forgejo_storage.packages | bodsch.core.remove_empty_values %}
+{% if values | count > 0 %}
 
 [storage.packages]
-  {% if forgejo_storage.packages.storage_type | default('') | string | length > 0 %}
-STORAGE_TYPE = {{ forgejo_storage.packages.storage_type }}
-    {% endif %}
+  {% if values.storage_type | default('') | string | length > 0 %}
+STORAGE_TYPE = {{ values.storage_type }}
   {% endif %}
-
-  {% if forgejo_storage.actions_log is defined and
-        forgejo_storage.actions_log | count > 0 %}
+{% endif %}
+{# ------------------------------------------------------------------------- #}
+{% set values = forgejo_storage.actions_log | bodsch.core.remove_empty_values %}
+{% if values | count > 0 %}
 
 [storage.actions_log]
-    {% if forgejo_storage.actions_log.storage_type | default('') | string | length > 0 %}
-STORAGE_TYPE = {{ forgejo_storage.actions_log.storage_type }}
-    {% endif %}
+  {% if values.storage_type | default('') | string | length > 0 %}
+STORAGE_TYPE = {{ values.storage_type }}
   {% endif %}
+{% endif %}
+{# ------------------------------------------------------------------------- #}
+{% set values = forgejo_storage.actions_artifacts | bodsch.core.remove_empty_values %}
+{% if values | count > 0 %}
+
+[storage.actions_artifacts]
+  {% if values.storage_type | default('') | string | length > 0 %}
+STORAGE_TYPE = {{ values.storage_type }}
+  {% endif %}
+{% endif %}
+{# ------------------------------------------------------------------------- #}
+{% set values = forgejo_storage.minio | bodsch.core.remove_empty_values %}
+{% if values | count > 0 %}
+  {% for m in values %}
+[storage.{{ m.get("name") }}]
+STORAGE_TYPE = minio
+    {% if m.endpoint | default('') | string | length > 0 %}
+MINIO_ENDPOINT = {{ m.endpoint }}
+    {% endif %}
+    {% if m.access_key_id | default('') | string | length > 0 %}
+MINIO_ACCESS_KEY_ID = {{ m.access_key_id }}
+    {% endif %}
+    {% if m.secret_access_key | default('') | string | length > 0 %}
+MINIO_SECRET_ACCESS_KEY = {{ m.secret_access_key }}
+    {% endif %}
+    {% if m.bucket | default('') | string | length > 0 %}
+MINIO_BUCKET = {{ m.bucket }}
+    {% endif %}
+    {% if m.bucket_lookup | default('') | string | length > 0 %}
+MINIO_BUCKET_LOOKUP = {{ m.bucket_lookup }}
+    {% endif %}
+    {% if m.location | default('') | string | length > 0 %}
+MINIO_LOCATION = {{ m.location }}
+    {% endif %}
+    {% if m.use_ssl | default('') | string | length > 0 %}
+MINIO_USE_SSL = {{ m.use_ssl | bodsch.core.config_bool(true_as='true', false_as='false') }}
+    {% endif %}
+    {% if m.insecure_skip_verify | default('') | string | length > 0 %}
+MINIO_INSECURE_SKIP_VERIFY = {{ m.insecure_skip_verify | bodsch.core.config_bool(true_as='true', false_as='false') }}
+    {% endif %}
+  {% endfor %}
 {% endif %}

@@ -43,7 +43,7 @@
 ;; In addition there is _`StaticRootPath`_ which can be set as a built-in at build time, but will otherwise default to _`AppWorkPath`_
 #}
 
-{% if forgejo_version is version_compare('1.20', '>=') %}
+{% if forgejo_version is version_compare('8.0', '>=') %}
   {% if forgejo_app.display_name_format | default('') | string | length > 0 %}
 APP_DISPLAY_NAME_FORMAT = {{ forgejo_app.display_name_format }}
   {% endif %}

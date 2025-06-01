@@ -1,39 +1,41 @@
-{% set values = forgejo_picture | bodsch.core.remove_empty_values %}
-{% if values | count > 0 %}
+{% set picture = forgejo_picture | bodsch.core.remove_empty_values %}
+{% if picture | count > 0 %}
 
 [picture]
-  {% if forgejo_picture.avatar_upload_path | default('') | string | length > 0 %}
-AVATAR_UPLOAD_PATH = {{ forgejo_picture.avatar_upload_path }}
+  {% if forgejo_version is version_compare('1.21', '<') %}
+    {% if picture.avatar_upload_path | default('') | string | length > 0 %}
+AVATAR_UPLOAD_PATH = {{ picture.avatar_upload_path }}
+    {% endif %}
+    {% if picture.repository_avatar_upload_path | default('') | string | length > 0 %}
+REPOSITORY_AVATAR_UPLOAD_PATH = {{ picture.repository_avatar_upload_path }}
+    {% endif %}
   {% endif %}
-  {% if forgejo_picture.repository_avatar_upload_path | default('') | string | length > 0 %}
-REPOSITORY_AVATAR_UPLOAD_PATH = {{ forgejo_picture.repository_avatar_upload_path }}
+  {% if picture.repository_avatar_fallback | default('') | string | length > 0 and
+        picture.repository_avatar_fallback in ["none", "random", "image"]    %}
+REPOSITORY_AVATAR_FALLBACK = {{ picture.repository_avatar_fallback }}
   {% endif %}
-  {% if forgejo_picture.repository_avatar_fallback | default('') | string | length > 0 and
-        forgejo_picture.repository_avatar_fallback in ["none", "random", "image"]    %}
-REPOSITORY_AVATAR_FALLBACK = {{ forgejo_picture.repository_avatar_fallback }}
+  {% if picture.repository_avatar_fallback_image | default('') | string | length > 0 %}
+REPOSITORY_AVATAR_FALLBACK_IMAGE = {{ picture.repository_avatar_fallback_image }}
   {% endif %}
-  {% if forgejo_picture.repository_avatar_fallback_image | default('') | string | length > 0 %}
-REPOSITORY_AVATAR_FALLBACK_IMAGE = {{ forgejo_picture.repository_avatar_fallback_image }}
+  {% if picture.avatar_max_width | default('') | string | length > 0 %}
+AVATAR_MAX_WIDTH = {{ picture.avatar_max_width }}
   {% endif %}
-  {% if forgejo_picture.avatar_max_width | default('') | string | length > 0 %}
-AVATAR_MAX_WIDTH = {{ forgejo_picture.avatar_max_width }}
+  {% if picture.avatar_max_height | default('') | string | length > 0 %}
+AVATAR_MAX_HEIGHT = {{ picture.avatar_max_height }}
   {% endif %}
-  {% if forgejo_picture.avatar_max_height | default('') | string | length > 0 %}
-AVATAR_MAX_HEIGHT = {{ forgejo_picture.avatar_max_height }}
+  {% if picture.avatar_rendered_size_factor | default('') | string | length > 0 %}
+AVATAR_RENDERED_SIZE_FACTOR = {{ picture.avatar_rendered_size_factor }}
   {% endif %}
-  {% if forgejo_picture.avatar_rendered_size_factor | default('') | string | length > 0 %}
-AVATAR_RENDERED_SIZE_FACTOR = {{ forgejo_picture.avatar_rendered_size_factor }}
+  {% if picture.avatar_max_file_size | default('') | string | length > 0 %}
+AVATAR_MAX_FILE_SIZE = {{ picture.avatar_max_file_size }}
   {% endif %}
-  {% if forgejo_picture.avatar_max_file_size | default('') | string | length > 0 %}
-AVATAR_MAX_FILE_SIZE = {{ forgejo_picture.avatar_max_file_size }}
+  {% if picture.gravatar_source | default('') | string | length > 0 %}
+GRAVATAR_SOURCE = {{ picture.gravatar_source }}
   {% endif %}
-  {% if forgejo_picture.gravatar_source | default('') | string | length > 0 %}
-GRAVATAR_SOURCE = {{ forgejo_picture.gravatar_source }}
+  {% if picture.disable_gravatar | default('') | string | length > 0 %}
+DISABLE_GRAVATAR = {{ picture.disable_gravatar | bodsch.core.config_bool(true_as='true', false_as='false') }}
   {% endif %}
-  {% if forgejo_picture.disable_gravatar | default('') | string | length > 0 %}
-DISABLE_GRAVATAR = {{ forgejo_picture.disable_gravatar | bodsch.core.config_bool(true_as='true', false_as='false') }}
-  {% endif %}
-  {% if forgejo_picture.enable_federated_avatar | default('') | string | length > 0 %}
-ENABLE_FEDERATED_AVATAR = {{ forgejo_picture.enable_federated_avatar | bodsch.core.config_bool(true_as='true', false_as='false') }}
+  {% if picture.enable_federated_avatar | default('') | string | length > 0 %}
+ENABLE_FEDERATED_AVATAR = {{ picture.enable_federated_avatar | bodsch.core.config_bool(true_as='true', false_as='false') }}
   {% endif %}
 {% endif %}

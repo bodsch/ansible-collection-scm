@@ -2,19 +2,26 @@
 {% if values | count > 0 %}
 
 [other]
-  {% if forgejo_other.show_footer_branding | default('') | string | length > 0 %}
-SHOW_FOOTER_BRANDING = {{ forgejo_other.show_footer_branding | bodsch.core.config_bool(true_as='true', false_as='false') }}
+  {% if values.show_footer_branding | default('') | string | length > 0 %}
+SHOW_FOOTER_BRANDING = {{ values.show_footer_branding | bodsch.core.config_bool(true_as='true', false_as='false') }}
   {% endif %}
-  {% if forgejo_other.show_footer_version | default('') | string | length > 0 %}
-SHOW_FOOTER_VERSION = {{ forgejo_other.show_footer_version | bodsch.core.config_bool(true_as='true', false_as='false') }}
+  {% if values.show_footer_version | default('') | string | length > 0 %}
+SHOW_FOOTER_VERSION = {{ values.show_footer_version | bodsch.core.config_bool(true_as='true', false_as='false') }}
   {% endif %}
-  {% if forgejo_other.show_footer_template_load_time | default('') | string | length > 0 %}
-SHOW_FOOTER_TEMPLATE_LOAD_TIME = {{ forgejo_other.show_footer_template_load_time | bodsch.core.config_bool(true_as='true', false_as='false') }}
+  {% if values.show_footer_template_load_time | default('') | string | length > 0 %}
+SHOW_FOOTER_TEMPLATE_LOAD_TIME = {{ values.show_footer_template_load_time | bodsch.core.config_bool(true_as='true', false_as='false') }}
   {% endif %}
-  {% if forgejo_other.enable_sitemap | default('') | string | length > 0 %}
-ENABLE_SITEMAP = {{ forgejo_other.enable_sitemap | bodsch.core.config_bool(true_as='true', false_as='false') }}
+  {# ------------------------------------------------------------------------- #}
+  {% if forgejo_version is version_compare('8.0', '>=') %}
+    {% if values.show_footer_powered_by | default('') | string | length > 0 %}
+SHOW_FOOTER_POWERED_BY =  {{ values.show_footer_powered_by | bodsch.core.config_bool(true_as='true', false_as='false') }}
+    {% endif %}
   {% endif %}
-  {% if forgejo_other.enable_feed | default('') | string | length > 0 %}
-ENABLE_FEED = {{ forgejo_other.enable_feed | bodsch.core.config_bool(true_as='true', false_as='false') }}
+  {# ------------------------------------------------------------------------- #}
+  {% if values.enable_sitemap | default('') | string | length > 0 %}
+ENABLE_SITEMAP = {{ values.enable_sitemap | bodsch.core.config_bool(true_as='true', false_as='false') }}
+  {% endif %}
+  {% if values.enable_feed | default('') | string | length > 0 %}
+ENABLE_FEED = {{ values.enable_feed | bodsch.core.config_bool(true_as='true', false_as='false') }}
   {% endif %}
 {% endif %}

@@ -56,6 +56,16 @@ ENABLE_CAPTCHA = {{ values.enable_captcha | bodsch.core.config_bool(true_as='tru
   {% if values.require_captcha_for_login | default('') | string | length > 0 %}
 REQUIRE_CAPTCHA_FOR_LOGIN = {{ values.require_captcha_for_login | bodsch.core.config_bool(true_as='true', false_as='false') }}
   {% endif %}
+  {# ------------------------------------------------------------------------- #}
+  {% if forgejo_version is version_compare('7.0.7', '>=') %}
+    {% if values.require_external_registration_captcha | default('') | string | length > 0 %}
+REQUIRE_EXTERNAL_REGISTRATION_CAPTCHA = {{ values.require_external_registration_captcha | bodsch.core.config_bool(true_as='true', false_as='false') }}
+{% endif %}
+    {% if values.require_external_registration_password | default('') | string | length > 0 %}
+REQUIRE_EXTERNAL_REGISTRATION_PASSWORD = {{ values.require_external_registration_password | bodsch.core.config_bool(true_as='true', false_as='false') }}
+    {% endif %}
+  {# ------------------------------------------------------------------------- #}
+  {% endif %}
   {% if values.captcha_type | default('') | string | length > 0 and
         values.captcha_type in ["image", "recaptcha", "hcaptcha", "mcaptcha", "cfturnstile"] %}
 CAPTCHA_TYPE = {{ values.captcha_type }}
@@ -162,35 +172,17 @@ VALID_SITE_URL_SCHEMES = {{ values.valid_site_url_schemes | join(', ') }}
   {% endif %}
   {# ------------------------------------------------------------------------- #}
   {% if forgejo_version is version_compare('1.20', '>=') %}
-    {% if values.abandoned_job_timeout | default('') | string | length > 0 %}
-ABANDONED_JOB_TIMEOUT = {{ values.abandoned_job_timeout }}
-    {% endif %}
     {% if values.allow_dots_in_usernames | default('') | string | length > 0 %}
 ALLOW_DOTS_IN_USERNAMES = {{ values.allow_dots_in_usernames | bodsch.core.config_bool(true_as='true', false_as='false') }}
     {% endif %}
-    {% if values.ambiguous_unicode_detection | default('') | string | length > 0 %}
-AMBIGUOUS_UNICODE_DETECTION = {{ values.ambiguous_unicode_detection | bodsch.core.config_bool(true_as='true', false_as='false') }}
+    {% if values.enable_reverse_proxy_authentication_api | default('') | string | length > 0 %}
+ENABLE_REVERSE_PROXY_AUTHENTICATION_API = {{ values.enable_reverse_proxy_authentication_api | bodsch.core.config_bool(true_as='true', false_as='false') }}
     {% endif %}
-    {% if values.artifact_retention_days | default('') | string | length > 0 %}
-ARTIFACT_RETENTION_DAYS = {{ values.artifact_retention_days }}
-    {% endif %}
-    {% if values.default_close_issues_via_commits_in_any_branch | default('') | string | length > 0 %}
-DEFAULT_CLOSE_ISSUES_VIA_COMMITS_IN_ANY_BRANCH = {{ values.default_close_issues_via_commits_in_any_branch | bodsch.core.config_bool(true_as='true', false_as='false') }}
-    {% endif %}
-
-
-    {% if values.domain_endpoint | default('') | string | length > 0 %}
-DOMAIN_ENDPOINT = {{ values.domain_endpoint }}
+    {% if values.user_location_map_url | default('') | string | length > 0 %}
+USER_LOCATION_MAP_URL = {{ values.user_location_map_url }}
     {% endif %}
   {% endif %}
-  {# ------------------------------------------------------------------------- #}
   {% if forgejo_version is version_compare('9.0', '>=') %}
-    {% if values.batch_operation_concurrency | default('') | string | length > 0 %}
-BATCH_OPERATION_CONCURRENCY = 8
-    {% endif %}
-    {% if values.batch_size | default('') | string | length > 0 %}
-BATCH_SIZE = 20
-    {% endif %}
     {% if values.disable_code_page | default('') | string | length > 0 %}
 DISABLE_CODE_PAGE = false
     {% endif %}
@@ -200,8 +192,32 @@ DISABLE_ORGANIZATIONS_PAGE = false
     {% if values.disable_users_page | default('') | string | length > 0 %}
 DISABLE_USERS_PAGE = false
     {% endif %}
+  {% endif %}
+  {% if forgejo_version is version_compare('10.0.3', '>=') %}
     {% if values.enable_internal_signin | default('') | string | length > 0 %}
 ENABLE_INTERNAL_SIGNIN = true
     {% endif %}
   {% endif %}
+  {# ------------------------------------------------------------------------- #}
 {% endif %}
+{# ------------------------------------------------------------------------- #}
+{% if forgejo_version is version_compare('10.0.3', '>=') %}
+  {% set values = forgejo_service.explore | bodsch.core.remove_empty_values %}
+  {% if values | count > 0 %}
+
+[service.explore]
+    {% if values.require_signin_view | default('') | string | length > 0 %}
+REQUIRE_SIGNIN_VIEW = {{ values.require_signin_view | bodsch.core.config_bool(true_as='true', false_as='false') }}
+    {% endif %}
+    {% if values.disable_users_page | default('') | string | length > 0 %}
+DISABLE_USERS_PAGE = {{ values.disable_users_page | bodsch.core.config_bool(true_as='true', false_as='false') }}
+    {% endif %}
+    {% if values.disable_organizations_page | default('') | string | length > 0 %}
+DISABLE_ORGANIZATIONS_PAGE = {{ values.disable_organizations_page | bodsch.core.config_bool(true_as='true', false_as='false') }}
+    {% endif %}
+    {% if values.disable_code_page | default('') | string | length > 0 %}
+DISABLE_CODE_PAGE = {{ values.disable_code_page | bodsch.core.config_bool(true_as='true', false_as='false') }}
+    {% endif %}
+  {% endif %}
+{% endif %}
+{# ------------------------------------------------------------------------- #}

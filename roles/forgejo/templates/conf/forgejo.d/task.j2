@@ -1,17 +1,19 @@
-{% set values = forgejo_task | bodsch.core.remove_empty_values %}
-{% if values | count > 0 %}
+{% if forgejo_version is version_compare('7.0', '<') %}
+  {% set values = forgejo_task | bodsch.core.remove_empty_values %}
+  {% if values | count > 0 %}
 
 [task]
-  {% if forgejo_task.queue_type | default('') | string | length > 0 and
-        forgejo_task.queue_type in ["channel", "redis"] %}
-QUEUE_TYPE = {{ forgejo_task.queue_type }}
-    {% if forgejo_task.queue_type == "channel" and
-          forgejo_task.queue_length | default('') | string | length > 0 %}
-QUEUE_LENGTH = {{ forgejo_task.queue_length }}
-    {% endif %}
-    {% if forgejo_task.queue_type == "redis" and
-          forgejo_task.queue_conn_str | default('') | string | length > 0 %}
-QUEUE_CONN_STR = {{ forgejo_task.queue_conn_str }}
+    {% if values.queue_type | default('') | string | length > 0 and
+          values.queue_type in ["channel", "redis"] %}
+QUEUE_TYPE = {{ values.queue_type }}
+      {% if values.queue_type == "channel" and
+            values.queue_length | default('') | string | length > 0 %}
+QUEUE_LENGTH = {{ values.queue_length }}
+      {% endif %}
+      {% if values.queue_type == "redis" and
+            values.queue_conn_str | default('') | string | length > 0 %}
+QUEUE_CONN_STR = {{ values.queue_conn_str }}
+      {% endif %}
     {% endif %}
   {% endif %}
 {% endif %}
