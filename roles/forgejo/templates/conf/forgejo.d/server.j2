@@ -237,4 +237,18 @@ STARTUP_TIMEOUT = {{ forgejo_server.startup_timeout }}
   {% if forgejo_server.static_cache_time | default('') | string | length > 0 %}
 STATIC_CACHE_TIME = {{ forgejo_server.static_cache_time }}
   {% endif %}
+  {% if forgejo_version is version_compare('1.20', '>=') %}
+    {% if forgejo_server.lfs_jwt_secret_uri | default('') | string | length > 0 %}
+LFS_JWT_SECRET_URI = {{ forgejo_server.lfs_jwt_secret_uri }}
+    {% endif %}
+    {% if forgejo_server.ssh_authorized_keys_command_template | default('') | string | length > 0 %}
+SSH_AUTHORIZED_KEYS_COMMAND_TEMPLATE = {{ forgejo_server.ssh_authorized_keys_command_template }}
+    {% endif %}
+  {% endif %}
+  {% if forgejo_version is version_compare('9.0', '>=') %}
+    {% if forgejo_server.lfs_max_batch_size | default('') | string | length > 0 %}
+LFS_MAX_BATCH_SIZE = {{ forgejo_server.lfs_max_batch_size }}
+    {% endif %}
+  {% endif %}
+
 {% endif %}

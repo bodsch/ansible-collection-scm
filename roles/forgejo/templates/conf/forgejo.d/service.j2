@@ -160,9 +160,48 @@ USER_DELETE_WITH_COMMENTS_MAX_TIME = {{ values.user_delete_with_comments_max_tim
   {% if values.valid_site_url_schemes | default([]) | count > 0 %}
 VALID_SITE_URL_SCHEMES = {{ values.valid_site_url_schemes | join(', ') }}
   {% endif %}
+  {# ------------------------------------------------------------------------- #}
   {% if forgejo_version is version_compare('1.20', '>=') %}
+    {% if values.abandoned_job_timeout | default('') | string | length > 0 %}
+ABANDONED_JOB_TIMEOUT = {{ values.abandoned_job_timeout }}
+    {% endif %}
+    {% if values.allow_dots_in_usernames | default('') | string | length > 0 %}
+ALLOW_DOTS_IN_USERNAMES = {{ values.allow_dots_in_usernames | bodsch.core.config_bool(true_as='true', false_as='false') }}
+    {% endif %}
+    {% if values.ambiguous_unicode_detection | default('') | string | length > 0 %}
+AMBIGUOUS_UNICODE_DETECTION = {{ values.ambiguous_unicode_detection | bodsch.core.config_bool(true_as='true', false_as='false') }}
+    {% endif %}
+    {% if values.artifact_retention_days | default('') | string | length > 0 %}
+ARTIFACT_RETENTION_DAYS = {{ values.artifact_retention_days }}
+    {% endif %}
+    {% if values.default_close_issues_via_commits_in_any_branch | default('') | string | length > 0 %}
+DEFAULT_CLOSE_ISSUES_VIA_COMMITS_IN_ANY_BRANCH = {{ values.default_close_issues_via_commits_in_any_branch | bodsch.core.config_bool(true_as='true', false_as='false') }}
+    {% endif %}
+
+
     {% if values.domain_endpoint | default('') | string | length > 0 %}
 DOMAIN_ENDPOINT = {{ values.domain_endpoint }}
+    {% endif %}
+  {% endif %}
+  {# ------------------------------------------------------------------------- #}
+  {% if forgejo_version is version_compare('9.0', '>=') %}
+    {% if values.batch_operation_concurrency | default('') | string | length > 0 %}
+BATCH_OPERATION_CONCURRENCY = 8
+    {% endif %}
+    {% if values.batch_size | default('') | string | length > 0 %}
+BATCH_SIZE = 20
+    {% endif %}
+    {% if values.disable_code_page | default('') | string | length > 0 %}
+DISABLE_CODE_PAGE = false
+    {% endif %}
+    {% if values.disable_organizations_page | default('') | string | length > 0 %}
+DISABLE_ORGANIZATIONS_PAGE = false
+    {% endif %}
+    {% if values.disable_users_page | default('') | string | length > 0 %}
+DISABLE_USERS_PAGE = false
+    {% endif %}
+    {% if values.enable_internal_signin | default('') | string | length > 0 %}
+ENABLE_INTERNAL_SIGNIN = true
     {% endif %}
   {% endif %}
 {% endif %}

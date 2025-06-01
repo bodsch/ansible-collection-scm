@@ -24,7 +24,14 @@ SERVER_URL = {{ forgejo_camo.server_url }}
   {% if forgejo_camo.hmac_key | default('') | string | length > 0 %}
 HMAC_KEY = {{ forgejo_camo.hmac_key }}
   {% endif %}
-  {% if forgejo_camo.allways | default('') | string | length > 0 %}
+  {% if forgejo_version is version_compare('1.20', '<=') %}
+    {% if forgejo_camo.allways | default('') | string | length > 0 %}
 ALLWAYS = {{ forgejo_camo.allways | bodsch.core.config_bool(true_as='true', false_as='false') }}
+    {% endif %}
+  {% endif %}
+  {% if forgejo_version is version_compare('1.20', '=>') %}
+    {% if forgejo_camo.always | default('') | string | length > 0 %}
+ALWAYS = {{ forgejo_camo.always | bodsch.core.config_bool(true_as='true', false_as='false') }}
+    {% endif %}
   {% endif %}
 {% endif %}

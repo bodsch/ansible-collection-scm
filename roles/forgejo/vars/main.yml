@@ -117,8 +117,7 @@ forgejo_defaults_camo:
   hmac_key: ""
   allways: ""                                     # false
   # changes between 1.20 and 9.0
-  # - ALLWAYS = false
-  # + ALWAYS = false
+  always: ""                                      # false
 
 forgejo_defaults_cors:
   enabled: ""                                     # false
@@ -875,10 +874,10 @@ forgejo_defaults_server:
   startup_timeout: ""                             # 0
   static_cache_time: ""                           # 6h
   # changes between 1.20 and 9.0
-  # + LFS_JWT_SECRET_URI = file:/etc/gitea/lfs_jwt_secret
-  # + SSH_AUTHORIZED_KEYS_COMMAND_TEMPLATE = {{.AppPath}} --config={{.CustomConf}} serv key-{{.Key.ID}}
+  lfs_jwt_secret_uri: ""                          # file:/etc/gitea/lfs_jwt_secret
+  ssh_authorized_keys_command_template: ""        # !unsafe "{{.AppPath}} --config={{.CustomConf}} serv key-{{.Key.ID}}"
   # changes between v9 and v10
-  # + LFS_MAX_BATCH_SIZE = 0
+  lfs_max_batch_size: ""
 
 forgejo_defaults_service:
   active_code_live_minutes: ""                    # 180
@@ -933,61 +932,61 @@ forgejo_defaults_service:
   # added in version 1.20
   domain_endpoint: "release.forgejo.org"
   # changes between 1.20 and 9.0
-  # + ABANDONED_JOB_TIMEOUT = 24h
-  # + ALLOW_DOTS_IN_USERNAMES = true
-  # - ALLOW_SUBDOMAIN = false
-  # + AMBIGUOUS_UNICODE_DETECTION = true
-  # + ARTIFACT_RETENTION_DAYS = 90
-  # - AVATAR_UPLOAD_PATH = data/avatars
-  # + Content-Type = text/html; charset=utf-8
-  # + DEFAULT_CLOSE_ISSUES_VIA_COMMITS_IN_ANY_BRANCH = false
-  # + DEFAULT_RPM_SIGN_ENABLED = false
-  # + DISABLE_FORKS = false
+  abandoned_job_timeout: 24h
+  allow_dots_in_usernames: true
+  # - ALLOW_SUBDOMAIN: false
+  ambiguous_unicode_detection: true
+  artifact_retention_days: 90
+  # - AVATAR_UPLOAD_PATH: data/avatars
+  # + Content-Type: text/html; charset=utf-8
+  default_close_issues_via_commits_in_any_branch: false
+  # + DEFAULT_RPM_SIGN_ENABLED: false
+  # + DISABLE_FORKS: false
   # + DOMAIN =
-  # + DOMAIN_ENDPOINT = release.forgejo.org
-  # + ENABLE_OPENID_SIGNUP = true
-  # + ENABLE_PUSH_CREATE_ORG = false
-  # + ENABLE_PUSH_CREATE_USER = false
-  # + ENABLE_REVERSE_PROXY_AUTHENTICATION_API = false
-  # + ENDLESS_TASK_TIMEOUT = 3h
-  # + EXPLORE_PAGING_DEFAULT_SORT = recentupdate
-  # + FILEPREVIEW_MAX_LINES = 50
-  # + FROM_DISPLAY_NAME_FORMAT = {{ .DisplayName }}
-  # + GENERATOR_URL_TEMPLATE = https://img.shields.io/badge/{{.label}}-{{.text}}-{{.color}}
+  # + DOMAIN_ENDPOINT: release.forgejo.org
+  # + ENABLE_OPENID_SIGNUP: true
+  # + ENABLE_PUSH_CREATE_ORG: false
+  # + ENABLE_PUSH_CREATE_USER: false
+  # + ENABLE_REVERSE_PROXY_AUTHENTICATION_API: false
+  # + ENDLESS_TASK_TIMEOUT: 3h
+  # + EXPLORE_PAGING_DEFAULT_SORT: recentupdate
+  # + FILEPREVIEW_MAX_LINES: 50
+  # + FROM_DISPLAY_NAME_FORMAT: {{ .DisplayName }}
+  # + GENERATOR_URL_TEMPLATE: https://img.shields.io/badge/{{.label}}-{{.text}}-{{.color}}
   # + In-Reply-To =
-  # + LIMIT_DISPATCH_INPUTS = 10
-  # + LOG_COMPRESSION = zstd
-  # + LOG_RETENTION_DAYS = 365
-  # + MAX_ROWS = 2500
-  # + MEMBERS_PAGING_NUM = 20
+  # + LIMIT_DISPATCH_INPUTS: 10
+  # + LOG_COMPRESSION: zstd
+  # + LOG_RETENTION_DAYS: 365
+  # + MAX_ROWS: 2500
+  # + MEMBERS_PAGING_NUM: 20
   # + MINIO_BUCKET_LOOKUP =
-  # + PACKAGES_PAGING_NUM = 20
-  # + POPULATE_SQUASH_COMMENT_WITH_COMMIT_MESSAGES = false
-  # + PREFERRED_TIMESTAMP_TENSE = mixed
-  # - QUEUE_CONN_STR = "redis://127.0.0.1:6379/0?pool_size=100&idle_timeout=180s"
-  # - QUEUE_TYPE = channel
-  # + REACTION_MAX_USER_NUM = 10
-  # - REPOSITORY_AVATAR_UPLOAD_PATH = data/repo-avatars
-  # + REPO_INDEXER_EXCLUDE_VENDORED = true
-  # + REPO_SEARCH_PAGING_NUM = 20
-  # + REQUIRE_EXTERNAL_REGISTRATION_CAPTCHA = false
-  # + REQUIRE_EXTERNAL_REGISTRATION_PASSWORD = false
-  # + RETARGET_CHILDREN_ON_MERGE = true
-  # + Reply-To = test@example.com, test2@example.com
-  # - SCHEME = http
-  # + SEND_NOTIFICATION_EMAIL_ON_NEW_USER = false
-  # + SHOW_FOOTER_POWERED_BY = true
-  # + SKIP_WORKFLOW_STRINGS = [skip ci],[ci skip],[no ci],[skip actions],[actions skip]
+  # + PACKAGES_PAGING_NUM: 20
+  # + POPULATE_SQUASH_COMMENT_WITH_COMMIT_MESSAGES: false
+  # + PREFERRED_TIMESTAMP_TENSE: mixed
+  # - QUEUE_CONN_STR: "redis://127.0.0.1:6379/0?pool_size=100&idle_timeout=180s"
+  # - QUEUE_TYPE: channel
+  # + REACTION_MAX_USER_NUM: 10
+  # - REPOSITORY_AVATAR_UPLOAD_PATH: data/repo-avatars
+  # + REPO_INDEXER_EXCLUDE_VENDORED: true
+  # + REPO_SEARCH_PAGING_NUM: 20
+  # + REQUIRE_EXTERNAL_REGISTRATION_CAPTCHA: false
+  # + REQUIRE_EXTERNAL_REGISTRATION_PASSWORD: false
+  # + RETARGET_CHILDREN_ON_MERGE: true
+  # + Reply-To: test@example.com, test2@example.com
+  # - SCHEME: http
+  # + SEND_NOTIFICATION_EMAIL_ON_NEW_USER: false
+  # + SHOW_FOOTER_POWERED_BY: true
+  # + SKIP_WORKFLOW_STRINGS: [skip ci],[ci skip],[no ci],[skip actions],[actions skip]
   # + USER_DISABLED_FEATURES =
-  # + USER_LOCATION_MAP_URL = https://www.openstreetmap.org/search?query=
-  # + ZOMBIE_TASK_TIMEOUT = 10m
+  # + USER_LOCATION_MAP_URL: https://www.openstreetmap.org/search?query=
+  # + ZOMBIE_TASK_TIMEOUT: 10m
   # changes between v9 and v10
-  # + BATCH_OPERATION_CONCURRENCY = 8
-  # + BATCH_SIZE = 20
-  # + DISABLE_CODE_PAGE = false
-  # + DISABLE_ORGANIZATIONS_PAGE = false
-  # + DISABLE_USERS_PAGE = false
-  # + ENABLE_INTERNAL_SIGNIN = true
+  batch_operation_concurrency: 8
+  batch_size: 20
+  disable_code_page: false
+  disable_organizations_page: false
+  disable_users_page: false
+  enable_internal_signin: true
 
 forgejo_defaults_session:
   provider: ""                                    # memory
