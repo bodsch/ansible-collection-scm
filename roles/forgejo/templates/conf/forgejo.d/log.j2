@@ -2,44 +2,63 @@
 {% if values | count > 0 %}
 
 [log]
-  {% if forgejo_log.root_path | default('') | string | length > 0 %}
-ROOT_PATH = {{ forgejo_log.root_path }}
+  {% if values.root_path | default('') | string | length > 0 %}
+ROOT_PATH = {{ values.root_path }}
   {% endif %}
-  {% if forgejo_log.mode | count > 0 %}
-     {% set valid_log_mode = ["console", "file", "conn", "smtp", "database"] %}
-     {% set log_mode = forgejo_log.mode | bodsch.core.compare_list(compare_to_list=valid_log_mode) %}
+  {% if values.mode | default([]) | count > 0 %}
+     {% set valid_log_mode = ["console", "file", "conn"] %}
+     {% set log_mode = values.mode | bodsch.core.compare_list(compare_to_list=valid_log_mode) %}
 MODE = {{ log_mode | join(', ') }}
   {% endif %}
-  {% if forgejo_log.level | default('') | string | length > 0 and
-        forgejo_log.level | lower in ["trace", "debug", "info", "warn", "error", "critical", "none"] %}
-LEVEL = {{ forgejo_log.level }}
+  {% if values.level | default('') | string | length > 0 and
+        values.level | lower in ["trace", "debug", "info", "warn", "error", "critical", "none"] %}
+LEVEL = {{ values.level }}
   {% endif %}
-  {% if forgejo_log.disable_router_log | default('') | string | length > 0 %}
-DISABLE_ROUTER_LOG = {{ forgejo_log.disable_router_log | bodsch.core.config_bool(true_as='true', false_as='false') }}
-  {% endif %}
-  {% if forgejo_log.router | default('') | string | length > 0 %}
-ROUTER = {{ forgejo_log.router }}
-  {% endif %}
-  {% if forgejo_log.enable_access_log | default('') | string | length > 0 %}
-ENABLE_ACCESS_LOG = {{ forgejo_log.enable_access_log | bodsch.core.config_bool(true_as='true', false_as='false') }}
-  {% endif %}
-  {% if forgejo_log.access | default('') | string | length > 0 %}
-ACCESS = {{ forgejo_log.access }}
-  {% endif %}
-  {% if forgejo_log.access_log_template | default('') | string | length > 0 %}
+  {% if values.access_log_template | default('') | string | length > 0 %}
   {#
     {{.Ctx.RemoteAddr}} - {{.Identity}} {{.Start.Format "[02/Jan/2006:15:04:05 -0700]" }} "{{.Ctx.Req.Method}} {{.Ctx.Req.URL.RequestURI}} {{.Ctx.Req.Proto}}" {{.ResponseWriter.Status}} {{.ResponseWriter.Size}} "{{.Ctx.Req.Referer}}\" \"{{.Ctx.Req.UserAgent}}"
   #}
-ACCESS_LOG_TEMPLATE = {{ forgejo_log.access_log_template }}
+ACCESS_LOG_TEMPLATE = {{ values.access_log_template }}
   {% endif %}
-  {% if forgejo_log.enable_ssh_log | default('') | string | length > 0 %}
-ENABLE_SSH_LOG = {{ forgejo_log.enable_ssh_log | bodsch.core.config_bool(true_as='true', false_as='false') }}
+  {% if values.enable_ssh_log | default('') | string | length > 0 %}
+ENABLE_SSH_LOG = {{ values.enable_ssh_log | bodsch.core.config_bool(true_as='true', false_as='false') }}
   {% endif %}
-  {% if forgejo_log.stacktrace_level | default('') | string | length > 0 and
-        forgejo_log.stacktrace_level | lower in ["trace", "debug", "info", "warn", "error", "critical", "none"] %}
-STACKTRACE_LEVEL = {{ forgejo_log.stacktrace_level }}
+  {% if values.stacktrace_level | default('') | string | length > 0 and
+        values.stacktrace_level | lower in ["trace", "debug", "info", "warn", "error", "critical", "none"] %}
+STACKTRACE_LEVEL = {{ values.stacktrace_level }}
   {% endif %}
-  {% if forgejo_log.buffer_len | default('') | string | length > 0 %}
-BUFFER_LEN = {{ forgejo_log.buffer_len }}
+  {% if values.buffer_len | default('') | string | length > 0 %}
+BUFFER_LEN = {{ values.buffer_len }}
   {% endif %}
+  {% if values.request_id_headers | default([]) | count > 0 %}
+REQUEST_ID_HEADERS = {{ values.request_id_headers | join(', ') }}
+  {% endif %}
+{% endif %}
+{# ---------------------------------------------------------- #}
+{% if forgejo_log.log_writer | default([]) | count > 0 %}
+{#
+  Setting a comma (,) to sub-logger’s mode means making it use the default global MODE.
+#}
+{# List of log outputs to use for the default logger. #}
+logger.default.MODE =
+{# List of log outputs to use for the Router logger. #}
+logger.router.MODE  =
+{# List of log outputs to use for the XORM logger. #}
+logger.xorm.MODE    =
+{# List of log outputs to use for the Access logger. By default, the access logger is disabled. #}
+logger.access.MODE  =
+
+  {% set sub_logger = values.log_writer | bodsch.scm.sub_logger() %}
+  {% for logger in sub_logger %}
+    {% set logger_data = values.log_writer | bodsch.scm.sub_logger_data(logger) %}
+    {% set _ = logger_data.pop("name") %}
+[log.{{ logger }}]
+    {% for k, v in logger_data.items() %}
+      {% if v | bodsch.core.type == "bool" %}
+{{ k | upper }} = {{ v | bodsch.core.config_bool(true_as='true', false_as='false') }}
+      {% else %}
+{{ k | upper }} = {{ v }}
+      {% endif %}
+    {% endfor %}
+  {% endfor %}
 {% endif %}

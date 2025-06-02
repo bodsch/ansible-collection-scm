@@ -459,17 +459,17 @@ forgejo_defaults_lfs:
     batch_size: ""                                # 20
     batch_operation_concurrency: ""               # 8
 
-
 forgejo_defaults_log:
   root_path: ""
-  mode: []                                        # [console, file]
-  level: ""                                       # info
+  mode:                                           # [console, file]
+    - console
+  level: info                                     # info   | Either "Trace", "Debug", "Info", "Warn", "Error" or "None", default is "Info"
   disable_router_log: ""                          # false
   router: ""                                      # console
   enable_access_log: ""                           # false
   access: ""                                      # file
   # TODO
-  access_log_template: ""
+  access_log_template: !unsafe ""
     # {{.Ctx.RemoteAddr}} - {{.Identity}}
     # {{.Start.Format "[02/Jan/2006:15:04:05 -0700]" }}
     # {{.Ctx.Req.Method}}
@@ -481,42 +481,33 @@ forgejo_defaults_log:
   enable_ssh_log: ""                              # false
   stacktrace_level: ""                            # none
   buffer_len: ""                                  # 10000
-  # # ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-  # #  creating specific log configuration
-  # #
-  # #  you can set specific configuration for individual modes and subloggers
-  # #
-  # #  configuration available to all log modes/subloggers
-  # level: ""
-  # flags: stdflags
-  # expression: ""
-  # prefix: ""
-  # colorize: false
-  console:
-    stderr: ""                                    # false
-  file:
-    level: ""
-    file_name: ""
-    log_rotate: ""                                # true
-    max_size_shift: ""                            # 28
-    daily_rotate: ""                              # true
-    max_days: ""                                  # 7
-    compress: ""                                  # true
-    compression_level: ""                         # -1
-  conn:
-    level: ""
-    reconnect_on_msg: ""                          # false
-    reconnect: ""                                 # false
-    protocol: ""                                  # tcp (either "tcp", "unix" or "udp")
-    addr: ""
-  smtp:
-    level: ""
-    subject: ""                                   # diagnostic message from server
-    host: ""
-    user: ""
-    passwd: ""
-    receivers: []
-  # changes between 1.20 and 9.0
+  request_id_headers: []
+  #   - X-Request-ID
+  #   - X-Trace-ID
+  #   - X-Req-ID
+
+  log_writer:
+    # https://forgejo.org/docs/latest/admin/logging-documentation
+    - name: console                                 # standard console
+      mode: console                                 #
+      level: info                                   #
+      flags: stdflags                               #
+      colorize: false                               #
+    # - name: file                                    #
+    #   level: ""                                     #
+    #   file_name: ""                                 #
+    #   log_rotate: ""                                # true
+    #   max_size_shift: ""                            # 28
+    #   daily_rotate: ""                              # true
+    #   max_days: ""                                  # 7
+    #   compress: ""                                  # true
+    #   compression_level: ""                         # -1
+    # - name: conn
+    #   level: ""
+    #   reconnect_on_msg: ""                          # false
+    #   reconnect: ""                                 # false
+    #   protocol: ""                                  # tcp (either "tcp", "unix" or "udp")
+    #   addr: ""
 
 forgejo_defaults_mailer:
   enabled: ""                                     # false
@@ -550,12 +541,19 @@ forgejo_defaults_mailer:
       - charset=utf-8
     in_reply_to: []
 
-forgejo_defaultforgejo_emails_markdown:
-  enable_hard_line_break_in_comments: ""          # true
+# forgejo_defaultforgejo_emails_markdown:
+#   enable_hard_line_break_in_comments: ""          # true
+#   enable_hard_line_break_in_documents: ""         # false
+#   custom_url_schemes: []
+#   file_extensions: []                             # [".md", ".markdown", ".mdown", ".mkd"]
+#   enable_math: ""                                 # true
+
+forgejo_defaults_markdown:
+  enable_hard_line_break_in_comments: ""          # false
   enable_hard_line_break_in_documents: ""         # false
-  custom_url_schemes: []
-  file_extensions: []                             # [".md", ".markdown", ".mdown", ".mkd"]
-  enable_math: ""                                 # true
+  custom_url_schemes: []                          #
+  file_extensions: []                             #
+  enable_math: ""                                 # false
 
 forgejo_defaults_markup:
   mermaid_max_source_characters: ""               # 5000
@@ -575,13 +573,6 @@ forgejo_defaults_markup:
     render_command: ""                            # "asciidoc --out-file=- -"
     is_input_file: ""                             # false
     render_content_mode: ""                       # sanitized
-
-forgejo_defaults_markdown:
-  enable_hard_line_break_in_comments: ""          # false
-  enable_hard_line_break_in_documents: ""         # false
-  custom_url_schemes: []                          #
-  file_extensions: []                             #
-  enable_math: ""                                 # false
 
 forgejo_defaults_metrics:
   enabled: ""                                     # false
@@ -691,8 +682,6 @@ forgejo_defaults_picture:
   disable_gravatar: ""                            # true
   enable_federated_avatar: ""                     # false
 
-  #
-
 forgejo_defaults_project:
   project_board_basic_kanban_type:
     - To Do
@@ -715,17 +704,17 @@ forgejo_defaults_queue:
     datadir: ""                                   # queues/ # Relative paths will be made absolute against `%(APP_DATA_PATH)s`.
     length: ""                                    # 20
     batch_length: ""                              # 20
-    conn_str: ""                                  # "addrs=127.0.0.1:6379 db=0"
+    conn_str: ""                                  # redis://127.0.0.1:6379/0
     queue_name: ""                                # "_queue"
     set_name: ""                                  # "_unique"
-    wrap_if_necessary: ""                         # true
-    max_attempts: ""                              # 10
-    timeout: ""                                   # 15m30s
-    workers: ""                                   # 0
-    max_workers: ""                               # 10
-    block_timeout: ""                             # 1s
-    boost_timeout: ""                             # 5m
-    boost_workers: ""                             # 1
+    max_workers: ""                               # 1-10
+    # wrap_if_necessary: ""                         # true
+    # max_attempts: ""                              # 10
+    # timeout: ""                                   # 15m30s
+    # workers: ""                                   # 0
+    # block_timeout: ""                             # 1s
+    # boost_timeout: ""                             # 5m
+    # boost_workers: ""                             # 1
 
 forgejo_defaults_repo_archive:
   storage_type: ""                                # local
@@ -787,7 +776,6 @@ forgejo_defaults_repository:
     test_conflicting_patches_with_git_apply: ""   # false
     populate_squash_comment_with_commit_messages: "" # true
     retarget_children_on_merge: ""                # true
-
   issue:
     lock_reasons: []                              # [Too heated, Off-topic, Resolved, Spam]
   release:

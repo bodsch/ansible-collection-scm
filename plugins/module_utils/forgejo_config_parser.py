@@ -85,7 +85,8 @@ class ForgejoConfigParser:
 
         # Schreibe merged Datei
         with open(output_path, 'w', encoding='utf-8') as f:
-            merged.write(f)
+            # merged.write(f)
+            self.write_sorted_config(merged, f)
 
         # Nach write()
         with open(output_path, 'r', encoding='utf-8') as f:
@@ -96,6 +97,15 @@ class ForgejoConfigParser:
 
         with open(output_path, 'w', encoding='utf-8') as f:
             f.write(content)
+
+    def write_sorted_config(self, parser, file):
+        # Sektionen alphabetisch sortieren
+        for section in sorted(parser.sections()):
+            file.write(f"[{section}]\n")
+            # Schlüssel innerhalb jeder Sektion alphabetisch sortieren
+            for key, value in sorted(parser.items(section)):
+                file.write(f"{key} = {value}\n")
+            file.write("\n")
 
 
 """

@@ -3,9 +3,7 @@
 
 [queue]
   {% set queue_parameters = [
-    "type", "datadir", "length", "batch_length", "conn_str", "queue_name", "set_name",
-    "wrap_if_necessary", "max_attempts", "timeout", "workers", "max_workers",
-    "block_timeout", "boost_timeout", "boost_workers"] %}
+    "type", "datadir", "length", "batch_length", "conn_str", "queue_name", "set_name", "max_workers"] %}
   {% set default_queue = forgejo_queue.default %}
   {% set forgejo_queue = forgejo_queue.pop('default') %}
   {% for k, v in default_queue.items() %}
