@@ -32,6 +32,8 @@ Tested on
 
 ## usage
 
+[config cheat-sheet](https://forgejo.org/docs/latest/admin/config-cheat-sheet)
+
 - [actions](docs/actions.md)
 - [admin](docs/admin.md)
 - [api](docs/api.md)
@@ -79,11 +81,16 @@ Tested on
 - [ui](docs/ui.md)
 - [webhook](docs/webhook.md)
 
+### Examples
+
+- [configured](molecule/configured/group_vars/all/vars.yml)
+- [configured with ldap](molecule/configured-with-ldap/group_vars/all/vars.yml)
+- [configured with mariadb](molecule/configured-with-mariadb/group_vars/all/vars.yml)
+- [custom config directory](molecule/custom-config-directory/group_vars/all/vars.yml)
+- [update](molecule/update/group_vars/all/vars.yml)
 
 
-
-
-Full example
+### Full example
 
 ```yaml
 forgejo_version: 1.20.5-0
