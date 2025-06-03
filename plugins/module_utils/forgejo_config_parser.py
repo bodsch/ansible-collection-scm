@@ -31,11 +31,25 @@ class ForgejoConfigParser:
         return parser
 
     def _preprocess(self, text):
-        if not text.strip().startswith('['):
-            text = '[__default__]\n' + text
-        return text
+        """
+        """
+        # Entferne Leerzeilen (auch mehrfach aufeinanderfolgende) vor dem Parsen
+        lines = text.splitlines()
+        lines = [line for line in lines if line.strip() != '']
+
+        if lines and not lines[0].startswith('['):
+            lines.insert(0, '[__default__]')
+
+        return '\n'.join(lines)
+
+        # if not text.strip().startswith('['):
+        #     text = '[__default__]\n' + text
+        #
+        # return text
 
     def _remove_ignored_keys(self, parser):
+        """
+        """
         for section, keys in self.ignore_keys.items():
             if parser.has_section(section):
                 for key in keys:
@@ -60,7 +74,12 @@ class ForgejoConfigParser:
         return hashlib.sha256(self.get_cleaned_string().encode('utf-8')).hexdigest()
 
     def is_equal_to(self, other):
-        return self.get_cleaned_string().strip() == other.get_cleaned_string().strip()
+        """
+        """
+        self_clean = self.get_cleaned_string().strip()
+        other_clean = other.get_cleaned_string().strip()
+
+        return self_clean == other_clean
 
     def merge_into(self, base_path, output_path):
         base = ForgejoConfigParser(base_path, self.ignore_keys)

@@ -12,7 +12,7 @@ import pwd
 
 from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.bodsch.scm.plugins.module_utils.forgejo_config_parser import ForgejoConfigParser
-
+from ansible_collections.bodsch.core.plugins.module_utils.diff import SideBySide
 
 DOCUMENTATION = """
 ---
@@ -94,13 +94,19 @@ class ForgejoConfigCompare(object):
         new = ForgejoConfigParser(path=self.new_config, ignore_keys=self.ignore_map)
 
         if not orig.is_equal_to(new):
-            # self.module.log("Konfiguration hat sich geändert.")
-            # self.module.log(f"Original SHA256 : {orig.checksum()}")
-            # self.module.log(f"Neu SHA256      : {new.checksum()}")
+            self.module.log("Konfiguration hat sich geändert.")
+            self.module.log(f"Original SHA256 : {orig.checksum()}")
+            self.module.log(f"Neu SHA256      : {new.checksum()}")
 
-            new.merge_into(base_path=self.config, output_path="/run/forgejo.merged")
+            side_by_side = SideBySide(module=self.module, left=self.config, right=self.new_config)
+            self.module.log(f"{side_by_side.diff()}")
 
-            shutil.move("/run/forgejo.merged", self.config)
+            merged_config = os.path.join(os.path.dirname(self.config), "forgejo.merged")
+
+            new.merge_into(base_path=self.config, output_path=merged_config)
+
+            # shutil.move(merged_config, self.config)
+            shutil.copyfile(merged_config, self.config)
             shutil.chown(self.config, self.owner, self.group)
 
             return dict(

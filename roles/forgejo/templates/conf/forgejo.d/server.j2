@@ -2,255 +2,255 @@
 {% if values | count > 0 %}
 
 [server]
-  {% if forgejo_server.protocol | default('') | string | length > 0 and
-        forgejo_server.protocol in  ["http", "https", "http+unix", "fcgi", "fcgi+unix"] %}
-PROTOCOL = {{ forgejo_server.protocol }}
+  {% if values.protocol | default('') | string | length > 0 and
+        values.protocol in  ["http", "https", "http+unix", "fcgi", "fcgi+unix"] %}
+PROTOCOL = {{ values.protocol }}
   {% endif %}
-  {% if forgejo_server.use_proxy_protocol | default('') | string | length > 0 %}
-USE_PROXY_PROTOCOL = {{ forgejo_server.use_proxy_protocol | bodsch.core.config_bool(true_as='true', false_as='false') }}
+  {% if values.use_proxy_protocol | default('') | string | length > 0 %}
+USE_PROXY_PROTOCOL = {{ values.use_proxy_protocol | bodsch.core.config_bool(true_as='true', false_as='false') }}
   {% endif %}
-  {% if forgejo_server.proxy_protocol_tls_bridging | default('') | string | length > 0 %}
-PROXY_PROTOCOL_TLS_BRIDGING = {{ forgejo_server.proxy_protocol_tls_bridging | bodsch.core.config_bool(true_as='true', false_as='false') }}
+  {% if values.proxy_protocol_tls_bridging | default('') | string | length > 0 %}
+PROXY_PROTOCOL_TLS_BRIDGING = {{ values.proxy_protocol_tls_bridging | bodsch.core.config_bool(true_as='true', false_as='false') }}
   {% endif %}
-  {% if forgejo_server.proxy_protocol_header_timeout | default('') | string | length > 0 %}
-PROXY_PROTOCOL_HEADER_TIMEOUT = {{ forgejo_server.proxy_protocol_header_timeout }}
+  {% if values.proxy_protocol_header_timeout | default('') | string | length > 0 %}
+PROXY_PROTOCOL_HEADER_TIMEOUT = {{ values.proxy_protocol_header_timeout }}
   {% endif %}
-  {% if forgejo_server.proxy_protocol_accept_unknown | default('') | string | length > 0 %}
-PROXY_PROTOCOL_ACCEPT_UNKNOWN = {{ forgejo_server.proxy_protocol_accept_unknown | bodsch.core.config_bool(true_as='true', false_as='false') }}
+  {% if values.proxy_protocol_accept_unknown | default('') | string | length > 0 %}
+PROXY_PROTOCOL_ACCEPT_UNKNOWN = {{ values.proxy_protocol_accept_unknown | bodsch.core.config_bool(true_as='true', false_as='false') }}
   {% endif %}
-  {% if forgejo_server.domain | default('') | string | length > 0 %}
-DOMAIN = {{ forgejo_server.domain }}
+  {% if values.domain | default('') | string | length > 0 %}
+DOMAIN = {{ values.domain }}
   {% endif %}
-  {% if forgejo_server.root_url | default('') | string | length > 0 %}
-ROOT_URL = {{ forgejo_server.root_url }}
+  {% if values.root_url | default('') | string | length > 0 %}
+ROOT_URL = {{ values.root_url }}
   {% endif %}
-  {% if forgejo_server.static_url_prefix | default('') | string | length > 0 %}
-STATIC_URL_PREFIX = {{ forgejo_server.static_url_prefix }}
+  {% if values.static_url_prefix | default('') | string | length > 0 %}
+STATIC_URL_PREFIX = {{ values.static_url_prefix }}
   {% endif %}
-  {% if forgejo_server.http_addr | default('') | string | length > 0 %}
-HTTP_ADDR = {{ forgejo_server.http_addr }}
+  {% if values.http_addr | default('') | string | length > 0 %}
+HTTP_ADDR = {{ values.http_addr }}
   {% endif %}
-  {% if forgejo_server.http_port | default('') | string | length > 0 %}
-HTTP_PORT = {{ forgejo_server.http_port }}
+  {% if values.http_port | default('') | string | length > 0 %}
+HTTP_PORT = {{ values.http_port }}
   {% endif %}
-  {% if forgejo_server.redirect_other_port | default('') | string | length > 0 %}
-REDIRECT_OTHER_PORT = {{ forgejo_server.redirect_other_port | bodsch.core.config_bool(true_as='true', false_as='false') }}
-    {% if forgejo_server.port_to_redirect | default('') | string | length > 0 %}
+  {% if values.redirect_other_port | default('') | string | length > 0 %}
+REDIRECT_OTHER_PORT = {{ values.redirect_other_port | bodsch.core.config_bool(true_as='true', false_as='false') }}
+    {% if values.port_to_redirect | default('') | string | length > 0 %}
 PORT_TO_REDIRECT = 80
     {% endif %}
   {% endif %}
-  {% if forgejo_server.redirector_use_proxy_protocol | default('') | string | length > 0 %}
-REDIRECTOR_USE_PROXY_PROTOCOL = {{ forgejo_server.redirector_use_proxy_protocol }}
+  {% if values.redirector_use_proxy_protocol | default('') | string | length > 0 %}
+REDIRECTOR_USE_PROXY_PROTOCOL = {{ values.redirector_use_proxy_protocol }}
   {% endif %}
-  {% if forgejo_server.ssl_min_version | default('') | string | length > 0 %}
-SSL_MIN_VERSION = {{ forgejo_server.ssl_min_version }}
+  {% if values.ssl_min_version | default('') | string | length > 0 %}
+SSL_MIN_VERSION = {{ values.ssl_min_version }}
   {% endif %}
-  {% if forgejo_server.ssl_max_version | default('') | string | length > 0 %}
-SSL_MAX_VERSION = {{ forgejo_server.ssl_max_version }}
+  {% if values.ssl_max_version | default('') | string | length > 0 %}
+SSL_MAX_VERSION = {{ values.ssl_max_version }}
   {% endif %}
-  {% if forgejo_server.ssl_curve_preferences | count > 0 %}
-SSL_CURVE_PREFERENCES = {{ forgejo_server.ssl_curve_preferences | join(', ') }}
+  {% if values.ssl_curve_preferences | default([]) | count > 0 %}
+SSL_CURVE_PREFERENCES = {{ values.ssl_curve_preferences | join(', ') }}
   {% endif %}
-  {% if forgejo_server.ssl_cipher_suites | count > 0 %}
-SSL_CIPHER_SUITES =  {{ forgejo_server.ssl_cipher_suites | join(', ') }}
+  {% if values.ssl_cipher_suites | default([]) | count > 0 %}
+SSL_CIPHER_SUITES =  {{ values.ssl_cipher_suites | join(', ') }}
   {% endif %}
-  {% if forgejo_server.per_write_timeout | default('') | string | length > 0 %}
-PER_WRITE_TIMEOUT = {{ forgejo_server.per_write_timeout }}
+  {% if values.per_write_timeout | default('') | string | length > 0 %}
+PER_WRITE_TIMEOUT = {{ values.per_write_timeout }}
   {% endif %}
-  {% if forgejo_server.per_write_per_kb_timeout | default('') | string | length > 0 %}
-PER_WRITE_PER_KB_TIMEOUT = {{ forgejo_server.per_write_per_kb_timeout }}
+  {% if values.per_write_per_kb_timeout | default('') | string | length > 0 %}
+PER_WRITE_PER_KB_TIMEOUT = {{ values.per_write_per_kb_timeout }}
   {% endif %}
-  {% if forgejo_server.unix_socket_permission | default('') | string | length > 0 %}
-UNIX_SOCKET_PERMISSION = {{ forgejo_server.unix_socket_permission }}
+  {% if values.unix_socket_permission | default('') | string | length > 0 %}
+UNIX_SOCKET_PERMISSION = {{ values.unix_socket_permission }}
   {% endif %}
-  {% if forgejo_server.local_root_url | default('') | string | length > 0 %}
-LOCAL_ROOT_URL = {{ forgejo_server.local_root_url }}
+  {% if values.local_root_url | default('') | string | length > 0 %}
+LOCAL_ROOT_URL = {{ values.local_root_url }}
   {% endif %}
-  {% if forgejo_server.local_use_proxy_protocol | default('') | string | length > 0 %}
-LOCAL_USE_PROXY_PROTOCOL = {{ forgejo_server.local_use_proxy_protocol }}
+  {% if values.local_use_proxy_protocol | default('') | string | length > 0 %}
+LOCAL_USE_PROXY_PROTOCOL = {{ values.local_use_proxy_protocol }}
   {% endif %}
-  {% if forgejo_server.disable_ssh | default('') | string | length > 0 %}
-DISABLE_SSH = {{ forgejo_server.disable_ssh | bodsch.core.config_bool(true_as='true', false_as='false') }}
+  {% if values.disable_ssh | default('') | string | length > 0 %}
+DISABLE_SSH = {{ values.disable_ssh | bodsch.core.config_bool(true_as='true', false_as='false') }}
   {% endif %}
-  {% if forgejo_server.start_ssh_server | default('') | string | length > 0 %}
-START_SSH_SERVER = {{ forgejo_server.start_ssh_server | bodsch.core.config_bool(true_as='true', false_as='false') }}
+  {% if values.start_ssh_server | default('') | string | length > 0 %}
+START_SSH_SERVER = {{ values.start_ssh_server | bodsch.core.config_bool(true_as='true', false_as='false') }}
   {% endif %}
-  {% if forgejo_server.ssh_server_use_proxy_protocol | default('') | string | length > 0 %}
-SSH_SERVER_USE_PROXY_PROTOCOL = {{ forgejo_server.ssh_server_use_proxy_protocol | bodsch.core.config_bool(true_as='true', false_as='false') }}
+  {% if values.ssh_server_use_proxy_protocol | default('') | string | length > 0 %}
+SSH_SERVER_USE_PROXY_PROTOCOL = {{ values.ssh_server_use_proxy_protocol | bodsch.core.config_bool(true_as='true', false_as='false') }}
   {% endif %}
-  {% if forgejo_server.builtin_ssh_server_user | default('') | string | length > 0 %}
-BUILTIN_SSH_SERVER_USER = {{ forgejo_server.builtin_ssh_server_user }}
+  {% if values.builtin_ssh_server_user | default('') | string | length > 0 %}
+BUILTIN_SSH_SERVER_USER = {{ values.builtin_ssh_server_user }}
   {% endif %}
-  {% if forgejo_server.ssh_domain | default('') | string | length > 0 %}
-SSH_DOMAIN = {{ forgejo_server.ssh_domain }}
+  {% if values.ssh_domain | default('') | string | length > 0 %}
+SSH_DOMAIN = {{ values.ssh_domain }}
   {% endif %}
-  {% if forgejo_server.ssh_user | default('') | string | length > 0 %}
-SSH_USER = {{ forgejo_server.ssh_user }}
+  {% if values.ssh_user | default('') | string | length > 0 %}
+SSH_USER = {{ values.ssh_user }}
   {% endif %}
-  {% if forgejo_server.ssh_listen_host | default('') | string | length > 0 %}
-SSH_LISTEN_HOST = {{ forgejo_server.ssh_listen_host }}
+  {% if values.ssh_listen_host | default('') | string | length > 0 %}
+SSH_LISTEN_HOST = {{ values.ssh_listen_host }}
   {% endif %}
-  {% if forgejo_server.ssh_port | default('') | string | length > 0 %}
-SSH_PORT = {{ forgejo_server.ssh_port }}
+  {% if values.ssh_port | default('') | string | length > 0 %}
+SSH_PORT = {{ values.ssh_port }}
   {% endif %}
-  {% if forgejo_server.ssh_listen_port | default('') | string | length > 0 %}
-SSH_LISTEN_PORT = {{ forgejo_server.ssh_listen_port }}
+  {% if values.ssh_listen_port | default('') | string | length > 0 %}
+SSH_LISTEN_PORT = {{ values.ssh_listen_port }}
   {% endif %}
-  {% if forgejo_server.ssh_root_path | default('') | string | length > 0 %}
-SSH_ROOT_PATH = {{ forgejo_server.ssh_root_path }}
+  {% if values.ssh_root_path | default('') | string | length > 0 %}
+SSH_ROOT_PATH = {{ values.ssh_root_path }}
   {% endif %}
-  {% if forgejo_server.ssh_create_authorized_keys_file | default('') | string | length > 0 %}
-SSH_CREATE_AUTHORIZED_KEYS_FILE = {{ forgejo_server.ssh_create_authorized_keys_file | bodsch.core.config_bool(true_as='true', false_as='false') }}
+  {% if values.ssh_create_authorized_keys_file | default('') | string | length > 0 %}
+SSH_CREATE_AUTHORIZED_KEYS_FILE = {{ values.ssh_create_authorized_keys_file | bodsch.core.config_bool(true_as='true', false_as='false') }}
   {% endif %}
-  {% if forgejo_server.ssh_create_authorized_principals_file | default('') | string | length > 0 %}
-SSH_CREATE_AUTHORIZED_PRINCIPALS_FILE = {{ forgejo_server.ssh_create_authorized_principals_file | bodsch.core.config_bool(true_as='true', false_as='false') }}
+  {% if values.ssh_create_authorized_principals_file | default('') | string | length > 0 %}
+SSH_CREATE_AUTHORIZED_PRINCIPALS_FILE = {{ values.ssh_create_authorized_principals_file | bodsch.core.config_bool(true_as='true', false_as='false') }}
   {% endif %}
-  {% if forgejo_server.ssh_server_ciphers | default([]) | count > 0 %}
-SSH_SERVER_CIPHERS = {{ forgejo_server.ssh_server_ciphers | join(', ') }}
+  {% if values.ssh_server_ciphers | default([]) | count > 0 %}
+SSH_SERVER_CIPHERS = {{ values.ssh_server_ciphers | join(', ') }}
   {% endif %}
-  {% if forgejo_server.ssh_server_key_exchanges | default([]) | count > 0 %}
-SSH_SERVER_KEY_EXCHANGES = {{ forgejo_server.ssh_server_key_exchanges | join(', ') }}
+  {% if values.ssh_server_key_exchanges | default([]) | count > 0 %}
+SSH_SERVER_KEY_EXCHANGES = {{ values.ssh_server_key_exchanges | join(', ') }}
   {% endif %}
-  {% if forgejo_server.ssh_server_macs | default([]) | count > 0 %}
-SSH_SERVER_MACS = {{ forgejo_server.ssh_server_macs | join(', ') }}
+  {% if values.ssh_server_macs | default([]) | count > 0 %}
+SSH_SERVER_MACS = {{ values.ssh_server_macs | join(', ') }}
   {% endif %}
-  {% if forgejo_server.ssh_server_host_keys | default([]) | count > 0 %}
-SSH_SERVER_HOST_KEYS = {{ forgejo_server.ssh_server_host_keys | join(', ') }}
+  {% if values.ssh_server_host_keys | default([]) | count > 0 %}
+SSH_SERVER_HOST_KEYS = {{ values.ssh_server_host_keys | join(', ') }}
   {% endif %}
-  {% if forgejo_server.ssh_key_test_path | default('') | string | length > 0 %}
-SSH_KEY_TEST_PATH = {{ forgejo_server.ssh_key_test_path }}
+  {% if values.ssh_key_test_path | default('') | string | length > 0 %}
+SSH_KEY_TEST_PATH = {{ values.ssh_key_test_path }}
   {% endif %}
-  {% if forgejo_server.ssh_keygen_path | default('') | string | length > 0 %}
-SSH_KEYGEN_PATH = {{ forgejo_server.ssh_keygen_path }}
+  {% if values.ssh_keygen_path | default('') | string | length > 0 %}
+SSH_KEYGEN_PATH = {{ values.ssh_keygen_path }}
   {% endif %}
-  {% if forgejo_server.ssh_authorized_keys_backup | default('') | string | length > 0 %}
-SSH_AUTHORIZED_KEYS_BACKUP = {{ forgejo_server.ssh_authorized_keys_backup | bodsch.core.config_bool(true_as='true', false_as='false') }}
+  {% if values.ssh_authorized_keys_backup | default('') | string | length > 0 %}
+SSH_AUTHORIZED_KEYS_BACKUP = {{ values.ssh_authorized_keys_backup | bodsch.core.config_bool(true_as='true', false_as='false') }}
   {% endif %}
-  {% if forgejo_server.ssh_authorized_principals_allow | default([]) | count > 0 %}
-    {% if forgejo_server.ssh_trusted_user_ca_keys is defined and
-          forgejo_server.ssh_trusted_user_ca_keys | string | length == 0 %}
+  {% if values.ssh_authorized_principals_allow | default([]) | count > 0 %}
+    {% if values.ssh_trusted_user_ca_keys is defined and
+          values.ssh_trusted_user_ca_keys | string | length == 0 %}
       {% set valid_principals = ["off"] %}
     {% else %}
       {% set valid_principals = ["empty", "off", "email", "username", "anything"] %}
-      {% set valid_principals = forgejo_server.ssh_authorized_principals_allow | bodsch.core.compare_list(compare_to_list=valid_principals) %}
+      {% set valid_principals = values.ssh_authorized_principals_allow | bodsch.core.compare_list(compare_to_list=valid_principals) %}
     {% endif %}
 SSH_AUTHORIZED_PRINCIPALS_ALLOW = {{ valid_principals | join(', ') }}
   {% endif %}
-  {% if forgejo_server.ssh_authorized_principals_backup | default('') | string | length > 0 %}
-SSH_AUTHORIZED_PRINCIPALS_BACKUP = {{ forgejo_server.ssh_authorized_principals_backup | bodsch.core.config_bool(true_as='true', false_as='false') }}
+  {% if values.ssh_authorized_principals_backup | default('') | string | length > 0 %}
+SSH_AUTHORIZED_PRINCIPALS_BACKUP = {{ values.ssh_authorized_principals_backup | bodsch.core.config_bool(true_as='true', false_as='false') }}
   {% endif %}
-  {% if forgejo_server.ssh_trusted_user_ca_keys | default([]) | count > 0 %}
-SSH_TRUSTED_USER_CA_KEYS = {{ forgejo_server.ssh_trusted_user_ca_keys | join(', ') }}
+  {% if values.ssh_trusted_user_ca_keys | default([]) | count > 0 %}
+SSH_TRUSTED_USER_CA_KEYS = {{ values.ssh_trusted_user_ca_keys | join(', ') }}
   {% endif %}
-  {% if forgejo_server.ssh_trusted_user_ca_keys_filename | default('') | string | length > 0 %}
-SSH_TRUSTED_USER_CA_KEYS_FILENAME = {{ forgejo_server.ssh_trusted_user_ca_keys_filename }}
+  {% if values.ssh_trusted_user_ca_keys_filename | default('') | string | length > 0 %}
+SSH_TRUSTED_USER_CA_KEYS_FILENAME = {{ values.ssh_trusted_user_ca_keys_filename }}
   {% endif %}
-  {% if forgejo_server.ssh_expose_anonymous | default('') | string | length > 0 %}
-SSH_EXPOSE_ANONYMOUS = {{ forgejo_server.ssh_expose_anonymous | bodsch.core.config_bool(true_as='true', false_as='false') }}
+  {% if values.ssh_expose_anonymous | default('') | string | length > 0 %}
+SSH_EXPOSE_ANONYMOUS = {{ values.ssh_expose_anonymous | bodsch.core.config_bool(true_as='true', false_as='false') }}
   {% endif %}
-  {% if forgejo_server.ssh_per_write_timeout | default('') | string | length > 0 %}
-SSH_PER_WRITE_TIMEOUT = {{ forgejo_server.ssh_per_write_timeout }}
+  {% if values.ssh_per_write_timeout | default('') | string | length > 0 %}
+SSH_PER_WRITE_TIMEOUT = {{ values.ssh_per_write_timeout }}
   {% endif %}
-  {% if forgejo_server.ssh_per_write_per_kb_timeout | default('') | string | length > 0 %}
-SSH_PER_WRITE_PER_KB_TIMEOUT = {{ forgejo_server.ssh_per_write_per_kb_timeout }}
+  {% if values.ssh_per_write_per_kb_timeout | default('') | string | length > 0 %}
+SSH_PER_WRITE_PER_KB_TIMEOUT = {{ values.ssh_per_write_per_kb_timeout }}
   {% endif %}
-  {% if forgejo_server.minimum_key_size_check | default('') | string | length > 0 %}
-MINIMUM_KEY_SIZE_CHECK = {{ forgejo_server.minimum_key_size_check | bodsch.core.config_bool(true_as='true', false_as='false') }}
+  {% if values.minimum_key_size_check | default('') | string | length > 0 %}
+MINIMUM_KEY_SIZE_CHECK = {{ values.minimum_key_size_check | bodsch.core.config_bool(true_as='true', false_as='false') }}
   {% endif %}
-  {% if forgejo_server.offline_mode | default('') | string | length > 0 %}
-OFFLINE_MODE = {{ forgejo_server.offline_mode | bodsch.core.config_bool(true_as='true', false_as='false') }}
+  {% if values.offline_mode | default('') | string | length > 0 %}
+OFFLINE_MODE = {{ values.offline_mode | bodsch.core.config_bool(true_as='true', false_as='false') }}
   {% endif %}
-  {% if forgejo_server.disable_router_log | default('') | string | length > 0 %}
-DISABLE_ROUTER_LOG = {{ forgejo_server.disable_router_log | bodsch.core.config_bool(true_as='true', false_as='false') }}
+  {% if values.disable_router_log | default('') | string | length > 0 %}
+DISABLE_ROUTER_LOG = {{ values.disable_router_log | bodsch.core.config_bool(true_as='true', false_as='false') }}
   {% endif %}
-  {% if forgejo_server.enable_acme | default('') | string | length > 0 %}
-ENABLE_ACME = {{ forgejo_server.enable_acme | bodsch.core.config_bool(true_as='true', false_as='false') }}
-    {% if forgejo_server.acme_url | default('') | string | length > 0 %}
-ACME_URL = {{ forgejo_server.acme_url }}
+  {% if values.enable_acme | default('') | string | length > 0 %}
+ENABLE_ACME = {{ values.enable_acme | bodsch.core.config_bool(true_as='true', false_as='false') }}
+    {% if values.acme_url | default('') | string | length > 0 %}
+ACME_URL = {{ values.acme_url }}
     {% endif %}
-    {% if forgejo_server.acme_accepttos | default('') | string | length > 0 %}
-ACME_ACCEPTTOS = {{ forgejo_server.acme_accepttos | bodsch.core.config_bool(true_as='true', false_as='false') }}
+    {% if values.acme_accepttos | default('') | string | length > 0 %}
+ACME_ACCEPTTOS = {{ values.acme_accepttos | bodsch.core.config_bool(true_as='true', false_as='false') }}
     {% endif %}
-    {% if forgejo_server.acme_ca_root | default('') | string | length > 0 %}
-ACME_CA_ROOT = {{ forgejo_server.acme_ca_root }}
+    {% if values.acme_ca_root | default('') | string | length > 0 %}
+ACME_CA_ROOT = {{ values.acme_ca_root }}
     {% endif %}
-    {% if forgejo_server.acme_email | default('') | string | length > 0 %}
-ACME_EMAIL = {{ forgejo_server.acme_email }}
+    {% if values.acme_email | default('') | string | length > 0 %}
+ACME_EMAIL = {{ values.acme_email }}
     {% endif %}
-    {% if forgejo_server.acme_directory | default('') | string | length > 0 %}
-ACME_DIRECTORY = {{ forgejo_server.acme_directory }}
+    {% if values.acme_directory | default('') | string | length > 0 %}
+ACME_DIRECTORY = {{ values.acme_directory }}
     {% endif %}
   {% endif %}
-  {% if forgejo_server.cert_file | default('') | string | length > 0 %}
-CERT_FILE = {{ forgejo_server.cert_file }}
+  {% if values.cert_file | default('') | string | length > 0 %}
+CERT_FILE = {{ values.cert_file }}
   {% endif %}
-  {% if forgejo_server.key_file | default('') | string | length > 0 %}
-KEY_FILE = {{ forgejo_server.key_file }}
+  {% if values.key_file | default('') | string | length > 0 %}
+KEY_FILE = {{ values.key_file }}
   {% endif %}
-  {% if forgejo_server.static_root_path | default('') | string | length > 0 %}
-STATIC_ROOT_PATH = {{ forgejo_server.static_root_path }}
+  {% if values.static_root_path | default('') | string | length > 0 %}
+STATIC_ROOT_PATH = {{ values.static_root_path }}
   {% endif %}
-  {% if forgejo_server.app_data_path | default('') | string | length > 0 %}
-APP_DATA_PATH = {{ forgejo_server.app_data_path }}
+  {% if values.app_data_path | default('') | string | length > 0 %}
+APP_DATA_PATH = {{ values.app_data_path }}
   {% endif %}
-  {% if forgejo_server.enable_gzip | default('') | string | length > 0 %}
-ENABLE_GZIP = {{ forgejo_server.enable_gzip | bodsch.core.config_bool(true_as='true', false_as='false') }}
+  {% if values.enable_gzip | default('') | string | length > 0 %}
+ENABLE_GZIP = {{ values.enable_gzip | bodsch.core.config_bool(true_as='true', false_as='false') }}
   {% endif %}
-  {% if forgejo_server.enable_pprof | default('') | string | length > 0 %}
-ENABLE_PPROF = {{ forgejo_server.enable_pprof | bodsch.core.config_bool(true_as='true', false_as='false') }}
+  {% if values.enable_pprof | default('') | string | length > 0 %}
+ENABLE_PPROF = {{ values.enable_pprof | bodsch.core.config_bool(true_as='true', false_as='false') }}
   {% endif %}
-  {% if forgejo_server.pprof_data_path | default('') | string | length > 0 %}
-PPROF_DATA_PATH = {{ forgejo_server.pprof_data_path }}
+  {% if values.pprof_data_path | default('') | string | length > 0 %}
+PPROF_DATA_PATH = {{ values.pprof_data_path }}
   {% endif %}
-  {% if forgejo_server.landing_page | default('') | string | length > 0 and
-        forgejo_server.landing_page in ["home", "explore", "organizations", "login"] %}
+  {% if values.landing_page | default('') | string | length > 0 and
+        values.landing_page in ["home", "explore", "organizations", "login"] %}
     {#
         Landing page, can be "home", "explore", "organizations", "login", or any URL such as "/org/repo" or even "https://anotherwebsite.com"
         The "login" choice is not a security measure but just a UI flow change, use REQUIRE_SIGNIN_VIEW to force users to log in.
     #}
-LANDING_PAGE = {{ forgejo_server.landing_page }}
+LANDING_PAGE = {{ values.landing_page }}
   {% endif %}
-  {% if forgejo_server.lfs_start_server | default('') | string | length > 0 %}
-LFS_START_SERVER = {{ forgejo_server.lfs_start_server | bodsch.core.config_bool(true_as='true', false_as='false') }}
+  {% if values.lfs_start_server | default('') | string | length > 0 %}
+LFS_START_SERVER = {{ values.lfs_start_server | bodsch.core.config_bool(true_as='true', false_as='false') }}
   {% endif %}
-  {% if forgejo_server.lfs_jwt_secret | default('') | string | length > 0 %}
-LFS_JWT_SECRET = {{ forgejo_server.lfs_jwt_secret }}
+  {% if values.lfs_jwt_secret | default('') | string | length > 0 %}
+LFS_JWT_SECRET = {{ values.lfs_jwt_secret }}
   {% endif %}
-  {% if forgejo_server.lfs_http_auth_expiry | default('') | string | length > 0 %}
-LFS_HTTP_AUTH_EXPIRY = {{ forgejo_server.lfs_http_auth_expiry }}
+  {% if values.lfs_http_auth_expiry | default('') | string | length > 0 %}
+LFS_HTTP_AUTH_EXPIRY = {{ values.lfs_http_auth_expiry }}
   {% endif %}
-  {% if forgejo_server.lfs_max_file_size | default('') | string | length > 0 %}
-LFS_MAX_FILE_SIZE = {{ forgejo_server.lfs_max_file_size }}
+  {% if values.lfs_max_file_size | default('') | string | length > 0 %}
+LFS_MAX_FILE_SIZE = {{ values.lfs_max_file_size }}
   {% endif %}
-  {% if forgejo_server.lfs_locks_paging_num | default('') | string | length > 0 %}
-LFS_LOCKS_PAGING_NUM = {{ forgejo_server.lfs_locks_paging_num }}
+  {% if values.lfs_locks_paging_num | default('') | string | length > 0 %}
+LFS_LOCKS_PAGING_NUM = {{ values.lfs_locks_paging_num }}
   {% endif %}
-  {% if forgejo_server.allow_graceful_restarts | default('') | string | length > 0 %}
-ALLOW_GRACEFUL_RESTARTS = {{ forgejo_server.allow_graceful_restarts | bodsch.core.config_bool(true_as='true', false_as='false') }}
+  {% if values.allow_graceful_restarts | default('') | string | length > 0 %}
+ALLOW_GRACEFUL_RESTARTS = {{ values.allow_graceful_restarts | bodsch.core.config_bool(true_as='true', false_as='false') }}
   {% endif %}
-  {% if forgejo_server.graceful_hammer_time | default('') | string | length > 0 %}
-GRACEFUL_HAMMER_TIME = {{ forgejo_server.graceful_hammer_time }}
+  {% if values.graceful_hammer_time | default('') | string | length > 0 %}
+GRACEFUL_HAMMER_TIME = {{ values.graceful_hammer_time }}
   {% endif %}
-  {% if forgejo_server.startup_timeout | default('') | string | length > 0 %}
-STARTUP_TIMEOUT = {{ forgejo_server.startup_timeout }}
+  {% if values.startup_timeout | default('') | string | length > 0 %}
+STARTUP_TIMEOUT = {{ values.startup_timeout }}
   {% endif %}
-  {% if forgejo_server.static_cache_time | default('') | string | length > 0 %}
-STATIC_CACHE_TIME = {{ forgejo_server.static_cache_time }}
+  {% if values.static_cache_time | default('') | string | length > 0 %}
+STATIC_CACHE_TIME = {{ values.static_cache_time }}
   {% endif %}
   {# ------------------------------------------------------------------------- #}
   {% if forgejo_version is version_compare('7.0', '>=') %}
-    {% if forgejo_server.lfs_jwt_secret_uri | default('') | string | length > 0 %}
-LFS_JWT_SECRET_URI = {{ forgejo_server.lfs_jwt_secret_uri }}
+    {% if values.lfs_jwt_secret_uri | default('') | string | length > 0 %}
+LFS_JWT_SECRET_URI = {{ values.lfs_jwt_secret_uri }}
     {% endif %}
   {% endif %}
   {% if forgejo_version is version_compare('7.0.7', '>=') %}
-    {% if forgejo_server.ssh_authorized_keys_command_template | default('') | string | length > 0 %}
-SSH_AUTHORIZED_KEYS_COMMAND_TEMPLATE = {{ forgejo_server.ssh_authorized_keys_command_template }}
+    {% if values.ssh_authorized_keys_command_template | default('') | string | length > 0 %}
+SSH_AUTHORIZED_KEYS_COMMAND_TEMPLATE = {{ values.ssh_authorized_keys_command_template }}
     {% endif %}
   {% endif %}
   {% if forgejo_version is version_compare('10.0.3', '>=') %}
-    {% if forgejo_server.lfs_max_batch_size | default('') | string | length > 0 %}
-LFS_MAX_BATCH_SIZE = {{ forgejo_server.lfs_max_batch_size }}
+    {% if values.lfs_max_batch_size | default('') | string | length > 0 %}
+LFS_MAX_BATCH_SIZE = {{ values.lfs_max_batch_size }}
     {% endif %}
   {% endif %}
   {# ------------------------------------------------------------------------- #}

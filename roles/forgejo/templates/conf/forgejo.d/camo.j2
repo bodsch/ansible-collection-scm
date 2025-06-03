@@ -8,30 +8,30 @@
     server_url **is required** if camo is enabled.
     hmac_key **is required** if camo is enabled.
   #}
-  {% set forgejo_camo_enabled = forgejo_camo.enabled %}
-  {% if forgejo_camo.server_url | default('') | string | length == 0 %}
+  {% set forgejo_camo_enabled = values.enabled %}
+  {% if values.server_url | default('') | string | length == 0 %}
 ;; server_url **is required** if camo is enabled.
     {% set forgejo_camo_enabled = false %}
   {% endif %}
-  {% if forgejo_camo.hmac_key | default('') | string | length == 0 %}
+  {% if values.hmac_key | default('') | string | length == 0 %}
 ;; hmac_key **is required** if camo is enabled.
     {% set forgejo_camo_enabled = false %}
   {% endif %}
 ENABLED = {{ forgejo_camo_enabled | bool | ternary('true', 'false') }}
-  {% if forgejo_camo.server_url | default('') | string | length > 0 %}
-SERVER_URL = {{ forgejo_camo.server_url }}
+  {% if values.server_url | default('') | string | length > 0 %}
+SERVER_URL = {{ values.server_url }}
   {% endif %}
-  {% if forgejo_camo.hmac_key | default('') | string | length > 0 %}
-HMAC_KEY = {{ forgejo_camo.hmac_key }}
+  {% if values.hmac_key | default('') | string | length > 0 %}
+HMAC_KEY = {{ values.hmac_key }}
   {% endif %}
   {% if forgejo_version is version_compare('1.20', '<=') %}
-    {% if forgejo_camo.allways | default('') | string | length > 0 %}
-ALLWAYS = {{ forgejo_camo.allways | bodsch.core.config_bool(true_as='true', false_as='false') }}
+    {% if values.allways | default('') | string | length > 0 %}
+ALLWAYS = {{ values.allways | bodsch.core.config_bool(true_as='true', false_as='false') }}
     {% endif %}
   {% endif %}
   {% if forgejo_version is version_compare('1.20', '=>') %}
-    {% if forgejo_camo.always | default('') | string | length > 0 %}
-ALWAYS = {{ forgejo_camo.always | bodsch.core.config_bool(true_as='true', false_as='false') }}
+    {% if values.always | default('') | string | length > 0 %}
+ALWAYS = {{ values.always | bodsch.core.config_bool(true_as='true', false_as='false') }}
     {% endif %}
   {% endif %}
 {% endif %}

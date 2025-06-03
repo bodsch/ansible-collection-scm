@@ -157,7 +157,7 @@ ENABLED = {{ values.enabled | bodsch.core.config_bool(true_as='true', false_as='
     {% if values.temp_path | default('') | string | length > 0 %}
 TEMP_PATH = {{ values.temp_path }}
     {% endif %}
-    {% if values.allowed_types | count > 0 %}
+    {% if values.allowed_types | default([]) | count > 0 %}
 ALLOWED_TYPES = {{ values.allowed_types | join(', ') }}
     {% endif %}
     {% if values.file_max_size | default('') | string | length > 0 %}
@@ -224,7 +224,7 @@ TEST_CONFLICTING_PATCHES_WITH_GIT_APPLY = {{ values.test_conflicting_patches_wit
 {% if values | count > 0 %}
 
 [repository.issue]
-  {% if values.lock_reasons | count > 0 %}
+  {% if values.lock_reasons | default([]) | count > 0 %}
 LOCK_REASONS = {{ values.lock_reasons | join(', ') }}
   {% endif %}
 {% endif %}
@@ -234,7 +234,7 @@ LOCK_REASONS = {{ values.lock_reasons | join(', ') }}
 {% if values | count > 0 %}
 
 [repository.release]
-  {% if values.allowed_types | count > 0 %}
+  {% if values.allowed_types | default([]) | count > 0 %}
 ALLOWED_TYPES = {{ values.allowed_types | join(', ') }}
   {% endif %}
   {% if values.default_paging_num | default('') | string | length > 0 %}
@@ -261,24 +261,24 @@ SIGNING_EMAIL = {{ values.signing_email }}
           values.default_trust_model in ["collaborator", "committer", "collaboratorcommitter"] %}
 DEFAULT_TRUST_MODEL = {{ values.default_trust_model }}
     {% endif %}
-    {% if values.initial_commit | count > 0 %}
+    {% if values.initial_commit | default([]) | count > 0 %}
       {% set valid_comit = ["never", "pubkey", "twofa", "always"] %}
       {% set valid_comit = values.initial_commit | bodsch.core.compare_list(compare_to_list=valid_comit) %}
 INITIAL_COMMIT = {{ valid_comit | join(', ') }}
     {% endif %}
-    {% if values.crud_actions | default('') | string | length > 0 %}
+    {% if values.crud_actions | default([]) | count > 0 %}
       {% set valid_actions = ["never", "pubkey", "twofa", "always", "parentsigned"] %}
       {% set valid_actions = values.crud_actions | bodsch.core.compare_list(compare_to_list=valid_actions) %}
 CRUD_ACTIONS = {{ valid_actions | join(', ') }}
     {% endif %}
-    {% if values.wiki | count > 0 %}
+    {% if values.wiki | default([]) | count > 0 %}
       {% set valid_wiki = ["never", "pubkey", "twofa", "always"] %}
       {% set valid_wiki = values.wiki | bodsch.core.compare_list(compare_to_list=valid_wiki) %}
-WIKI = {{ valid_wiki | join(', ') }}
+WIKI = {{ valid_wiki | default([]) | join(', ') }}
     {% endif  %}
-    {% if forgejo_repository.signing.merges | count > 0 %}
+    {% if values.merges | default([]) | count > 0 %}
       {% set valid_merges = ["never", "pubkey", "twofa", "always", "basesigned", "commitssigned", "approved"] %}
-      {% set valid_merges = forgejo_repository.signing.merges | bodsch.core.compare_list(compare_to_list=valid_merges) %}
+      {% set valid_merges = values.merges | bodsch.core.compare_list(compare_to_list=valid_merges) %}
 MERGES = {{ valid_merges | join(', ') }}
     {% endif %}
 {% endif %}

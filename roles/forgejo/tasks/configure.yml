@@ -100,11 +100,14 @@
     - restart forgejo
     - check if forgejo are available
 
-- name: d
-  debug:
-    msg: "{{ forgejo_config }}"
-
 - name: restart forgejo if needed
   ansible.builtin.meta: flush_handlers
+
+- name: wait for running forgejo
+  ansible.builtin.wait_for:
+    host: "{{ forgejo_server.http_addr | default('127.0.0.1') }}"
+    port: "{{ forgejo_server.http_port | default(3000) }}"
+    delay: 2
+    connect_timeout: 120
 
 ...

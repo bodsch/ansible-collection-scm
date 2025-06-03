@@ -1,18 +1,18 @@
-{% set values = forgejo_metrics | bodsch.core.remove_empty_values %}
+{% set values = forgejo_mirror | bodsch.core.remove_empty_values %}
 {% if values | count > 0 and values.enabled | default('false') | bool %}
 
 [mirror]
-ENABLED = {{ forgejo_mirror.enabled | default('false') | bodsch.core.config_bool(true_as='true', false_as='false') }}
-  {% if forgejo_mirror.disable_new_pull | default('') | string | length > 0 %}
-DISABLE_NEW_PULL = {{ forgejo_mirror.disable_new_pull | default('false') | bodsch.core.config_bool(true_as='true', false_as='false') }}
+ENABLED = {{ values.enabled | default('false') | bodsch.core.config_bool(true_as='true', false_as='false') }}
+  {% if values.disable_new_pull | default('') | string | length > 0 %}
+DISABLE_NEW_PULL = {{ values.disable_new_pull | default('false') | bodsch.core.config_bool(true_as='true', false_as='false') }}
   {% endif %}
-  {% if forgejo_mirror.disable_new_push | default('') | string | length > 0 %}
-DISABLE_NEW_PUSH = {{ forgejo_mirror.disable_new_push | default('false') | bodsch.core.config_bool(true_as='true', false_as='false') }}
+  {% if values.disable_new_push | default('') | string | length > 0 %}
+DISABLE_NEW_PUSH = {{ values.disable_new_push | default('false') | bodsch.core.config_bool(true_as='true', false_as='false') }}
   {% endif %}
-  {% if forgejo_mirror.default_interval | default('') | string | length > 0 %}
-DEFAULT_INTERVAL = {{ forgejo_mirror.default_interval }}
+  {% if values.default_interval | default('') | string | length > 0 %}
+DEFAULT_INTERVAL = {{ values.default_interval }}
   {% endif %}
-  {% if forgejo_mirror.min_interval | default('') | string | length > 0 %}
-MIN_INTERVAL = {{ forgejo_mirror.min_interval }}
+  {% if values.min_interval | default('') | string | length > 0 %}
+MIN_INTERVAL = {{ values.min_interval }}
   {% endif %}
 {% endif %}

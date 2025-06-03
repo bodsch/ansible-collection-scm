@@ -12,10 +12,10 @@ ENABLE_OPENID_SIGNUP = {{ values.enable_openid_signup | bodsch.core.config_bool(
     {% endif %}
   {% endif %}
   {# ------------------------------------------------------------------------- #}
-  {% if values.whitelisted_uris | count > 0 %}
+  {% if values.whitelisted_uris | default([]) | count > 0 %}
 WHITELISTED_URIS = {{ values.whitelisted_uris | join(' ') }}
   {% endif %}
-  {% if values.blacklisted_uris | count > 0 %}
+  {% if values.blacklisted_uris | default([]) | count > 0 %}
 BLACKLISTED_URIS = {{ values.blacklisted_uris | join(' ') }}
   {% endif %}
 {% endif %}

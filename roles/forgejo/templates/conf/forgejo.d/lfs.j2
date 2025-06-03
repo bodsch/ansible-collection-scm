@@ -5,42 +5,42 @@
 {% if values | count > 0 %}
 
 [lfs]
-  {% if forgejo_lfs.storage_type | default('') | string | length > 0 and
-        forgejo_lfs.storage_type in ["local", "minio"] %}
-STORAGE_TYPE = {{ forgejo_lfs.storage_type }}
-    {% if forgejo_lfs.storage_type == "local" %}
-      {% if forgejo_lfs.path | default('') | string | length > 0 %}
-PATH = {{ forgejo_lfs.path }}
+  {% if values.storage_type | default('') | string | length > 0 and
+        values.storage_type in ["local", "minio"] %}
+STORAGE_TYPE = {{ values.storage_type }}
+    {% if values.storage_type == "local" %}
+      {% if values.path | default('') | string | length > 0 %}
+PATH = {{ values.path }}
       {% endif %}
     {% endif %}
-    {% if forgejo_lfs.storage_type == "minio" %}
-      {% if forgejo_lfs.minio_base_path | default('') | string | length > 0 %}
-MINIO_BASE_PATH = {{ forgejo_lfs.minio_base_path }}
+    {% if values.storage_type == "minio" %}
+      {% if values.minio_base_path | default('') | string | length > 0 %}
+MINIO_BASE_PATH = {{ values.minio_base_path }}
       {% endif %}
-      {% if forgejo_lfs.minio_endpoint | default('') | string | length > 0 %}
-MINIO_ENDPOINT = {{ forgejo_lfs.minio_endpoint }}
+      {% if values.minio_endpoint | default('') | string | length > 0 %}
+MINIO_ENDPOINT = {{ values.minio_endpoint }}
       {% endif %}
-      {% if forgejo_lfs.minio_access_key_id | default('') | string | length > 0 %}
-MINIO_ACCESS_KEY_ID = {{ forgejo_lfs.minio_access_key_id }}
+      {% if values.minio_access_key_id | default('') | string | length > 0 %}
+MINIO_ACCESS_KEY_ID = {{ values.minio_access_key_id }}
       {% endif %}
-      {% if forgejo_lfs.minio_secret_access_key | default('') | string | length > 0 %}
-MINIO_SECRET_ACCESS_KEY = {{ forgejo_lfs.minio_secret_access_key }}
+      {% if values.minio_secret_access_key | default('') | string | length > 0 %}
+MINIO_SECRET_ACCESS_KEY = {{ values.minio_secret_access_key }}
       {% endif %}
-      {% if forgejo_lfs.minio_bucket | default('') | string | length > 0 %}
-MINIO_BUCKET = {{ forgejo_lfs.minio_bucket }}
+      {% if values.minio_bucket | default('') | string | length > 0 %}
+MINIO_BUCKET = {{ values.minio_bucket }}
       {% endif %}
-      {% if forgejo_lfs.minio_location | default('') | string | length > 0 %}
-MINIO_LOCATION = {{ forgejo_lfs.minio_location }}
+      {% if values.minio_location | default('') | string | length > 0 %}
+MINIO_LOCATION = {{ values.minio_location }}
       {% endif %}
-      {% if forgejo_lfs.minio_use_ssl | default('') | string | length > 0 %}
-MINIO_USE_SSL = {{ forgejo_lfs.minio_use_ssl | bool | ternary('true', 'false') }}
+      {% if values.minio_use_ssl | default('') | string | length > 0 %}
+MINIO_USE_SSL = {{ values.minio_use_ssl | bool | ternary('true', 'false') }}
       {% endif %}
-      {% if forgejo_lfs.minio_insecure_skip_verify | default('') | string | length > 0 %}
-MINIO_INSECURE_SKIP_VERIFY = {{ forgejo_lfs.minio_insecure_skip_verify | bool | ternary('true', 'false') }}
+      {% if values.minio_insecure_skip_verify | default('') | string | length > 0 %}
+MINIO_INSECURE_SKIP_VERIFY = {{ values.minio_insecure_skip_verify | bool | ternary('true', 'false') }}
       {% endif %}
-      {% if forgejo_lfs.minio_checksum_algorithm | default('') | string | length > 0 and
-            forgejo_lfs.minio_checksum_algorithm in ["default", "md5"] %}
-MINIO_CHECKSUM_ALGORITHM = {{ forgejo_lfs.minio_checksum_algorithm }}
+      {% if values.minio_checksum_algorithm | default('') | string | length > 0 and
+            values.minio_checksum_algorithm in ["default", "md5"] %}
+MINIO_CHECKSUM_ALGORITHM = {{ values.minio_checksum_algorithm }}
       {% endif %}
     {% endif %}
   {% endif %}

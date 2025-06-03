@@ -4,8 +4,8 @@
 [queue]
   {% set queue_parameters = [
     "type", "datadir", "length", "batch_length", "conn_str", "queue_name", "set_name", "max_workers"] %}
-  {% set default_queue = forgejo_queue.default %}
-  {% set forgejo_queue = forgejo_queue.pop('default') %}
+  {% set default_queue = values.default %}
+  {% set forgejo_queue = values.pop('default') %}
   {% for k, v in default_queue.items() %}
     {% if k in queue_parameters and v | default('') | string | length > 0 %}
 {{ k | upper }} = {{ v | bodsch.core.config_bool(true_as='true', false_as='false') }}

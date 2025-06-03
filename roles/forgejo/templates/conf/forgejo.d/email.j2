@@ -3,35 +3,35 @@
       values.incoming.enabled | default('false') | bool %}
 
 [email.incoming]
-ENABLED = {{ forgejo_email.incoming.enabled | bodsch.core.config_bool(true_as='true', false_as='false') }}
-    {% if forgejo_email.incoming.reply_to_address | default('') | string | length > 0 %}
-REPLY_TO_ADDRESS = {{ forgejo_email.incoming.reply_to_address }}
+ENABLED = {{ values.incoming.enabled | bodsch.core.config_bool(true_as='true', false_as='false') }}
+    {% if values.incoming.reply_to_address | default('') | string | length > 0 %}
+REPLY_TO_ADDRESS = {{ values.incoming.reply_to_address }}
     {% endif %}
-    {% if forgejo_email.incoming.host | default('') | string | length > 0 %}
-HOST = {{ forgejo_email.incoming.host }}
+    {% if values.incoming.host | default('') | string | length > 0 %}
+HOST = {{ values.incoming.host }}
     {% endif %}
-    {% if forgejo_email.incoming.port | default('') | string | length > 0 %}
-PORT = {{ forgejo_email.incoming.port }}
+    {% if values.incoming.port | default('') | string | length > 0 %}
+PORT = {{ values.incoming.port }}
     {% endif %}
-    {% if forgejo_email.incoming.username | default('') | string | length > 0 %}
-USERNAME = {{ forgejo_email.incoming.username }}
+    {% if values.incoming.username | default('') | string | length > 0 %}
+USERNAME = {{ values.incoming.username }}
     {% endif %}
-    {% if forgejo_email.incoming.password | default('') | string | length > 0 %}
-PASSWORD = {{ forgejo_email.incoming.password }}
+    {% if values.incoming.password | default('') | string | length > 0 %}
+PASSWORD = {{ values.incoming.password }}
     {% endif %}
-    {% if forgejo_email.incoming.use_tls | default('') | string | length > 0 %}
-USE_TLS = {{ forgejo_email.incoming.use_tls | bodsch.core.config_bool(true_as='true', false_as='false') }}
+    {% if values.incoming.use_tls | default('') | string | length > 0 %}
+USE_TLS = {{ values.incoming.use_tls | bodsch.core.config_bool(true_as='true', false_as='false') }}
     {% endif %}
-    {% if forgejo_email.incoming.skip_tls_verify | default('') | string | length > 0 %}
-SKIP_TLS_VERIFY = {{ forgejo_email.incoming.skip_tls_verify | bodsch.core.config_bool(true_as='true', false_as='false') }}
+    {% if values.incoming.skip_tls_verify | default('') | string | length > 0 %}
+SKIP_TLS_VERIFY = {{ values.incoming.skip_tls_verify | bodsch.core.config_bool(true_as='true', false_as='false') }}
     {% endif %}
-    {% if forgejo_email.incoming.mailbox | default('') | string | length > 0 %}
-MAILBOX = {{ forgejo_email.incoming.mailbox }}
+    {% if values.incoming.mailbox | default('') | string | length > 0 %}
+MAILBOX = {{ values.incoming.mailbox }}
     {% endif %}
-    {% if forgejo_email.incoming.delete_handled_message | default('') | string | length > 0 %}
-DELETE_HANDLED_MESSAGE = {{ forgejo_email.incoming.delete_handled_message | bodsch.core.config_bool(true_as='true', false_as='false') }}
+    {% if values.incoming.delete_handled_message | default('') | string | length > 0 %}
+DELETE_HANDLED_MESSAGE = {{ values.incoming.delete_handled_message | bodsch.core.config_bool(true_as='true', false_as='false') }}
     {% endif %}
-    {% if forgejo_email.incoming.maximum_message_size | default('') | string | length > 0 %}
-MAXIMUM_MESSAGE_SIZE = {{ forgejo_email.incoming.maximum_message_size }}
+    {% if values.incoming.maximum_message_size | default('') | string | length > 0 %}
+MAXIMUM_MESSAGE_SIZE = {{ values.incoming.maximum_message_size }}
     {% endif %}
 {% endif %}

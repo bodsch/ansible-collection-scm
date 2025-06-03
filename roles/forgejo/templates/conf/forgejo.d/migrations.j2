@@ -1,4 +1,4 @@
-{% set values = forgejo_metrics | bodsch.core.remove_empty_values %}
+{% set values = forgejo_migrations | bodsch.core.remove_empty_values %}
 {% if values | count > 0 %}
 
 [migrations]
@@ -8,10 +8,10 @@ MAX_ATTEMPTS = {{ values.max_attempts }}
   {% if values.retry_backoff | default('') | string | length > 0 %}
 RETRY_BACKOFF = {{ values.retry_backoff }}
   {% endif %}
-  {% if values.allowed_domains | count > 0 %}
+  {% if values.allowed_domains | default([]) | count > 0 %}
 ALLOWED_DOMAINS = {{ values.allowed_domains | join(', ') }}
   {% endif %}
-  {% if values.blocked_domains | count > 0 %}
+  {% if values.blocked_domains | default([]) | count > 0 %}
 BLOCKED_DOMAINS = {{ values.blocked_domains | join(', ') }}
   {% endif %}
   {% if values.allow_localnetworks | default('') | string | length > 0 %}

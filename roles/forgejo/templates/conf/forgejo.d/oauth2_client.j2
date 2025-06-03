@@ -1,25 +1,25 @@
-{% set values = forgejo_metrics | bodsch.core.remove_empty_values %}
+{% set values = forgejo_oauth2_client | bodsch.core.remove_empty_values %}
 {% if values | count > 0 %}
 
 [oauth2_client]
-  {% if forgejo_oauth2_client.register_email_confirm | default('') | string | length > 0 %}
-REGISTER_EMAIL_CONFIRM = {{ forgejo_oauth2_client.register_email_confirm }}
+  {% if values.register_email_confirm | default('') | string | length > 0 %}
+REGISTER_EMAIL_CONFIRM = {{ values.register_email_confirm }}
   {% endif %}
-  {% if forgejo_oauth2_client.openid_connect_scopes | default('') | string | length > 0 %}
-OPENID_CONNECT_SCOPES = {{ forgejo_oauth2_client.openid_connect_scopes }}
+  {% if values.openid_connect_scopes | default('') | string | length > 0 %}
+OPENID_CONNECT_SCOPES = {{ values.openid_connect_scopes }}
   {% endif %}
-  {% if forgejo_oauth2_client.enable_auto_registration | default('') | string | length > 0 %}
-ENABLE_AUTO_REGISTRATION = {{ forgejo_oauth2_client.enable_auto_registration | bodsch.core.config_bool(true_as='true', false_as='false') }}
+  {% if values.enable_auto_registration | default('') | string | length > 0 %}
+ENABLE_AUTO_REGISTRATION = {{ values.enable_auto_registration | bodsch.core.config_bool(true_as='true', false_as='false') }}
   {% endif %}
-  {% if forgejo_oauth2_client.username | default('') | string | length > 0 and
-        forgejo_oauth2_client.username in ["userid", "nickname", "email"] %}
-USERNAME = {{ forgejo_oauth2_client.username }}
+  {% if values.username | default('') | string | length > 0 and
+        values.username in ["userid", "nickname", "email"] %}
+USERNAME = {{ values.username }}
   {% endif %}
-  {% if forgejo_oauth2_client.update_avatar | default('') | string | length > 0 %}
-UPDATE_AVATAR = {{ forgejo_oauth2_client.update_avatar | bodsch.core.config_bool(true_as='true', false_as='false') }}
+  {% if values.update_avatar | default('') | string | length > 0 %}
+UPDATE_AVATAR = {{ values.update_avatar | bodsch.core.config_bool(true_as='true', false_as='false') }}
   {% endif %}
-  {% if forgejo_oauth2_client.account_linking | default('') | string | length > 0 and
-        forgejo_oauth2_client.account_linking in ["disabled", "login", "auto"] %}
-ACCOUNT_LINKING = {{ forgejo_oauth2_client.account_linking }}
+  {% if values.account_linking | default('') | string | length > 0 and
+        values.account_linking in ["disabled", "login", "auto"] %}
+ACCOUNT_LINKING = {{ values.account_linking }}
   {% endif %}
 {% endif %}

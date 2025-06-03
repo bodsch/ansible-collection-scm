@@ -1,10 +1,9 @@
 {% set values = forgejo_highlight | bodsch.core.remove_empty_values %}
 {% if values | count > 0 %}
 
-  {% if forgejo_highlight.mapping is defined and
-        forgejo_highlight.mapping | count > 0 %}
+  {% if values.mapping | default({}) | count > 0 %}
 [highlight.mapping]
-    {% for k, v in forgejo_highlight.mapping.items() %}
+    {% for k, v in values.mapping.items() %}
 {{ k }} = {{ v }}
     {% endfor %}
   {% endif %}

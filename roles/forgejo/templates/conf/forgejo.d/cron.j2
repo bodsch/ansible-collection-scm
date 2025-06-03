@@ -3,9 +3,9 @@
       values.enabled | default('false') | bool %}
 
 [cron]
-ENABLED = {{ forgejo_cron.enabled | bodsch.core.config_bool(true_as='true', false_as='false') }}
-  {% if forgejo_cron.run_at_start | default('') | string | length > 0 %}
-RUN_AT_START = {{ forgejo_cron.run_at_start | bool | ternary('true', 'false') }}
+ENABLED = {{ values.enabled | bodsch.core.config_bool(true_as='true', false_as='false') }}
+  {% if values.run_at_start | default('') | string | length > 0 %}
+RUN_AT_START = {{ values.run_at_start | bool | ternary('true', 'false') }}
   {% endif %}
   {% set cron_jobs = [
       "archive_cleanup", "update_mirrors", "repo_health_check", "check_repo_stats",
@@ -21,7 +21,7 @@ RUN_AT_START = {{ forgejo_cron.run_at_start | bool | ternary('true', 'false') }}
       "http_endpoint"
       ] %}
   {% for job in cron_jobs %}
-    {% set d = forgejo_cron.get(job) %}
+    {% set d = values.get(job) %}
     {% if d and d.enabled | default('false') | bool %}
 
       {# {% set _ = d.pop("enabled") %} #}

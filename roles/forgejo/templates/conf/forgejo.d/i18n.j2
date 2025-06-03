@@ -2,12 +2,10 @@
 {% if values | count > 0 %}
 
 [i18n]
-  {% if forgejo_i18n.langs is defined and
-        forgejo_i18n.langs | count > 0 %}
-LANGS = {{ forgejo_i18n.langs | join(', ') }}
+  {% if values.langs | default([]) | count > 0 %}
+LANGS = {{ values.langs | join(', ') }}
   {% endif %}
-  {% if forgejo_i18n.names is defined and
-        forgejo_i18n.names | count > 0 %}
-NAMES = {{ forgejo_i18n.names | join(', ') }}
+  {% if values.names | default([]) | count > 0 %}
+NAMES = {{ values.names | join(', ') }}
   {% endif %}
 {% endif %}

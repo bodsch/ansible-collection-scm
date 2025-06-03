@@ -1,46 +1,46 @@
-{% set actions = forgejo_actions | bodsch.core.remove_empty_values %}
-{% if actions | count > 0 and
-      actions.enabled | default('false') | bool %}
+{% set values = forgejo_actions | bodsch.core.remove_empty_values %}
+{% if values | count > 0 and
+      values.enabled | default('false') | bool %}
 
 [actions]
-ENABLED = {{ actions.enabled | bodsch.core.config_bool(true_as='true', false_as='false') }}
-  {% if actions.default_actions_url is defined and
-        actions.default_actions_url | string | length > 0 %}
-DEFAULT_ACTIONS_URL = {{ actions.default_actions_url }}
+ENABLED = {{ values.enabled | bodsch.core.config_bool(true_as='true', false_as='false') }}
+  {% if values.default_actions_url is defined and
+        values.default_actions_url | string | length > 0 %}
+DEFAULT_ACTIONS_URL = {{ values.default_actions_url }}
   {% endif %}
-  {% if actions.artifact_retention_days is defined and
-        actions.artifact_retention_days | string | length > 0 %}
-ARTIFACT_RETENTION_DAYS = {{ actions.artifact_retention_days }}
+  {% if values.artifact_retention_days is defined and
+        values.artifact_retention_days | string | length > 0 %}
+ARTIFACT_RETENTION_DAYS = {{ values.artifact_retention_days }}
   {% endif %}
-  {% if actions.zombie_task_timeout | default('') | string | length > 0 %}
-ZOMBIE_TASK_TIMEOUT = {{ actions.zombie_task_timeout }}
+  {% if values.zombie_task_timeout | default('') | string | length > 0 %}
+ZOMBIE_TASK_TIMEOUT = {{ values.zombie_task_timeout }}
   {% endif %}
-  {% if actions.endless_task_timeout | default('') | string | length > 0 %}
-ENDLESS_TASK_TIMEOUT = {{ actions.endless_task_timeout }}
+  {% if values.endless_task_timeout | default('') | string | length > 0 %}
+ENDLESS_TASK_TIMEOUT = {{ values.endless_task_timeout }}
   {% endif %}
-  {% if actions.abandoned_job_timeout | default('') | string | length > 0 %}
-ABANDONED_JOB_TIMEOUT = {{ actions.abandoned_job_timeout }}
+  {% if values.abandoned_job_timeout | default('') | string | length > 0 %}
+ABANDONED_JOB_TIMEOUT = {{ values.abandoned_job_timeout }}
   {% endif %}
   {# ------------------------------------------------------------------------- #}
   {% if forgejo_version is version_compare('9.0', '>=') %}
-    {% if actions.log_compression | default('') | string | length > 0 and
-          actions.log_compression in ["none", "zstd"] %}
-LOG_COMPRESSION = {{ actions.log_compression }}
+    {% if values.log_compression | default('') | string | length > 0 and
+          values.log_compression in ["none", "zstd"] %}
+LOG_COMPRESSION = {{ values.log_compression }}
     {% endif %}
-    {% if actions.log_retention_days | default('') | string | length > 0 %}
-LOG_RETENTION_DAYS = {{ actions.log_retention_days }}
+    {% if values.log_retention_days | default('') | string | length > 0 %}
+LOG_RETENTION_DAYS = {{ values.log_retention_days }}
     {% endif %}
   {% endif %}
   {# ------------------------------------------------------------------------- #}
   {% if forgejo_version is version_compare('1.21', '>=') %}
-    {% if actions.skip_workflow_strings | default([]) | count > 0 %}
-SKIP_WORKFLOW_STRINGS = {{ actions.skip_workflow_strings | join(', ') }}
+    {% if values.skip_workflow_strings | default([]) | count > 0 %}
+SKIP_WORKFLOW_STRINGS = {{ values.skip_workflow_strings | join(', ') }}
     {% endif %}
   {% endif %}
   {# ------------------------------------------------------------------------- #}
   {% if forgejo_version is version_compare('8.0', '>=') %}
-    {% if actions.limit_dispatch_inputs | default('') | string | length > 0 %}
-LIMIT_DISPATCH_INPUTS = {{ actions.limit_dispatch_inputs }}
+    {% if values.limit_dispatch_inputs | default('') | string | length > 0 %}
+LIMIT_DISPATCH_INPUTS = {{ values.limit_dispatch_inputs }}
     {% endif %}
   {% endif %}
   {# ------------------------------------------------------------------------- #}

@@ -43,7 +43,7 @@ REGEXP = {{ i.regexp }}
 
 [markup.asciidoc]
 ENABLED = {{ values.enabled | bodsch.core.config_bool(true_as='true', false_as='false') }}
-  {% if values.file_extensions | count > 0 %}
+  {% if values.file_extensions | default([]) | count > 0 %}
 FILE_EXTENSIONS = {{ values.file_extensions | join(', ') }}
   {% endif %}
   {% if values.render_command | default('') | string | length > 0 %}

@@ -2,37 +2,37 @@
 {% if values | count > 0 and values.enabled | default('false') | bool %}
 
 [oauth2]
-ENABLED = {{ forgejo_oauth2.enabled | default('false') | bodsch.core.config_bool(true_as='true', false_as='false') }}
-  {% if forgejo_oauth2.jwt_signing_algorithm | default('') | string | length > 0 and
-        forgejo_oauth2.jwt_signing_algorithm in ["HS256", "HS384", "HS512", "RS256", "RS384", "RS512", "ES256", "ES384", "ES512", "EdDSA"] %}
-JWT_SIGNING_ALGORITHM = {{ forgejo_oauth2.jwt_signing_algorithm }}
+ENABLED = {{ values.enabled | default('false') | bodsch.core.config_bool(true_as='true', false_as='false') }}
+  {% if values.jwt_signing_algorithm | default('') | string | length > 0 and
+        values.jwt_signing_algorithm in ["HS256", "HS384", "HS512", "RS256", "RS384", "RS512", "ES256", "ES384", "ES512", "EdDSA"] %}
+JWT_SIGNING_ALGORITHM = {{ values.jwt_signing_algorithm }}
   {% endif %}
-  {% if forgejo_oauth2.jwt_signing_algorithm in ["RS256", "RS384", "RS512", "ES256", "ES384", "ES512"] and
-        forgejo_oauth2.jwt_signing_private_key_file | default('') | string | length > 0 %}
-JWT_SIGNING_PRIVATE_KEY_FILE = {{ forgejo_oauth2.jwt_signing_private_key_file }}
+  {% if values.jwt_signing_algorithm in ["RS256", "RS384", "RS512", "ES256", "ES384", "ES512"] and
+        values.jwt_signing_private_key_file | default('') | string | length > 0 %}
+JWT_SIGNING_PRIVATE_KEY_FILE = {{ values.jwt_signing_private_key_file }}
   {% endif %}
-  {% if forgejo_oauth2.jwt_signing_algorithm in ["HS256", "HS384", "HS512"] and
-        forgejo_oauth2.jwt_secret | default('') | string | length > 0 %}
-JWT_SECRET = {{ forgejo_oauth2.jwt_secret }}
+  {% if values.jwt_signing_algorithm in ["HS256", "HS384", "HS512"] and
+        values.jwt_secret | default('') | string | length > 0 %}
+JWT_SECRET = {{ values.jwt_secret }}
   {% endif %}
-  {% if forgejo_oauth2.access_token_expiration_time | default('') | string | length > 0 %}
-ACCESS_TOKEN_EXPIRATION_TIME = {{ forgejo_oauth2.access_token_expiration_time }}
+  {% if values.access_token_expiration_time | default('') | string | length > 0 %}
+ACCESS_TOKEN_EXPIRATION_TIME = {{ values.access_token_expiration_time }}
   {% endif %}
-  {% if forgejo_oauth2.refresh_token_expiration_time | default('') | string | length > 0 %}
-REFRESH_TOKEN_EXPIRATION_TIME = {{ forgejo_oauth2.refresh_token_expiration_time }}
+  {% if values.refresh_token_expiration_time | default('') | string | length > 0 %}
+REFRESH_TOKEN_EXPIRATION_TIME = {{ values.refresh_token_expiration_time }}
   {% endif %}
-  {% if forgejo_oauth2.invalidate_refresh_tokens | default('') | string | length > 0 %}
-INVALIDATE_REFRESH_TOKENS = {{ forgejo_oauth2.invalidate_refresh_tokens | bodsch.core.config_bool(true_as='true', false_as='false') }}
+  {% if values.invalidate_refresh_tokens | default('') | string | length > 0 %}
+INVALIDATE_REFRESH_TOKENS = {{ values.invalidate_refresh_tokens | bodsch.core.config_bool(true_as='true', false_as='false') }}
   {% endif %}
-  {% if forgejo_oauth2.max_token_length | default('') | string | length > 0 %}
-MAX_TOKEN_LENGTH = {{ forgejo_oauth2.max_token_length }}
+  {% if values.max_token_length | default('') | string | length > 0 %}
+MAX_TOKEN_LENGTH = {{ values.max_token_length }}
   {% endif %}
   {% if forgejo_version is version_compare('1.20', '>=') %}
-    {% if forgejo_oauth2.default_applications | default([]) | count > 0 %}
-DEFAULT_APPLICATIONS = {{ forgejo_oauth2.default_applications | join(', ') }} ; git-credential-oauth, git-credential-manager, tea
+    {% if values.default_applications | default([]) | count > 0 %}
+DEFAULT_APPLICATIONS = {{ values.default_applications | join(', ') }} ; git-credential-oauth, git-credential-manager, tea
     {% endif %}
-    {% if forgejo_oauth2.jwt_secret_uri | default('') | string | length > 0 %}
-JWT_SECRET_URI = {{ forgejo_oauth2.jwt_secret_uri }} ; file:/etc/gitea/oauth2_jwt_secret
+    {% if values.jwt_secret_uri | default('') | string | length > 0 %}
+JWT_SECRET_URI = {{ values.jwt_secret_uri }} ; file:/etc/gitea/oauth2_jwt_secret
     {% endif %}
   {% endif %}
 {% endif %}

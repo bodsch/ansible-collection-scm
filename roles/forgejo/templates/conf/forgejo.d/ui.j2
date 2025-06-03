@@ -48,10 +48,10 @@ SHOW_USER_EMAIL = {{ values.show_user_email | bodsch.core.config_bool(true_as='t
   {% if values.default_theme | default('') | string | length > 0 %}
 DEFAULT_THEME = {{ values.default_theme }}
   {% endif %}
-  {% if values.themes | count > 0 %}
+  {% if values.themes | default([]) | count > 0 %}
 THEMES = {{ values.themes | join(', ') }}
   {% endif %}
-  {% if values.reactions | count > 0 %}
+  {% if values.reactions | default([]) | count > 0 %}
 REACTIONS = {{ values.reactions | join(', ') }}
   {% endif %}
   {# ------------------------------------------------------------------------- #}
@@ -61,7 +61,7 @@ REACTION_MAX_USER_NUM = {{ values.reaction_max_user_num }}
     {% endif %}
   {% endif %}
   {# ------------------------------------------------------------------------- #}
-  {% if values.custom_emojis | count > 0 %}
+  {% if values.custom_emojis | default([]) | count > 0 %}
 CUSTOM_EMOJIS = {{ values.custom_emojis | join(', ') }}
   {% endif %}
   {% if values.default_show_full_name | default('') | string | length > 0 %}
@@ -139,7 +139,7 @@ AUTHOR = {{ values.author }}
   {% if values.description | default('') | string | length > 0 %}
 DESCRIPTION = {{ values.description }}
   {% endif %}
-  {% if values.keywords | count > 0 %}
+  {% if values.keywords | default([]) | count > 0 %}
 KEYWORDS = {{ values.keywords | join(', ') }}
   {% endif %}
 {% endif %}
