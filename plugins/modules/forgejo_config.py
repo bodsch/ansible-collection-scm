@@ -101,34 +101,47 @@ class ForgejoConfigCompare(object):
         all_sections = set(org.data.keys()) | set(new.data.keys()) | set(self.ignore_map.keys())
 
         # 4) Struktur, um Unterschiede zu protokollieren
-        #    Zum Beispiel: differences = { sektion: {"status": ..., "cs_base": ..., "cs_new": ...}, ... }
+        #    Zum Beispiel: differences = { section: {"status": ..., "cs_base": ..., "cs_new": ...}, ... }
         differences = {}
 
-        for sektion in sorted(all_sections):
-            # self.module.log(f"  section: '{sektion}'")
-
+        for section in sorted(all_sections):
+            # self.module.log(f"  section: '{section}'")
+            cs_base = ""
+            cs_new = ""
             # a) Items (Key→Value) aus Base/ New holen, oder {} falls fehlt
-            items_base = org.data.get(sektion, {})
-            items_new = new.data.get(sektion, {})
-            cs_base = org.checksum_section(sektion)
-            cs_new = new.checksum_section(sektion)
+            items_base = org.data.get(section, {})
+            items_new = new.data.get(section, {})
+
+            if len(items_base) > 0:
+                cs_base = org.checksum_section(section)
+            if len(items_new) > 0:
+                cs_new = new.checksum_section(section)
+
+            # self.module.log(f"    org data: '{items_base}' type: {type(items_base)} size: {len(items_base)}")
+            # self.module.log(f"    new data: '{items_new}' type: {type(items_new)} size: {len(items_new)}")
 
             # c) Status bestimmen:
-            #    - "only_base": Sektion nur in Base vorhanden
-            #    - "only_new": Sektion nur in New vorhanden
+            #    - "org"      : Sektion nur in Base vorhanden
+            #    - "new"      : Sektion nur in New vorhanden
             #    - "identical": in beiden vorhanden & gleiche Hashes
-            #    - "modified": in beiden vorhanden, aber unterschiedliche Hashes
-            if sektion in org.data and sektion not in new.data:
-                status = "only_base"
-            elif sektion not in org.data and sektion in new.data:
-                status = "only_new"
-            else:  # existiert in beiden
-                if cs_base == cs_new:
-                    status = "identical"
-                else:
-                    status = "modified"
+            #    - "modified" : in beiden vorhanden, aber unterschiedliche Hashes
 
-            differences[sektion] = {
+            if cs_base == cs_new:
+                status = "identical"
+            else:
+                if section in org.data and section not in new.data:
+                    status = "org"
+                    self.module.log("  only in org data")
+                elif section not in org.data and section in new.data:
+                    status = "new"
+                    self.module.log("  only in new data")
+                else:  # existiert in beiden
+                    if cs_base == cs_new:
+                        status = "identical"
+                    else:
+                        status = "modified"
+
+            differences[section] = {
                 "status": status,
                 "cs_base": cs_base,
                 "cs_new": cs_new,
@@ -145,19 +158,20 @@ class ForgejoConfigCompare(object):
         # org_clean = org.get_cleaned_string()
         # new_clean = new.get_cleaned_string()
 
-        side_by_side = SideBySide(
-            module=self.module,
-            left=org.get_cleaned_string(),
-            right=new.get_cleaned_string()
-        )
-        self.module.log(f"{side_by_side.diff(width=140)}")
+        # side_by_side = SideBySide(
+        #     module=self.module,
+        #     left=org.get_cleaned_string(),
+        #     right=new.get_cleaned_string()
+        # )
+        # self.module.log(f"{side_by_side.diff(width=140)}")
 
         # 6) Wenn hier, dann mindestens eine Sektion tatsächlich geändert/neu/gelöscht
         #    Wir können jetzt sections_with_changes ausgeben oder im Log schreiben, z.B.:
-        self.module.log("Die folgenden Sektionen haben Unterschiede:")
-        for sec in sections_with_changes:
-            info = differences[sec]
-            self.module.log(f"  Sektion '{sec}': {info['status']}")
+        # self.module.log("Die folgenden Sektionen haben Unterschiede:")
+        # for sec in sections_with_changes:
+        #     info = differences[sec]
+        #     self.module.log(f"  section '{sec}'")
+        #     self.module.log(f"  {info}")
 
         merged_path = os.path.join(os.path.dirname(self.config), "forgejo.merged")
 
@@ -172,8 +186,8 @@ class ForgejoConfigCompare(object):
             ignore_keys=self.ignore_map
         )
 
-        # shutil.copyfile(merged_path, self.config)
-        # shutil.chown(self.config, self.owner, self.group)
+        shutil.copyfile(merged_path, self.config)
+        shutil.chown(self.config, self.owner, self.group)
 
         return dict(
             failed=False,
