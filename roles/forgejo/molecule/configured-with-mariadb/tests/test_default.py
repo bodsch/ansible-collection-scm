@@ -94,6 +94,10 @@ def get_vars(host):
     ansible_vars.update(molecule_vars)
     # ansible_vars.update(host_vars)
 
+    # pp_json(ansible_vars)
+    _ = ansible_vars["forgejo_defaults_badges"].pop("generator_url_template")
+    _ = ansible_vars["forgejo_defaults_mailer"].pop("from_display_name_format")
+
     templar = Templar(loader=DataLoader(), variables=ansible_vars)
     result = templar.template(ansible_vars, fail_on_undefined=False)
 
