@@ -9,9 +9,11 @@ import os
 import shutil
 import grp
 import pwd
+import datetime
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.bodsch.scm.plugins.module_utils.forgejo_config_parser import ForgejoConfigParser
+from ansible_collections.bodsch.scm.plugins.module_utils.forgejo_ini import ForgejoIni
+# from ansible_collections.bodsch.scm.plugins.module_utils.forgejo_config_parser import ForgejoConfigParser
 from ansible_collections.bodsch.core.plugins.module_utils.diff import SideBySide
 
 DOCUMENTATION = """
@@ -70,6 +72,116 @@ class ForgejoConfigCompare(object):
         }
 
     def run(self):
+        """ """
+        """
+        Annahme: self.config ist Pfad zu forgejo.ini, self.new_config zu forgejo.new,
+        self.ignore_map ist das Dict für ignore_keys, self.owner/group usw. existieren.
+        """
+        result = dict(
+            failed=False,
+            changed=False,
+            msg="forgejo.ini is up-to-date."
+        )
+
+        # 1) Wenn config nicht existiert: neu kopieren
+        if not os.path.exists(self.config):
+            shutil.copyfile(self.new_config, self.config)
+            shutil.chown(self.config, self.owner, self.group)
+            return dict(
+                failed=False,
+                changed=True,
+                msg="forgejo.ini was created successfully."
+            )
+
+        # 2) Sonst manuell beide Dateien einlesen, OHNE ConfigParser
+        org = ForgejoIni(self.module, path=self.config, ignore_keys=self.ignore_map)
+        new = ForgejoIni(self.module, path=self.new_config, ignore_keys=self.ignore_map)
+
+        # 3) Alle möglichen Sektionen sammeln
+        all_sections = set(org.data.keys()) | set(new.data.keys()) | set(self.ignore_map.keys())
+
+        # 4) Struktur, um Unterschiede zu protokollieren
+        #    Zum Beispiel: differences = { sektion: {"status": ..., "cs_base": ..., "cs_new": ...}, ... }
+        differences = {}
+
+        for sektion in sorted(all_sections):
+            # self.module.log(f"  section: '{sektion}'")
+
+            # a) Items (Key→Value) aus Base/ New holen, oder {} falls fehlt
+            items_base = org.data.get(sektion, {})
+            items_new = new.data.get(sektion, {})
+            cs_base = org.checksum_section(sektion)
+            cs_new = new.checksum_section(sektion)
+
+            # c) Status bestimmen:
+            #    - "only_base": Sektion nur in Base vorhanden
+            #    - "only_new": Sektion nur in New vorhanden
+            #    - "identical": in beiden vorhanden & gleiche Hashes
+            #    - "modified": in beiden vorhanden, aber unterschiedliche Hashes
+            if sektion in org.data and sektion not in new.data:
+                status = "only_base"
+            elif sektion not in org.data and sektion in new.data:
+                status = "only_new"
+            else:  # existiert in beiden
+                if cs_base == cs_new:
+                    status = "identical"
+                else:
+                    status = "modified"
+
+            differences[sektion] = {
+                "status": status,
+                "cs_base": cs_base,
+                "cs_new": cs_new,
+                "items_base": items_base,
+                "items_new": items_new,
+            }
+
+        # 5) Prüfen, ob irgendwo eine Sektion nicht "identical" ist
+        sections_with_changes = [sec for sec, info in differences.items() if info["status"] != "identical"]
+        if not sections_with_changes:
+            # Alles identisch – kein Merge nötig
+            return result
+
+        # org_clean = org.get_cleaned_string()
+        # new_clean = new.get_cleaned_string()
+
+        side_by_side = SideBySide(
+            module=self.module,
+            left=org.get_cleaned_string(),
+            right=new.get_cleaned_string()
+        )
+        self.module.log(f"{side_by_side.diff(width=140)}")
+
+        # 6) Wenn hier, dann mindestens eine Sektion tatsächlich geändert/neu/gelöscht
+        #    Wir können jetzt sections_with_changes ausgeben oder im Log schreiben, z.B.:
+        self.module.log("Die folgenden Sektionen haben Unterschiede:")
+        for sec in sections_with_changes:
+            info = differences[sec]
+            self.module.log(f"  Sektion '{sec}': {info['status']}")
+
+        merged_path = os.path.join(os.path.dirname(self.config), "forgejo.merged")
+
+        # # 7) Backup-Logik wie gehabt
+        # self.create_backup()
+
+        ForgejoIni.merge(
+            module=self.module,
+            base_path=self.config,
+            new_path=self.new_config,
+            output_path=merged_path,
+            ignore_keys=self.ignore_map
+        )
+
+        # shutil.copyfile(merged_path, self.config)
+        # shutil.chown(self.config, self.owner, self.group)
+
+        return dict(
+            failed=False,
+            changed=True,
+            msg="forgejo.ini was changed."
+        )
+
+    def run_o(self):
         """
         """
         result = dict(
@@ -90,12 +202,18 @@ class ForgejoConfigCompare(object):
                 msg="forgejo.ini was created successfully."
             )
 
-        orig = ForgejoConfigParser(path=self.config, ignore_keys=self.ignore_map)
-        new = ForgejoConfigParser(path=self.new_config, ignore_keys=self.ignore_map)
+        org = ForgejoConfigParser(self.module, path=self.config, ignore_keys=self.ignore_map)
+        new = ForgejoConfigParser(self.module, path=self.new_config, ignore_keys=self.ignore_map)
 
-        if not orig.is_equal_to(new):
+        # org_clean = org.get_cleaned_string()
+        # new_clean = new.get_cleaned_string()
+
+        # side_by_side = SideBySide(module=self.module, left=org_clean, right=new_clean)
+        # self.module.log(f"{side_by_side.diff(width=140)}")
+
+        if not org.is_equal_to(new):
             self.module.log("Konfiguration hat sich geändert.")
-            self.module.log(f"Original SHA256 : {orig.checksum()}")
+            self.module.log(f"Original SHA256 : {org.checksum()}")
             self.module.log(f"Neu SHA256      : {new.checksum()}")
 
             side_by_side = SideBySide(module=self.module, left=self.config, right=self.new_config)
@@ -103,9 +221,18 @@ class ForgejoConfigCompare(object):
 
             merged_config = os.path.join(os.path.dirname(self.config), "forgejo.merged")
 
+            timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M")
+            basename, ext = os.path.splitext(self.config)
+
+            backup_config = f"{basename}_{timestamp}{ext}"
+
+            self.module.log(f"merged_config : {merged_config}")
+            self.module.log(f"backup_config : {backup_config}")
+
             new.merge_into(base_path=self.config, output_path=merged_config)
 
             # shutil.move(merged_config, self.config)
+            os.rename(self.config, backup_config)
             shutil.copyfile(merged_config, self.config)
             shutil.chown(self.config, self.owner, self.group)
 

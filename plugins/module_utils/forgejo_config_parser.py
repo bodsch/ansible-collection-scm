@@ -1,270 +1,568 @@
 
+# import os
 import re
 import hashlib
-from io import StringIO
+# import datetime
+# import shutil
+from collections import OrderedDict
 
-try:
-    from configparser import ConfigParser
-except ImportError:
-    # ver. < 3.0
-    from ConfigParser import ConfigParser
+# Beispiel für DEFAULT_IGNORE_KEYS
+DEFAULT_IGNORE_KEYS = {
+    "security": ["INTERNAL_TOKEN"],
+    "oauth2": ["JWT_SECRET"]
+}
 
 
 class ForgejoConfigParser:
-    def __init__(self, path, ignore_keys=None):
+    """
+    """
+
+    def __init__(self, module, path, ignore_keys=None):
+        """
+        Liest beim Anlegen sofort den Inhalt von 'path' ein und filtert
+        alle ignorierten Keys direkt heraus.
+
+        :param path: Pfad zur INI-Datei
+        :param ignore_keys: Dict: Sektion → Liste von Schlüsseln, die rausfliegen sollen
+        """
+        self.module = module
+        self.module.log(f"ForgejoConfigParser::__ini__({path}, {ignore_keys})")
+
         self.path = path
-        self.ignore_keys = ignore_keys or {
-            "security": ["INTERNAL_TOKEN"],
-            "oauth2": ["JWT_SECRET"]
-        }
-        self.raw = self._read_file()
-        self.parser = self._parse_config(self.raw)
+        self.ignore_keys = ignore_keys or {}
+        # data: OrderedDict[ str(section) → dict[str(key)→str(value)] ]
+        self.data = OrderedDict()
+        self._load()
 
-    def _read_file(self):
+    def _load(self):
+        """
+        Liest die INI-Datei zeilenweise ein und füllt self.data.
+        Kommentare werden nur dann verworfen, wenn die Zeile mit ';' oder '#' beginnt.
+        Inline-Semikolon in einem Wert bleibt Teil von 'value'.
+        """
+        self.module.log("ForgejoConfigParser::_load()")
+        current_section = None
+
+        # Regex, um eine Section-Zeile zu erkennen
+        section_pattern = re.compile(r'^\s*\[(?P<name>[^]]+)\]\s*$')
+        # Regex, um ein key=value zu erkennen (split auf erstes '=').
+        kv_pattern = re.compile(r'^\s*(?P<key>[^=]+?)\s*=\s*(?P<val>.*)$')
+
         with open(self.path, 'r', encoding='utf-8') as f:
-            return f.read()
+            for raw_line in f:
+                line = raw_line.rstrip("\n")  # ohne Zeilenumbruch
 
-    def _parse_config(self, text):
-        parser = ConfigParser(strict=False, delimiters=('='), interpolation=None)
-        parser.optionxform = str
-        parser.read_string(self._preprocess(text))
-        return parser
+                # 1) Leerzeile?
+                if not line.strip():
+                    continue
 
-    def _preprocess(self, text):
+                # 2) Kommentarzeile? semikolon oder # am Zeilenanfang:
+                if line.lstrip().startswith(';') or line.lstrip().startswith('#'):
+                    continue
+
+                # 3) Section-Header?
+                m_sec = section_pattern.match(line)
+                if m_sec:
+                    sec_name = m_sec.group('name').strip()
+                    current_section = sec_name
+                    # lege neue Sektion mit leerem dict an (wenn noch nicht da)
+                    if sec_name not in self.data:
+                        self.data[sec_name] = {}
+                    continue
+
+                # 4) Key=Value?
+                m_kv = kv_pattern.match(line)
+                if m_kv and current_section is not None:
+                    key = m_kv.group('key').strip()
+                    val = m_kv.group('val')
+                    # Direkt nachladen, ob key in ignore_keys[current_section] steht:
+                    if current_section in self.ignore_keys \
+                       and key in self.ignore_keys[current_section]:
+                        # ignorieren
+                        continue
+
+                    # Wert so übernehmen, wie er da steht (z.B. "text/html; charset=utf-8")
+                    self.data[current_section][key] = val
+                    continue
+
+                # Wenn wir hierher kommen, war's weder Section noch Key=Value noch Kommentar.
+                # Das können wir nach Bedarf entweder ignorieren oder als 'rohe Zeile' speichern.
+                # Für diesen Anwendungsfall ignorieren wir sie stillschweigend.
+                continue
+
+    def checksum_section(self, section):
         """
+        Berechnet SHA256 über die geordnete Key=Value-Liste dieser Sektion.
         """
-        # Entferne Leerzeilen (auch mehrfach aufeinanderfolgende) vor dem Parsen
-        lines = text.splitlines()
-        lines = [line for line in lines if line.strip() != '']
+        self.module.log(f"ForgejoConfigParser::checksum_section({section})")
 
-        if lines and not lines[0].startswith('['):
-            lines.insert(0, '[__default__]')
+        parts = []
+        for key in sorted(section):
+            val = section[key]
+            parts.append(f"{key} = {val}\n")
+        return hashlib.sha256("".join(parts).encode("utf-8")).hexdigest()
 
-        return '\n'.join(lines)
+        # items = self.data.get(section, {})  # → {} wenn sektion fehlt
+        # # Jetzt sortieren und Hash über "" bzw. Keys bauen:
+        # parts = []
+        # for key in sorted(items):
+        #     val = items[key]
+        #     parts.append(f"{key} = {val}\n")
+        # joined = "".join(parts).encode("utf-8")
+        # return hashlib.sha256(joined).hexdigest()
 
-        # if not text.strip().startswith('['):
-        #     text = '[__default__]\n' + text
-        #
-        # return text
+        # if section not in self.data:
+        #     return None
+        # # Baue einen eindeutigen String: "key = value\n" pro Key, sortiert nach key.
+        # parts = []
+        # for key in sorted(self.data[section]):
+        #     val = self.data[section][key]
+        #     parts.append(f"{key} = {val}\n")
+        # joined = "".join(parts).encode("utf-8")
+        # return hashlib.sha256(joined).hexdigest()
 
-    def _remove_ignored_keys(self, parser):
+    def write(self, output_path):
         """
+        Schreibt self.data in eine neue INI-Datei, Sections alphabetisch,
+        Keys alphabetisch, OHNE Leerzeilen dazwischen.
         """
-        for section, keys in self.ignore_keys.items():
-            if parser.has_section(section):
-                for key in keys:
-                    parser.remove_option(section, key)
-
-    def get_cleaned_string(self):
-        temp_parser = ConfigParser(strict=False, delimiters=('='), interpolation=None)
-        temp_parser.optionxform = str
-        temp_parser.read_dict({s: dict(self.parser.items(s)) for s in self.parser.sections()})
-
-        self._remove_ignored_keys(temp_parser)
-
-        for section in self.ignore_keys:
-            if not temp_parser.has_section(section):
-                temp_parser.add_section(section)
-
-        output = StringIO()
-        temp_parser.write(output)
-        return output.getvalue()
-
-    def checksum(self):
-        return hashlib.sha256(self.get_cleaned_string().encode('utf-8')).hexdigest()
-
-    def is_equal_to(self, other):
-        """
-        """
-        self_clean = self.get_cleaned_string().strip()
-        other_clean = other.get_cleaned_string().strip()
-
-        return self_clean == other_clean
-
-    def merge_into(self, base_path, output_path):
-        base = ForgejoConfigParser(base_path, self.ignore_keys)
-        merged = ConfigParser(strict=False, delimiters=('='), interpolation=None)
-        merged.optionxform = str
-
-        # Start mit den Werten aus base
-        for section in base.parser.sections():
-            merged.add_section(section)
-            for key, val in base.parser.items(section):
-                merged.set(section, key, val)
-
-        # Werte aus self (z. B. forgejo.new) übernehmen
-        for section in self.parser.sections():
-            if not merged.has_section(section):
-                merged.add_section(section)
-
-            for key, val in self.parser.items(section):
-                if section in self.ignore_keys and key in self.ignore_keys[section]:
-                    continue  # Skip volatile keys
-                merged.set(section, key, val)
-
-        # Schreibe merged Datei
+        # self.module.log(f"ForgejoConfigParser::write({output_path})")
         with open(output_path, 'w', encoding='utf-8') as f:
-            # merged.write(f)
-            self.write_sorted_config(merged, f)
+            for section in sorted(self.data):
+                f.write(f"[{section}]\n")
+                for key in sorted(self.data[section]):
+                    val = self.data[section][key]
+                    f.write(f"{key} = {val}\n")
+                # KEIN zusätzliches f.write("\n")
 
-        # Nach write()
-        with open(output_path, 'r', encoding='utf-8') as f:
-            content = f.read()
+    @classmethod
+    def merge(cls, module, base_path, new_path, output_path, ignore_keys=None):
+        """
+        Liest base_path und new_path jeweils mit SimpleIni ein,
+        entfernt bereits während des Einlesens alle ignore_keys,
+        führt dann pro Sektion den Merge durch:
 
-        # Entferne [__default__] Section Header
-        content = re.sub(r'^\[__default__\]\n', '\n', content, flags=re.MULTILINE)
+        - Wenn Sektion nur in base ist -> beibehalten.
+        - Wenn Sektion nur in new  -> übernehmen.
+        - Wenn Sektion in beiden → SHA256 vergleichen:
+            • identisch → base behalten
+            • unterschiedlich → new übernehmen
 
-        with open(output_path, 'w', encoding='utf-8') as f:
-            f.write(content)
+        Das Resultat wird alphabetisch sortiert in output_path geschrieben.
 
-    def write_sorted_config(self, parser, file):
-        # Sektionen alphabetisch sortieren
-        for section in sorted(parser.sections()):
-            file.write(f"[{section}]\n")
-            # Schlüssel innerhalb jeder Sektion alphabetisch sortieren
-            for key, value in sorted(parser.items(section)):
-                file.write(f"{key} = {value}\n")
-            file.write("\n")
+        Gibt zurück: (changed, details)
+        """
+        module = module
+        module.log(f"ForgejoConfigParser::merge({base_path}, {new_path} {output_path}, {ignore_keys})")
+
+        ignore_keys = ignore_keys or {}
+        base_ini = cls(module, base_path, ignore_keys)
+        new_ini = cls(module, new_path, ignore_keys)
+
+        # Alle Sektionen zusammentragen
+        all_sections = set(base_ini.data.keys()) | set(new_ini.data.keys()) | set(ignore_keys.keys())
+
+        result = OrderedDict()
+        changed = False
+
+        for section in sorted(all_sections):
+            base_sec = base_ini.data.get(section, {})
+            new_sec = new_ini.data.get(section, {})
+            # beide Sektionen ggf. nach Entfernen der ignorierten Keys bereits bereinigt,
+            # weil der Konstruktor ignore_keys schon berücksichtigt hat.
+
+            if section in new_ini.data:
+                # Sektion existiert in new - vergleichen
+                if section in base_ini.data:
+                    # beide da → checksum prüfen
+                    cs_base = base_ini.checksum_section(section)
+                    cs_new = new_ini.checksum_section(section)
+                    if cs_base != cs_new:
+                        result[section] = new_sec.copy()
+                        changed = True
+                    else:
+                        # unverändert
+                        result[section] = base_sec.copy()
+                else:
+                    # Sektion nur in new → übernehmen
+                    result[section] = new_sec.copy()
+                    changed = True
+            else:
+                # Sektion nicht in new → nur in base
+                result[section] = base_sec.copy()
+                # changed bleibt False (weil nichts Neues da ist)
+
+            # Falls die Sektion weder in base noch new existiert, aber in ignore_keys war,
+            # legen wir sie trotzdem als leere Sektion an:
+            if section not in base_ini.data and section not in new_ini.data:
+                result[section] = {}  # leere Sektion
+
+        # Anschließend schreiben
+        merged_ini = cls.__new__(cls)         # Dummy‐Instanz ohne __init__ aufrufen
+        merged_ini.data = result
+        merged_ini.ignore_keys = ignore_keys
+        merged_ini.write(output_path)
+
+        return changed
+
+# # Beispiel, wie man es in der Run-Methode einsetzen könnte:
+# def run(self):
+#     """
+#     Annahme: self.config ist Pfad zu forgejo.ini, self.new_config zu forgejo.new,
+#     self.ignore_map ist das Dict für ignore_keys, self.owner/group usw. existieren.
+#     """
+#     result = dict(failed=False, changed=False, msg="forgejo.ini is up-to-date.")
+#
+#     # 1) Wenn config nicht existiert: neu kopieren
+#     if not os.path.exists(self.config):
+#         shutil.copyfile(self.new_config, self.config)
+#         shutil.chown(self.config, self.owner, self.group)
+#         return dict(failed=False, changed=True, msg="forgejo.ini was created successfully.")
+#
+#     # 2) Sonst manuell beide Dateien einlesen, OHNE ConfigParser
+#     base = SimpleIni(self.config, ignore_keys=self.ignore_map)
+#     new  = SimpleIni(self.new_config, ignore_keys=self.ignore_map)
+#
+#     # 3) Prüfen, ob sich irgendetwas geändert hat:
+#     #    Wir vergleichen pro Sektion die Checksummen – oder einfach den zusammengebauten Text.
+#     changed = False
+#     for sektion in set(base.data.keys()) | set(new.data.keys()) | set(self.ignore_map.keys()):
+#         cs_base = base.checksum_section(sektion)
+#         cs_new  = new.checksum_section(sektion)
+#         # Falls cs_base != cs_new (None vs Wert oder zwei unterschiedliche Hashes),
+#         # ist changed=True.
+#         if cs_base != cs_new:
+#             changed = True
+#             break
+#
+#     if not changed:
+#         return result
+#
+#     # 4) Wenn geändert: Backup anlegen, mergen, zurückkopieren
+#     timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M")
+#     basename, ext = os.path.splitext(self.config)
+#     backup_config = f"{basename}_{timestamp}{ext}"
+#     merged_path  = os.path.join(os.path.dirname(self.config), "forgejo.merged")
+#
+#     # Backup
+#     os.rename(self.config, backup_config)
+#
+#     # Merge und Schreiben
+#     SimpleIni.merge(
+#         base_path=self.config,      # der ursprüngliche Pfad existiert gerade nicht mehr,
+#         #                weil wir es umbenannt haben → wir müssen hier auf backup_config verweisen!
+#         new_path=self.new_config,
+#         output_path=merged_path,
+#         ignore_keys=self.ignore_map
+#     )
+#
+#     # Da wir base_path=forgejo.ini angegeben haben, ist das falsch:
+#     # Tatsächlich müssen wir natürlich das Backup (backup_config) als Basis verwenden.
+#     # Also besser:
+#     SimpleIni.merge(
+#         base_path=backup_config,
+#         new_path=self.new_config,
+#         output_path=merged_path,
+#         ignore_keys=self.ignore_map
+#     )
+#
+#     # merged_path nach forgejo.ini kopieren
+#     shutil.copyfile(merged_path, self.config)
+#     shutil.chown(self.config, self.owner, self.group)
+#
+#     return dict(failed=False, changed=True, msg="forgejo.ini was changed.")
 
 
-"""
-def read_ini_with_global_section(path, global_section="__global__"):
-    self.module.log(f"ForgejoConfig::read_ini_with_global_section({path}, {global_section})")
-
-    with open(path, 'r', encoding='utf-8') as f:
-        lines = f.readlines()
-
-    # self.module.log(f"{lines}")
-
-    modified_lines = []
-    section_started = False
-
-    for i, line in enumerate(lines):
-        stripped = line.strip()
-        if not stripped or stripped.startswith(';'):
-            modified_lines.append(line)
-            continue
-        if stripped.startswith('['):
-            section_started = True
-            break
-        else:
-            break
-
-    # Nur wenn keine Section direkt am Anfang kommt
-    if not section_started:
-        modified_lines = [f'[{global_section}]\n'] + lines
-    else:
-        modified_lines = lines
-
-    # self.module.log(f"{modified_lines}")
-
-    config = ConfigParser()
-    config.optionxform = str
-    config.read_file(StringIO(''.join(modified_lines)))
-
-    return config
-
-def compare_configs(file1, file2, ignore_map=None):
-
-    changed = False
-    config1 = self.read_ini_with_global_section(file1)
-    config2 = self.read_ini_with_global_section(file2)
-
-    ignore_map = {k.lower(): [key.lower() for key in v] for k, v in (ignore_map or {}).items()}
-
-    all_sections = set(config1.sections()) | set(config2.sections())
-
-    for section in all_sections:
-        self.module.log(f"  - {section}")
-
-        ignore_keys = set(ignore_map.get(section, []))
-
-        if section not in config1:
-            self.module.log(f"    - missing in {self.config}")
-            checksum1 = ""
-        else:
-            checksum1 = self.section_checksum(config1, section, ignore_keys)
-
-        if section not in config2:
-            self.module.log(f"    - missing in {self.new_config}")
-            checksum2 = ""
-        else:
-            checksum2 = self.section_checksum(config2, section, ignore_keys)
-
-        # if section not in config1 or section not in config2:
-        #    continue
-        # checksum1 = self.section_checksum(config1, section, ignore_keys)
-        # checksum2 = self.section_checksum(config2, section, ignore_keys)
-
-        self.module.log(f"  - '{checksum1}' vs '{checksum2}'")
-
-        if checksum1 != checksum2:
-            changed = True
-            self.module.log(f"Difference in section [{section}]")
-            _added, _removed, _changed = self.diff_section(config1, config2, section)
-
-            if _added or _removed or _changed:
-                for k, v in _added:
-                    self.module.log(f"  + added  : {k} = {v}")
-                for k, v in _removed:
-                    self.module.log(f"  - removed: {k} = {v}")
-                for k, v1, v2 in _changed:
-                    self.module.log(f"  ~ changed: {k} = {v1} → {v2}")
-
-    self.module.log(f"= changed: {changed}")
-
-    return changed
-
-def section_checksum(config, section, ignore_keys=None):
-    ignore_keys = ignore_keys or set()
-    items = [(k, v) for k, v in config[section].items() if k.lower() not in ignore_keys]
-    items.sort()
-    concat = ''.join(f'{k}={v}' for k, v in items)
-
-    return hashlib.md5(concat.encode('utf-8')).hexdigest()
-
-def transfer_keys(file1, file2, section_keys_to_transfer, output_file):
-    self.module.log(f"ForgejoConfig::transfer_keys({file1}, {file2}, {section_keys_to_transfer}, {output_file})")
-
-    config_ini = self.read_ini_with_global_section(file1)  # .ini
-    config_new = self.read_ini_with_global_section(file2)  # .new
-
-    for section, keys in section_keys_to_transfer.items():
-        if not config_ini.has_section(section):
-            continue
-
-        if not config_new.has_section(section):
-            config_new.add_section(section)
-
-        for key in keys:
-            if config_ini.has_option(section, key):
-                value = config_ini.get(section, key)
-                config_new.set(section, key, value)
-
-    # Datei schreiben
-    with open(output_file, 'w', encoding='utf-8') as f:
-        config_new.write(f)
-
-def diff_section(config1, config2, section, ignore_keys=None):
-    ignore_keys = set(ignore_keys or [])
-    keys1 = {k: v for k, v in config1.items(section)} if config1.has_section(section) else {}
-    keys2 = {k: v for k, v in config2.items(section)} if config2.has_section(section) else {}
-
-    added = []
-    removed = []
-    changed = []
-
-    for k in keys1:
-        if k in ignore_keys:
-            continue
-        if k not in keys2:
-            removed.append((k, keys1[k]))
-        elif keys1[k] != keys2[k]:
-            changed.append((k, keys1[k], keys2[k]))
-    for k in keys2:
-        if k in ignore_keys or k in keys1:
-            continue
-        added.append((k, keys2[k]))
-
-    return added, removed, changed
-"""
+# # ------------------------------------
+#
+# import re
+# import hashlib
+# from io import StringIO
+# from configparser import ConfigParser
+#
+#
+# DEFAULT_IGNORE_KEYS = {
+#     "security": ["INTERNAL_TOKEN"],
+#     "oauth2": ["JWT_SECRET"]
+# }
+#
+#
+# class ForgejoConfigParser:
+#     def __init__(self, module, path, ignore_keys=None):
+#         self.module = module
+#
+#         self.module.log(f"ForgejoConfigParser({path}, {ignore_keys})")
+#
+#         self.path = path
+#         # Standard-Werte für ignore_keys in einer Konstanten ausgelagert
+#         self.ignore_keys = ignore_keys if ignore_keys is not None else DEFAULT_IGNORE_KEYS
+#         self._base_parser = self._create_parser()
+#         self.raw = self._read_file()
+#         self.parser = self._parse_config(self.raw)
+#
+#     @staticmethod
+#     def _create_parser():
+#         """
+#         Hilfsfunktion, um überall denselben, korrekt konfigurierten ConfigParser zu erzeugen.
+#         """
+#         parser = ConfigParser(
+#             strict=False,
+#             delimiters=('=',),
+#             interpolation=None,
+#             inline_comment_prefixes=None   # <-- keine Inline-Kommentare mehr
+#         )
+#         parser.optionxform = str  # Groß-/Kleinschreibung der Schlüssel beibehalten
+#         return parser
+#
+#     def _read_file(self):
+#         with open(self.path, 'r', encoding='utf-8') as f:
+#             return f.read()
+#
+#     def _parse_config(self, text):
+#         """
+#         Liest den Text (nach Preprocessing) in einen neuen Parser ein und gibt ihn zurück.
+#         """
+#         parser = self._create_parser()
+#         parser.read_string(self._preprocess(text))
+#         return parser
+#
+#     def _preprocess(self, text):
+#         """
+#         1. Entfernt überflüssige Leerzeilen.
+#         2. Fügt bei Bedarf einen Dummy-Header [__default__] ein, falls
+#            keine echte Section-Eröffnung am Anfang steht.
+#         """
+#         lines = [line for line in text.splitlines() if line.strip() != ""]
+#         if lines and not lines[0].startswith('['):
+#             lines.insert(0, '[__default__]')
+#         return "\n".join(lines)
+#
+#     def _remove_ignored_keys(self, parser):
+#         """
+#         Entfernt in-place alle Schlüssel, die in ignore_keys definiert sind.
+#         """
+#         for section, keys in self.ignore_keys.items():
+#             if parser.has_section(section):
+#                 for key in keys:
+#                     parser.remove_option(section, key)
+#
+#     # def get_cleaned_string(self):
+#     #     """
+#     #     1. Erzeugt einen frischen Parser und befüllt ihn mit allen aktuellen
+#     #        Sektionen/Optionen aus self.parser.
+#     #     2. Entfernt anschließend volatile/ignorierte Schlüssel.
+#     #     3. Schreibt das Ergebnis in einen String und gibt ihn zurück.
+#     #     """
+#     #     temp = self._create_parser()
+#     #     # read_dict liest alle Sections und Keys ein
+#     #     temp.read_dict({sec: dict(self.parser.items(sec)) for sec in self.parser.sections()})
+#     #
+#     #     # Jetzt die ignoriere Schlüssel rauswerfen
+#     #     self._remove_ignored_keys(temp)
+#     #
+#     #     # Dafür sorgen, dass alle Sektionen aus ignore_keys existieren (auch wenn leer)
+#     #     for sec in self.ignore_keys:
+#     #         if not temp.has_section(sec):
+#     #             temp.add_section(sec)
+#     #
+#     #     output = StringIO()
+#     #     temp.write(output)
+#     #     return output.getvalue()
+#
+#     def get_cleaned_string(self):
+#         """
+#         1. Erzeugt einen frischen Parser und befüllt ihn mit allen aktuellen
+#            Sektionen/Optionen aus self.parser.
+#         2. Entfernt anschließend volatile/ignorierte Schlüssel.
+#         3. Fügt alle in ignore_keys gelisteten Sektionen hinzu, falls sie fehlen.
+#         4. Schreibt Sektionen und Keys alphabetisch sortiert (ohne Leerzeilen).
+#         5. Gibt das Ergebnis als String zurück.
+#         """
+#         # 1) Basis-PARSER mit allen Sektionen/Keys aus self.parser füllen
+#         temp = self._create_parser()
+#         temp.read_dict({sec: dict(self.parser.items(sec)) for sec in self.parser.sections()})
+#
+#         # 2) Ignorierte Keys entfernen
+#         self._remove_ignored_keys(temp)
+#
+#         # 3) Sicherstellen, dass auch leere Sektionen aus ignore_keys existieren
+#         for sec in self.ignore_keys:
+#             if not temp.has_section(sec):
+#                 temp.add_section(sec)
+#
+#         # 4) Alphabetisch sortiert in einen String schreiben (ohne Leerzeilen)
+#         output = StringIO()
+#         for section in sorted(temp.sections()):
+#             output.write(f"[{section}]\n")
+#             for key, val in sorted(temp.items(section)):
+#                 output.write(f"{key} = {val}\n")
+#             # KEINE zusätzliche Ausgabe einer Leerzeile hier
+#
+#         return output.getvalue()
+#
+#     def checksum(self):
+#         """
+#         SHA256-Checksumme über den "gereinigten" Config-String.
+#         """
+#         cleaned = self.get_cleaned_string().encode('utf-8')
+#         return hashlib.sha256(cleaned).hexdigest()
+#
+#     def is_equal_to(self, other):
+#         """
+#         Vergleicht die "gereinigten" Strings (ohne führende/trailing Leerzeilen).
+#         """
+#         self_clean = self.get_cleaned_string().strip()
+#         other_clean = other.get_cleaned_string().strip()
+#
+#         self.module.log("-------------------------------------------")
+#         self.module.log(f"{self_clean.splitlines()}")
+#         self.module.log("-------------------------------------------")
+#         self.module.log(f"{other_clean.splitlines()}")
+#         self.module.log("-------------------------------------------")
+#
+#         return self_clean == other_clean
+#
+#     # def merge_into(self, base_path, output_path):
+#     #     """
+#     #     Führt die Konfiguration in self über base_path zusammen und speichert
+#     #     das Ergebnis in output_path. Ignoriert hierbei bestimmte Schlüssel
+#     #     (siehe self.ignore_keys). Sortiert Sektionen und Schlüssel alphabetisch.
+#     #     """
+#     #     self.module.log(f"ForgejoConfigParser::merge_into(self, {base_path}, {output_path})")
+#     #
+#     #     # 1) Basis-Konfiguration einlesen
+#     #     base = ForgejoConfigParser(self.module, base_path, self.ignore_keys)
+#     #
+#     #     # 2) Neuen Parser für das Merge-Ergebnis erzeugen
+#     #     merged = self._create_parser()
+#     #
+#     #     # 3) Werte aus base übernehmen
+#     #     for section in base.parser.sections():
+#     #         merged.add_section(section)
+#     #         for key, val in base.parser.items(section):
+#     #             merged.set(section, key, val)
+#     #
+#     #     # 4) Werte aus self (z.B. forgejo.new) übernehmen, volatile Keys überspringen
+#     #     for section in self.parser.sections():
+#     #         if not merged.has_section(section):
+#     #             merged.add_section(section)
+#     #
+#     #         for key, val in self.parser.items(section):
+#     #             if section in self.ignore_keys and key in self.ignore_keys[section]:
+#     #                 continue
+#     #             merged.set(section, key, val)
+#     #
+#     #     # 5) In-Memory-Zusammenführung in String schreiben (ohne doppeltes File-I/O)
+#     #     buffer = StringIO()
+#     #     self._write_sorted_config(merged, buffer)
+#     #     content = buffer.getvalue()
+#     #
+#     #     # 6) [__default__]-Header entfernen, falls vorhanden
+#     #     content = re.sub(r'^\[__default__\]\n', '', content, flags=re.MULTILINE)
+#     #
+#     #     self.module.log(content.splitlines())
+#     #
+#     #     # 7) Endgültig in output_path schreiben
+#     #     with open(output_path, 'w', encoding='utf-8') as f:
+#     #         f.write(content)
+#
+#     def merge_into(self, base_path, output_path):
+#         """
+#         Führt die Konfiguration in self über base_path zusammen und speichert
+#         das Ergebnis in output_path. Ignoriert hierbei Schlüssel aus self.ignore_keys.
+#         Sortiert alle Sektionen und Keys alphabetisch und schreibt am Ende
+#         ein sauberes, leerzeilenfreies File.
+#         """
+#         self.module.log(f"ForgejoConfigParser::merge_into(self, {base_path}, {output_path})")
+#
+#         # 1) Base-Parser einlesen
+#         base = ForgejoConfigParser(self.module, base_path, self.ignore_keys)
+#
+#         # 2) Neue (self-)Instanz soll über base „drüber“ gemerged werden
+#         new = self  # self.parser ist bereits auf die „neue“ Datei geladen
+#
+#         # 3) Helferfunktion: Erzeuge aus einem Dict von key→value einen String
+#         #    (eine Zeile pro key), sortiert nach key, und gib die SHA256-Checksumme zurück.
+#         def section_checksum(items_dict):
+#             # "key = value\n" für jeden key in sortierter Reihenfolge
+#             s = "".join(f"{k} = {v}\n" for k, v in sorted(items_dict.items()))
+#             return hashlib.sha256(s.encode("utf-8")).hexdigest()
+#
+#         # 4) Sammle alle relevanten Sections:
+#         #    – aus base.parser.sections()
+#         #    – aus new.parser.sections()
+#         #    – aus den Keys von ignore_keys (damit leere Ignored-Sections trotzdem angelegt werden)
+#         all_sections = (
+#             set(base.parser.sections())
+#             | set(new.parser.sections())
+#             | set(self.ignore_keys.keys())
+#         )
+#
+#         # 5) Lege einen frischen Parser an, in den wir das Ergebnis schreiben
+#         merged = self._create_parser()
+#
+#         # 6) Pro Section entscheiden, ob wir base behalten oder new übernehmen:
+#         for section in sorted(all_sections):
+#             # --- a) Items von base (ohne ignore_keys) extrahieren ---
+#             base_items = {}
+#             if base.parser.has_section(section):
+#                 base_items = dict(base.parser.items(section))
+#                 if section in self.ignore_keys:
+#                     for ign in self.ignore_keys[section]:
+#                         base_items.pop(ign, None)
+#
+#             # --- b) Items von new (ohne ignore_keys) extrahieren ---
+#             new_items = {}
+#             if new.parser.has_section(section):
+#                 new_items = dict(new.parser.items(section))
+#                 if section in self.ignore_keys:
+#                     for ign in self.ignore_keys[section]:
+#                         new_items.pop(ign, None)
+#
+#             # --- c) Check, ob new_items vorhanden und anders als base_items ---
+#             changed = False
+#             if section in new.parser.sections():
+#                 # Wenn Section in base UND in new existiert, vergleiche Checksummen
+#                 if section in base.parser.sections():
+#                     cs_base = section_checksum(base_items)
+#                     cs_new = section_checksum(new_items)
+#                     changed = (cs_base != cs_new)
+#                 else:
+#                     # Section nur in new vorhanden → auf jeden Fall „geändert“
+#                     changed = True
+#
+#             # --- d) Entscheide, welche Items wir in merged setzen ---
+#             if changed:
+#                 chosen = new_items
+#             else:
+#                 chosen = base_items
+#
+#             # --- e) Section im merged-Parser anlegen und gefundene Items setzen ---
+#             merged.add_section(section)
+#             for key, val in sorted(chosen.items()):
+#                 merged.set(section, key, val)
+#
+#         # 7) Jetzt merged-Parser in einen String schreiben (alphabetisch sortiert)
+#         buffer = StringIO()
+#         self._write_sorted_config(merged, buffer)
+#         content = buffer.getvalue()
+#
+#         # 8) [__default__]-Header (Dummy) entfernen, falls vorhanden
+#         content = re.sub(r'^\[__default__\]\n', '', content, flags=re.MULTILINE)
+#
+#         # 9) In die Ausgabedatei schreiben
+#         with open(output_path, "w", encoding="utf-8") as f:
+#             f.write(content)
+#
+#     @staticmethod
+#     def _write_sorted_config(parser, file_like):
+#         """
+#         Schreibt alle Sektionen und deren Schlüssel/Werte alphabetisch sortiert
+#         (Sektionen nach Name, Keys pro Sektion nach Name).
+#         """
+#         for section in sorted(parser.sections()):
+#             file_like.write(f"[{section}]\n")
+#             for key, value in sorted(parser.items(section)):
+#                 file_like.write(f"{key} = {value}\n")
+#             file_like.write("\n")
+#

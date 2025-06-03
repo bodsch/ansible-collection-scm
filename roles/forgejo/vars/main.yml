@@ -533,12 +533,12 @@ forgejo_defaults_mailer:
   sendmail_convert_crlf: ""                       # true
   from_display_name_format: !unsafe "{{ .DisplayName }}" # Available Variables: `.DisplayName`, `.AppName` and `.Domain`.
   override_header:
-    reply_to:
-      - test@example.com
-      - test2@example.com
-    content_type:
-      - text/html
-      - charset=utf-8
+    reply_to: []
+    #   - test@example.com
+    #   - test2@example.com
+    content_type: []
+    #   - text/html
+    #   - charset=utf-8
     in_reply_to: []
 
 # forgejo_defaultforgejo_emails_markdown:

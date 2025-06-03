@@ -76,6 +76,7 @@ FROM_DISPLAY_NAME_FORMAT = {{ values.from_display_name_format }}
   {% if values | count > 0 %}
 
 [mailer.override_header]
+; {{ values }}
     {% if values.reply_to | default([]) | count > 0 %}
 Reply-To = {{ values.reply_to | join(', ') }}
     {% endif %}

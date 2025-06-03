@@ -1,13 +1,20 @@
 {% set values = forgejo_log | bodsch.core.remove_empty_values %}
+{% set _ = values.pop("log_writer") %}
 {% if values | count > 0 %}
 
 [log]
   {% if values.root_path | default('') | string | length > 0 %}
 ROOT_PATH = {{ values.root_path }}
   {% endif %}
-  {% if values.mode | default([]) | count > 0 %}
-     {% set valid_log_mode = ["console", "file", "conn"] %}
-     {% set log_mode = values.mode | bodsch.core.compare_list(compare_to_list=valid_log_mode) %}
+; {{ values.mode | default([]) }}
+  {% if values.mode | bodsch.core.type == "string" %}
+    {% set _mode = [values.mode] %}
+  {% elif values.mode | bodsch.core.type == "list" %}
+    {% set _mode = values.mode %}
+  {% endif %}
+  {% if _mode | default([]) | count > 0 %}
+     {% set valid_log_mode = ["console", "file", "file-error", "conn"] %}
+     {% set log_mode = _mode | bodsch.core.compare_list(compare_to_list=valid_log_mode) %}
 MODE = {{ log_mode | join(', ') }}
   {% endif %}
   {% if values.level | default('') | string | length > 0 and
@@ -35,22 +42,26 @@ REQUEST_ID_HEADERS = {{ values.request_id_headers | join(', ') }}
   {% endif %}
 {% endif %}
 {# ---------------------------------------------------------- #}
-{% if forgejo_log.log_writer | default([]) | count > 0 %}
+{% set values = forgejo_log.log_writer | bodsch.core.remove_empty_values %}
+{% if values | count > 0 %}
+; {{ values }}
 {#
   Setting a comma (,) to sub-logger’s mode means making it use the default global MODE.
 #}
 {# List of log outputs to use for the default logger. #}
-logger.default.MODE =
+; logger.default.MODE =
 {# List of log outputs to use for the Router logger. #}
-logger.router.MODE  =
+; logger.router.MODE  =
 {# List of log outputs to use for the XORM logger. #}
-logger.xorm.MODE    =
+; logger.xorm.MODE    =
 {# List of log outputs to use for the Access logger. By default, the access logger is disabled. #}
-logger.access.MODE  =
+; logger.access.MODE  =
 
-  {% set sub_logger = values.log_writer | bodsch.scm.sub_logger() %}
+  {% set sub_logger = values | bodsch.scm.sub_logger() %}
+; {{ sub_logger }}
   {% for logger in sub_logger %}
-    {% set logger_data = values.log_writer | bodsch.scm.sub_logger_data(logger) %}
+    {% set logger_data = values | bodsch.scm.sub_logger_data(logger) %}
+; -> {{ logger_data }}
     {% set _ = logger_data.pop("name") %}
 [log.{{ logger }}]
     {% for k, v in logger_data.items() %}
