@@ -1,72 +1,90 @@
+{% set values = forgejo_indexer | bodsch.core.remove_empty_values %}
+{% if values | count > 0 %}
 
-  {% if forgejo_indexer.issue_indexer_type | default('') | string | length > 0 and
-        forgejo_indexer.issue_indexer_type in ["bleve", "db", "elasticsearch", "meilisearch"] %}
+  {% if values.issue_indexer_type | default('') | string | length > 0 and
+        values.issue_indexer_type in ["bleve", "db", "elasticsearch", "meilisearch"] %}
 [indexer]
-ISSUE_INDEXER_TYPE = {{ forgejo_indexer.issue_indexer_type }}
-    {% if forgejo_indexer.issue_indexer_type == "bleve" and
-          forgejo_indexer.issue_indexer_path | default('') | string | length > 0 %}
-ISSUE_INDEXER_PATH = {{ forgejo_indexer.issue_indexer_path }}
+ISSUE_INDEXER_TYPE = {{ values.issue_indexer_type }}
+    {% if values.issue_indexer_type == "bleve" and
+          values.issue_indexer_path | default('') | string | length > 0 %}
+ISSUE_INDEXER_PATH = {{ values.issue_indexer_path }}
     {% endif %}
-    {% if forgejo_indexer.issue_indexer_type in ["elasticsearch", "meilisearch"] and
-          forgejo_indexer.issue_indexer_conn_str | default('') | string | length > 0 %}
-ISSUE_INDEXER_CONN_STR = {{ forgejo_indexer.issue_indexer_conn_str }}
+    {% if values.issue_indexer_type in ["elasticsearch", "meilisearch"] and
+          values.issue_indexer_conn_str | default('') | string | length > 0 %}
+ISSUE_INDEXER_CONN_STR = {{ values.issue_indexer_conn_str }}
     {% endif %}
-    {% if forgejo_indexer.issue_indexer_type == "elasticsearch" and
-          forgejo_indexer.issue_indexer_name | default('') | string | length > 0 %}
-ISSUE_INDEXER_NAME = {{ forgejo_indexer.issue_indexer_name }}
+    {% if values.issue_indexer_type == "elasticsearch" and
+          values.issue_indexer_name | default('') | string | length > 0 %}
+ISSUE_INDEXER_NAME = {{ values.issue_indexer_name }}
     {% endif %}
-    {% if forgejo_indexer.startup_timeout | default('') | string | length > 0 %}
-STARTUP_TIMEOUT = {{ forgejo_indexer.startup_timeout }}
+    {% if values.startup_timeout | default('') | string | length > 0 %}
+STARTUP_TIMEOUT = {{ values.startup_timeout }}
     {% endif %}
-    {% if forgejo_indexer.issue_indexer_queue_type | default('') | string | length > 0 and
-          forgejo_indexer.issue_indexer_queue_type in ["channel", "levelqueue", "redis"] %}
+    {% if values.issue_indexer_queue_type | default('') | string | length > 0 and
+          values.issue_indexer_queue_type in ["channel", "levelqueue", "redis"] %}
 ;; **DEPRECATED** use settings in `[queue.issue_indexer]`.
-ISSUE_INDEXER_QUEUE_TYPE = {{ forgejo_indexer.issue_indexer_queue_type }}
+ISSUE_INDEXER_QUEUE_TYPE = {{ values.issue_indexer_queue_type }}
     {% endif %}
-    {% if forgejo_indexer.issue_indexer_type == "levelqueue" and
-          forgejo_indexer.issue_indexer_queue_dir | default('') | string | length > 0 %}
+    {% if values.issue_indexer_type == "levelqueue" and
+          values.issue_indexer_queue_dir | default('') | string | length > 0 %}
 ;; **DEPRECATED** use settings in `[queue.issue_indexer]`.
-ISSUE_INDEXER_QUEUE_DIR = {{ forgejo_indexer.issue_indexer_queue_dir }}
+ISSUE_INDEXER_QUEUE_DIR = {{ values.issue_indexer_queue_dir }}
     {% endif %}
-    {% if forgejo_indexer.issue_indexer_type in ["levelqueue", "redis"] and
-          forgejo_indexer.issue_indexer_queue_conn_str | default('') | string | length > 0 %}
+    {% if values.issue_indexer_type in ["levelqueue", "redis"] and
+          values.issue_indexer_queue_conn_str | default('') | string | length > 0 %}
 ;; **DEPRECATED** use settings in `[queue.issue_indexer]`.
-ISSUE_INDEXER_QUEUE_CONN_STR = {{ forgejo_indexer.issue_indexer_queue_conn_str }}
+ISSUE_INDEXER_QUEUE_CONN_STR = {{ values.issue_indexer_queue_conn_str }}
     {% endif %}
-    {% if forgejo_indexer.issue_indexer_queue_batch_number | default('') | string | length > 0 %}
+    {% if values.issue_indexer_queue_batch_number | default('') | string | length > 0 %}
 ;; **DEPRECATED** use settings in `[queue.issue_indexer]`.
-ISSUE_INDEXER_QUEUE_BATCH_NUMBER = {{ forgejo_indexer.issue_indexer_queue_batch_number }}
+ISSUE_INDEXER_QUEUE_BATCH_NUMBER = {{ values.issue_indexer_queue_batch_number }}
     {% endif %}
-    {% if forgejo_indexer.repo_indexer_enabled | default('') | string | length > 0 %}
-REPO_INDEXER_ENABLED = {{ forgejo_indexer.repo_indexer_enabled | bodsch.core.config_bool(true_as='true', false_as='false') }}
+    {% if values.repo_indexer_enabled | default('') | string | length > 0 %}
+REPO_INDEXER_ENABLED = {{ values.repo_indexer_enabled | bodsch.core.config_bool(true_as='true', false_as='false') }}
     {% endif %}
-    {% if forgejo_indexer.issue_indexer_type in ["bleve", "elasticsearch"] and
-          forgejo_indexer.issue_indexer_type | default('') | string | length > 0 %}
-REPO_INDEXER_TYPE = {{ forgejo_indexer.issue_indexer_type }}
+    {% if values.repo_indexer_repo_types | default([]) | count > 0 %}
+REPO_INDEXER_REPO_TYPES = {{ orgejo_indexer.repo_indexer_repo_types | join(', ') }}
+{#
+;; repo indexer units, the items to index, could be `sources`, `forks`, `mirrors`, `templates` or any combination of them separated by a comma.
+;; If empty then it defaults to `sources` only, as if you'd like to disable fully please see REPO_INDEXER_ENABLED.
+;REPO_INDEXER_REPO_TYPES = sources,forks,mirrors,templates
+#}
     {% endif %}
-    {% if forgejo_indexer.issue_indexer_type == "bleve" and
-          forgejo_indexer.repo_indexer_path | default('') | string | length > 0 %}
-REPO_INDEXER_PATH = {{ forgejo_indexer.repo_indexer_path }}
+    {% if values.issue_indexer_type in ["bleve", "elasticsearch"] and
+          values.issue_indexer_type | default('') | string | length > 0 %}
+REPO_INDEXER_TYPE = {{ values.issue_indexer_type }}
     {% endif %}
-    {% if forgejo_indexer.issue_indexer_type == "elasticsearch" and
-          forgejo_indexer.repo_indexer_conn_str | default('') | string | length > 0 %}
-REPO_INDEXER_CONN_STR = {{ forgejo_indexer.repo_indexer_conn_str }}
+    {% if values.issue_indexer_type == "bleve" and
+          values.repo_indexer_path | default('') | string | length > 0 %}
+REPO_INDEXER_PATH = {{ values.repo_indexer_path }}
     {% endif %}
-    {% if forgejo_indexer.issue_indexer_type == "elasticsearch" and
-          forgejo_indexer.repo_indexer_name | default('') | string | length > 0 %}
-REPO_INDEXER_NAME = {{ forgejo_indexer.repo_indexer_name }}
+    {% if values.issue_indexer_type == "elasticsearch" and
+          values.repo_indexer_conn_str | default('') | string | length > 0 %}
+REPO_INDEXER_CONN_STR = {{ values.repo_indexer_conn_str }}
     {% endif %}
-    {% if forgejo_indexer.repo_indexer_include | count > 0 %}
-REPO_INDEXER_INCLUDE = {{ forgejo_indexer.repo_indexer_include | join(', ') }}
+    {% if values.issue_indexer_type == "elasticsearch" and
+          values.repo_indexer_name | default('') | string | length > 0 %}
+REPO_INDEXER_NAME = {{ values.repo_indexer_name }}
     {% endif %}
-    {% if forgejo_indexer.repo_indexer_exclude | count > 0 %}
-REPO_INDEXER_EXCLUDE = {{ forgejo_indexer.repo_indexer_exclude | join(', ') }}
+    {% if values.repo_indexer_include | default([]) | count > 0 %}
+REPO_INDEXER_INCLUDE = {{ values.repo_indexer_include | join(', ') }}
     {% endif %}
-    {% if forgejo_indexer.update_buffer_len | default('') | string | length > 0 %}
+    {% if values.repo_indexer_exclude | default([]) | count > 0 %}
+REPO_INDEXER_EXCLUDE = {{ values.repo_indexer_exclude | join(', ') }}
+    {% endif %}
+    {% if values.update_buffer_len | default('') | string | length > 0 %}
 ;; **DEPRECATED** use settings in `[queue.issue_indexer]`.
-UPDATE_BUFFER_LEN = {{ forgejo_indexer.update_buffer_len }}
+UPDATE_BUFFER_LEN = {{ values.update_buffer_len }}
     {% endif %}
-    {% if forgejo_indexer.max_file_size | default('') | string | length > 0 %}
-MAX_FILE_SIZE = {{ forgejo_indexer.max_file_size }}
+    {# ------------------------------------------------------------------------- #}
+    {% if forgejo_version is version_compare('1.21.11', '>=') %}
+      {% if values.repo_indexer_exclude_vendored | default('') | string | length > 0 %}
+REPO_INDEXER_EXCLUDE_VENDORED = {{ values.repo_indexer_exclude_vendored | bodsch.core.config_bool(true_as='true', false_as='false') }}
+      {% endif %}
+    {% endif %}
+    {# ------------------------------------------------------------------------- #}
+    {% if values.max_file_size | default('') | string | length > 0 %}
+MAX_FILE_SIZE = {{ values.max_file_size }}
     {% endif %}
   {% endif %}
+{% endif %}

@@ -1,40 +1,60 @@
+{% set values = forgejo_markup | bodsch.core.remove_empty_values %}
+{% if values.sanitizer is defined %}
+  {% set _ = values.pop("sanitizer") %}
+{% endif %}
+{% if values.asciidoc is defined %}
+  {% set _ = values.pop("asciidoc") %}
+{% endif %}
+{% if values | count > 0 %}
 
 [markup]
-  {% if forgejo_markup.mermaid_max_source_characters | default('') | string | length > 0 %}
-MERMAID_MAX_SOURCE_CHARACTERS = {{ forgejo_markup.mermaid_max_source_characters }}
+  {% if values.mermaid_max_source_characters | default('') | string | length > 0 %}
+MERMAID_MAX_SOURCE_CHARACTERS = {{ values.mermaid_max_source_characters }}
   {% endif %}
-  {% if forgejo_markup.sanitizer | count > 0 %}
-    {% for i in forgejo_markup.sanitizer %}
+    {# ------------------------------------------------------------------------- #}
+    {% if forgejo_version is version_compare('1.21.11', '>=') %}
+      {% if values.filepreview_max_lines | default('') | string | length > 0 %}
+FILEPREVIEW_MAX_LINES = {{ values.filepreview_max_lines }}
+      {% endif %}
+    {% endif %}
+    {# ------------------------------------------------------------------------- #}
+{% endif %}
+{# ---- #}
+{% set values = forgejo_markup.sanitizer | bodsch.core.remove_empty_values %}
+{% if values | count > 0 %}
+  {% for i in values %}
 
 [markup.sanitizer.{{ i.id }}]
-      {% if i.element | default('') | string | length > 0 %}
+    {% if i.element | default('') | string | length > 0 %}
 ELEMENT = {{ i.element }}
-      {% endif %}
-      {% if i.allow_attr | default('') | string | length > 0 %}
+    {% endif %}
+    {% if i.allow_attr | default('') | string | length > 0 %}
 ALLOW_ATTR = {{ i.allow_attr }}
-      {% endif %}
-      {% if i.regexp | default('') | string | length > 0 %}
+    {% endif %}
+    {% if i.regexp | default('') | string | length > 0 %}
 REGEXP = {{ i.regexp }}
-      {% endif %}
-    {% endfor %}
-  {% endif %}
-  {% if forgejo_markup.asciidoc is defined and
-        forgejo_markup.asciidoc | count > 0 and
-        forgejo_markup.asciidoc.enabled | bool %}
+    {% endif %}
+  {% endfor %}
+{% endif %}
+{# ---- #}
+{% set values = forgejo_markup.asciidoc | bodsch.core.remove_empty_values %}
+{% if values | count > 0 and
+      values.enabled | bool %}
 
 [markup.asciidoc]
-ENABLED = {{ forgejo_markup.asciidoc.enabled | bodsch.core.config_bool(true_as='true', false_as='false') }}
-    {% if forgejo_markup.asciidoc.file_extensions | count > 0 %}
-FILE_EXTENSIONS = {{ forgejo_markup.asciidoc.file_extensions | join(', ') }}
-    {% endif %}
-    {% if forgejo_markup.asciidoc.render_command | default('') | string | length > 0 %}
-RENDER_COMMAND = "{{ forgejo_markup.asciidoc.render_command }}"
-    {% endif %}
-    {% if forgejo_markup.asciidoc.is_input_file | default('') | string | length > 0 %}
-IS_INPUT_FILE = {{ forgejo_markup.asciidoc.is_input_file | bodsch.core.config_bool(true_as='true', false_as='false') }}
-    {% endif %}
-    {% if forgejo_markup.asciidoc.render_content_mode | default('') | string | length > 0 and
-          forgejo_markup.asciidoc.render_content_mode in ["sanitized", "no-sanitizer", "iframe"] %}
-RENDER_CONTENT_MODE = {{ forgejo_markup.asciidoc.render_content_mode }}
-    {% endif %}
+ENABLED = {{ values.enabled | bodsch.core.config_bool(true_as='true', false_as='false') }}
+  {% if values.file_extensions | default([]) | count > 0 %}
+FILE_EXTENSIONS = {{ values.file_extensions | join(', ') }}
   {% endif %}
+  {% if values.render_command | default('') | string | length > 0 %}
+RENDER_COMMAND = "{{ values.render_command }}"
+  {% endif %}
+  {% if values.is_input_file | default('') | string | length > 0 %}
+IS_INPUT_FILE = {{ values.is_input_file | bodsch.core.config_bool(true_as='true', false_as='false') }}
+  {% endif %}
+  {% if values.render_content_mode | default('') | string | length > 0 and
+        values.render_content_mode in ["sanitized", "no-sanitizer", "iframe"] %}
+RENDER_CONTENT_MODE = {{ values.render_content_mode }}
+  {% endif %}
+{% endif %}
+{# ---- #}

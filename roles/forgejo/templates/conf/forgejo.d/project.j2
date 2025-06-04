@@ -1,8 +1,11 @@
+{% set values = forgejo_project | bodsch.core.remove_empty_values %}
+{% if values | count > 0 %}
 
 [project]
-  {% if forgejo_project.project_board_basic_kanban_type | count > 0 %}
-PROJECT_BOARD_BASIC_KANBAN_TYPE = {{ forgejo_project.project_board_basic_kanban_type | join(', ') }}
+  {% if values.project_board_basic_kanban_type | default([]) | count > 0 %}
+PROJECT_BOARD_BASIC_KANBAN_TYPE = {{ values.project_board_basic_kanban_type | join(', ') }}
   {% endif %}
-  {% if forgejo_project.project_board_bug_triage_type | count > 0 %}
-PROJECT_BOARD_BUG_TRIAGE_TYPE = {{ forgejo_project.project_board_bug_triage_type | join(', ') }}
+  {% if values.project_board_bug_triage_type | default([]) | count > 0 %}
+PROJECT_BOARD_BUG_TRIAGE_TYPE = {{ values.project_board_bug_triage_type | join(', ') }}
   {% endif %}
+{% endif %}

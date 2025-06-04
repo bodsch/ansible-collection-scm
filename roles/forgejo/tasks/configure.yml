@@ -1,5 +1,55 @@
 ---
 
+- name: merge forgejo configuration between defaults and custom
+  ansible.builtin.set_fact:
+    forgejo_actions: "{{ forgejo_defaults_actions | combine(forgejo_actions, recursive=True) }}"
+    forgejo_admin: "{{ forgejo_defaults_admin | combine(forgejo_admin, recursive=True) }}"
+    forgejo_api: "{{ forgejo_defaults_api | combine(forgejo_api, recursive=True) }}"
+    forgejo_attachment: "{{ forgejo_defaults_attachment | combine(forgejo_attachment, recursive=True) }}"
+    forgejo_badges: "{{ forgejo_defaults_badges | combine(forgejo_badges, recursive=True) }}"
+    forgejo_auths: "{{ forgejo_defaults_auths | combine(forgejo_auths, recursive=True) }}"
+    forgejo_cache: "{{ forgejo_defaults_cache | combine(forgejo_cache, recursive=True) }}"
+    forgejo_camo: "{{ forgejo_defaults_camo | combine(forgejo_camo, recursive=True) }}"
+    forgejo_cors: "{{ forgejo_defaults_cors | combine(forgejo_cors, recursive=True) }}"
+    forgejo_cron: "{{ forgejo_defaults_cron | combine(forgejo_cron, recursive=True) }}"
+    forgejo_database: "{{ forgejo_defaults_database | combine(forgejo_database, recursive=True) }}"
+    forgejo_email: "{{ forgejo_defaults_email | combine(forgejo_email, recursive=True) }}"
+    forgejo_f3: "{{ forgejo_defaults_f3 | combine(forgejo_f3, recursive=True) }}"
+    forgejo_federation: "{{ forgejo_defaults_federation | combine(forgejo_federation, recursive=True) }}"
+    forgejo_git: "{{ forgejo_defaults_git | combine(forgejo_git, recursive=True) }}"
+    forgejo_highlight: "{{ forgejo_defaults_highlight | combine(forgejo_highlight, recursive=True) }}"
+    forgejo_i18n: "{{ forgejo_defaults_i18n | combine(forgejo_i18n, recursive=True) }}"
+    forgejo_indexer: "{{ forgejo_defaults_indexer | combine(forgejo_indexer, recursive=True) }}"
+    forgejo_lfs: "{{ forgejo_defaults_lfs | combine(forgejo_lfs, recursive=True) }}"
+    forgejo_log: "{{ forgejo_defaults_log | combine(forgejo_log, recursive=True) }}"
+    forgejo_mailer: "{{ forgejo_defaults_mailer | combine(forgejo_mailer, recursive=True) }}"
+    forgejo_markdown: "{{ forgejo_defaults_markdown | combine(forgejo_markdown, recursive=True) }}"
+    forgejo_markup: "{{ forgejo_defaults_markup | combine(forgejo_markup, recursive=True) }}"
+    forgejo_metrics: "{{ forgejo_defaults_metrics | combine(forgejo_metrics, recursive=True) }}"
+    forgejo_migrations: "{{ forgejo_defaults_migrations | combine(forgejo_migrations, recursive=True) }}"
+    forgejo_mirror: "{{ forgejo_defaults_mirror | combine(forgejo_mirror, recursive=True) }}"
+    forgejo_oauth2: "{{ forgejo_defaults_oauth2 | combine(forgejo_oauth2, recursive=True) }}"
+    forgejo_oauth2_client: "{{ forgejo_defaults_oauth2_client | combine(forgejo_oauth2_client, recursive=True) }}"
+    forgejo_openid: "{{ forgejo_defaults_openid | combine(forgejo_openid, recursive=True) }}"
+    forgejo_other: "{{ forgejo_defaults_other | combine(forgejo_other, recursive=True) }}"
+    forgejo_packages: "{{ forgejo_defaults_packages | combine(forgejo_packages, recursive=True) }}"
+    forgejo_picture: "{{ forgejo_defaults_picture | combine(forgejo_picture, recursive=True) }}"
+    forgejo_project: "{{ forgejo_defaults_project | combine(forgejo_project, recursive=True) }}"
+    forgejo_proxy: "{{ forgejo_defaults_proxy | combine(forgejo_proxy, recursive=True) }}"
+    forgejo_queue: "{{ forgejo_defaults_queue | combine(forgejo_queue, recursive=True) }}"
+    forgejo_repo_archive: "{{ forgejo_defaults_repo_archive | combine(forgejo_repo_archive, recursive=True) }}"
+    forgejo_repository: "{{ forgejo_defaults_repository | combine(forgejo_repository, recursive=True) }}"
+    forgejo_security: "{{ forgejo_defaults_security | combine(forgejo_security, recursive=True) }}"
+    forgejo_server: "{{ forgejo_defaults_server | combine(forgejo_server, recursive=True) }}"
+    forgejo_service: "{{ forgejo_defaults_service | combine(forgejo_service, recursive=True) }}"
+    forgejo_session: "{{ forgejo_defaults_session | combine(forgejo_session, recursive=True) }}"
+    forgejo_ssh: "{{ forgejo_defaults_ssh | combine(forgejo_ssh, recursive=True) }}"
+    forgejo_storage: "{{ forgejo_defaults_storage | combine(forgejo_storage, recursive=True) }}"
+    forgejo_task: "{{ forgejo_defaults_task | combine(forgejo_task, recursive=True) }}"
+    forgejo_time: "{{ forgejo_defaults_time | combine(forgejo_time, recursive=True) }}"
+    forgejo_ui: "{{ forgejo_defaults_ui | combine(forgejo_ui, recursive=True) }}"
+    forgejo_webhook: "{{ forgejo_defaults_webhook | combine(forgejo_webhook, recursive=True) }}"
+
 - name: create forgejo configuration directory
   ansible.builtin.file:
     path: "{{ forgejo_config_dir }}"
@@ -46,15 +96,18 @@
     config: "{{ forgejo_config_dir }}/forgejo.ini"
     new_config: "{{ forgejo_config_dir }}/forgejo.new"
   register: forgejo_config
-  #notify:
-  #  - restart forgejo
-  #  - check if forgejo are available
-
-- name: d
-  debug:
-    msg: "{{ forgejo_config }}"
+  notify:
+    - restart forgejo
+    - check if forgejo are available
 
 - name: restart forgejo if needed
   ansible.builtin.meta: flush_handlers
+
+- name: wait for running forgejo
+  ansible.builtin.wait_for:
+    host: "{{ forgejo_server.http_addr | default('127.0.0.1') }}"
+    port: "{{ forgejo_server.http_port | default(3000) | int }}"
+    delay: 2
+    connect_timeout: 120
 
 ...

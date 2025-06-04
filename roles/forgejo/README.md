@@ -32,7 +32,65 @@ Tested on
 
 ## usage
 
-Full example
+[config cheat-sheet](https://forgejo.org/docs/latest/admin/config-cheat-sheet)
+
+- [actions](docs/actions.md)
+- [admin](docs/admin.md)
+- [api](docs/api.md)
+- [attachment](docs/attachment.md)
+- [badges](docs/badges.md)
+- [cache](docs/cache.md)
+- [camo](docs/camo.md)
+- [cors](docs/cors.md)
+- [cron](docs/cron.md)
+- [database](docs/database.md)
+- [email](docs/email.md)
+- [f3](docs/f3.md)
+- [federation](docs/federation.md)
+- [git](docs/git.md)
+- [highlight](docs/highlight.md)
+- [i18n](docs/i18n.md)
+- [indexer](docs/indexer.md)
+- [lfs](docs/lfs.md)
+- [log](docs/log.md)
+- [mailer](docs/mailer.md)
+- [markdown](docs/markdown.md)
+- [markup](docs/markup.md)
+- [metrics](docs/metrics.md)
+- [migrations](docs/migrations.md)
+- [mirror](docs/mirror.md)
+- [oauth2_client](docs/oauth2_client.md)
+- [oauth2](docs/oauth2.md)
+- [openid](docs/openid.md)
+- [other](docs/other.md)
+- [packages](docs/packages.md)
+- [picture](docs/picture.md)
+- [project](docs/project.md)
+- [proxy](docs/proxy.md)
+- [queue](docs/queue.md)
+- [repo_archive](docs/repo_archive.md)
+- [repository](docs/repository.md)
+- [security](docs/security.md)
+- [server](docs/server.md)
+- [service](docs/service.md)
+- [session](docs/session.md)
+- [ssh](docs/ssh.md)
+- [storage](docs/storage.md)
+- [task](docs/task.md)
+- [time](docs/time.md)
+- [ui](docs/ui.md)
+- [webhook](docs/webhook.md)
+
+### Examples
+
+- [configured](molecule/configured/group_vars/all/vars.yml)
+- [configured with ldap](molecule/configured-with-ldap/group_vars/all/vars.yml)
+- [configured with mariadb](molecule/configured-with-mariadb/group_vars/all/vars.yml)
+- [custom config directory](molecule/custom-config-directory/group_vars/all/vars.yml)
+- [update](molecule/update/group_vars/all/vars.yml)
+
+
+### Full example
 
 ```yaml
 forgejo_version: 1.20.5-0

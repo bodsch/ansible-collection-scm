@@ -1,17 +1,27 @@
+{% set values = forgejo_migrations | bodsch.core.remove_empty_values %}
+{% if values | count > 0 %}
 
 [migrations]
-  {% if forgejo_migrations.max_attempts | default('') | string | length > 0 %}
-MAX_ATTEMPTS = {{ forgejo_migrations.max_attempts }}
+  {% if values.max_attempts | default('') | string | length > 0 %}
+MAX_ATTEMPTS = {{ values.max_attempts }}
   {% endif %}
-  {% if forgejo_migrations.retry_backoff | default('') | string | length > 0 %}
-RETRY_BACKOFF = {{ forgejo_migrations.retry_backoff }}
+  {% if values.retry_backoff | default('') | string | length > 0 %}
+RETRY_BACKOFF = {{ values.retry_backoff }}
   {% endif %}
-  {% if forgejo_migrations.allowed_domains | count > 0 %}
-ALLOWED_DOMAINS = {{ forgejo_migrations.allowed_domains | join(', ') }}
+  {% if values.allowed_domains | default([]) | count > 0 %}
+ALLOWED_DOMAINS = {{ values.allowed_domains | join(', ') }}
   {% endif %}
-  {% if forgejo_migrations.blocked_domains | count > 0 %}
-BLOCKED_DOMAINS = {{ forgejo_migrations.blocked_domains | join(', ') }}
+  {% if values.blocked_domains | default([]) | count > 0 %}
+BLOCKED_DOMAINS = {{ values.blocked_domains | join(', ') }}
   {% endif %}
-  {% if forgejo_migrations.allow_localnetworks | default('') | string | length > 0 %}
-ALLOW_LOCALNETWORKS = {{ forgejo_migrations.allow_localnetworks | default('false') | bodsch.core.config_bool(true_as='true', false_as='false') }}
+  {% if values.allow_localnetworks | default('') | string | length > 0 %}
+ALLOW_LOCALNETWORKS = {{ values.allow_localnetworks | default('false') | bodsch.core.config_bool(true_as='true', false_as='false') }}
   {% endif %}
+  {# ------------------------------------------------------------------------- #}
+  {% if forgejo_version is version_compare('1.21.11', '>=') %}
+    {% if values.skip_tls_verify | default('') | string | length > 0 %}
+SKIP_TLS_VERIFY = {{ values.skip_tls_verify | default('false') | bodsch.core.config_bool(true_as='true', false_as='false') }}
+    {% endif %}
+  {% endif %}
+  {# ------------------------------------------------------------------------- #}
+{% endif %}

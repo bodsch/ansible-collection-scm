@@ -1,128 +1,189 @@
+{% set values = forgejo_ui | bodsch.core.remove_empty_values %}
+{% set _ = values.pop("admin") %}
+{% set _ = values.pop("user") %}
+{% set _ = values.pop("meta") %}
+{% set _ = values.pop("notification") %}
+{% set _ = values.pop("svg") %}
+{% set _ = values.pop("csv") %}
+{% if values | count > 0 %}
 
 [ui]
-  {% if forgejo_ui.explore_paging_num | default('') | string | length > 0 %}
-EXPLORE_PAGING_NUM = {{ forgejo_ui.explore_paging_num }}
+  {% if values.explore_paging_num | default('') | string | length > 0 %}
+EXPLORE_PAGING_NUM = {{ values.explore_paging_num }}
   {% endif %}
-  {% if forgejo_ui.issue_paging_num | default('') | string | length > 0 %}
-ISSUE_PAGING_NUM = {{ forgejo_ui.issue_paging_num }}
+  {% if values.issue_paging_num | default('') | string | length > 0 %}
+ISSUE_PAGING_NUM = {{ values.issue_paging_num }}
   {% endif %}
-  {% if forgejo_ui.feed_max_commit_num | default('') | string | length > 0 %}
-FEED_MAX_COMMIT_NUM = {{ forgejo_ui.feed_max_commit_num }}
+  {% if values.feed_max_commit_num | default('') | string | length > 0 %}
+FEED_MAX_COMMIT_NUM = {{ values.feed_max_commit_num }}
   {% endif %}
-  {% if forgejo_ui.feed_paging_num | default('') | string | length > 0 %}
-FEED_PAGING_NUM = {{ forgejo_ui.feed_paging_num }}
+  {% if values.feed_paging_num | default('') | string | length > 0 %}
+FEED_PAGING_NUM = {{ values.feed_paging_num }}
   {% endif %}
-  {% if forgejo_ui.sitemap_paging_num | default('') | string | length > 0 %}
-SITEMAP_PAGING_NUM = {{ forgejo_ui.sitemap_paging_num }}
+  {% if values.sitemap_paging_num | default('') | string | length > 0 %}
+SITEMAP_PAGING_NUM = {{ values.sitemap_paging_num }}
   {% endif %}
-  {% if forgejo_ui.graph_max_commit_num | default('') | string | length > 0 %}
-GRAPH_MAX_COMMIT_NUM = {{ forgejo_ui.graph_max_commit_num }}
+  {% if values.graph_max_commit_num | default('') | string | length > 0 %}
+GRAPH_MAX_COMMIT_NUM = {{ values.graph_max_commit_num }}
   {% endif %}
-  {% if forgejo_ui.code_comment_lines | default('') | string | length > 0 %}
-CODE_COMMENT_LINES = {{ forgejo_ui.code_comment_lines }}
+  {% if values.code_comment_lines | default('') | string | length > 0 %}
+CODE_COMMENT_LINES = {{ values.code_comment_lines }}
   {% endif %}
-  {% if forgejo_ui.theme_color_meta_tag | default('') | string | length > 0 %}
-THEME_COLOR_META_TAG = `{{ forgejo_ui.theme_color_meta_tag }}`
+  {% if values.theme_color_meta_tag | default('') | string | length > 0 %}
+THEME_COLOR_META_TAG = `{{ values.theme_color_meta_tag }}`
   {% endif %}
-  {% if forgejo_ui.max_display_file_size | default('') | string | length > 0 %}
-MAX_DISPLAY_FILE_SIZE = {{ forgejo_ui.max_display_file_size }}
+  {% if values.max_display_file_size | default('') | string | length > 0 %}
+MAX_DISPLAY_FILE_SIZE = {{ values.max_display_file_size }}
   {% endif %}
-  {% if forgejo_ui.show_user_email | default('') | string | length > 0 %}
-SHOW_USER_EMAIL = {{ forgejo_ui.show_user_email | bodsch.core.config_bool(true_as='true', false_as='false') }}
+  {# ------------------------------------------------------------------------- #}
+  {% if forgejo_version is version_compare('1.20', '>=') %}
+    {% if values.ambiguous_unicode_detection | default('') | string | length > 0 %}
+AMBIGUOUS_UNICODE_DETECTION = {{ values.ambiguous_unicode_detection | bodsch.core.config_bool(true_as='true', false_as='false') }}
+    {% endif %}
   {% endif %}
-  {% if forgejo_ui.default_theme | default('') | string | length > 0 %}
-DEFAULT_THEME = {{ forgejo_ui.default_theme }}
+  {# ------------------------------------------------------------------------- #}
+  {% if values.show_user_email | default('') | string | length > 0 %}
+SHOW_USER_EMAIL = {{ values.show_user_email | bodsch.core.config_bool(true_as='true', false_as='false') }}
   {% endif %}
-  {% if forgejo_ui.themes | count > 0 %}
-THEMES = {{ forgejo_ui.themes | join(', ') }}
+  {% if values.default_theme | default('') | string | length > 0 %}
+DEFAULT_THEME = {{ values.default_theme }}
   {% endif %}
-  {% if forgejo_ui.reactions | count > 0 %}
-REACTIONS = {{ forgejo_ui.reactions | join(', ') }}
+  {% if values.themes | default([]) | count > 0 %}
+THEMES = {{ values.themes | join(', ') }}
   {% endif %}
-  {% if forgejo_ui.custom_emojis | count > 0 %}
-CUSTOM_EMOJIS = {{ forgejo_ui.custom_emojis | join(', ') }}
+  {% if values.reactions | default([]) | count > 0 %}
+REACTIONS = {{ values.reactions | join(', ') }}
   {% endif %}
-  {% if forgejo_ui.default_show_full_name | default('') | string | length > 0 %}
-DEFAULT_SHOW_FULL_NAME = {{ forgejo_ui.default_show_full_name | bodsch.core.config_bool(true_as='true', false_as='false') }}
+  {# ------------------------------------------------------------------------- #}
+  {% if forgejo_version is version_compare('1.20', '>=') %}
+    {% if values.reaction_max_user_num | default('') | string | length > 0 %}
+REACTION_MAX_USER_NUM = {{ values.reaction_max_user_num }}
+    {% endif %}
   {% endif %}
-  {% if forgejo_ui.search_repo_description | default('') | string | length > 0 %}
-SEARCH_REPO_DESCRIPTION = {{ forgejo_ui.search_repo_description | bodsch.core.config_bool(true_as='true', false_as='false') }}
+  {# ------------------------------------------------------------------------- #}
+  {% if values.custom_emojis | default([]) | count > 0 %}
+CUSTOM_EMOJIS = {{ values.custom_emojis | join(', ') }}
   {% endif %}
-  {% if forgejo_ui.use_service_worker | default('') | string | length > 0 %}
-USE_SERVICE_WORKER = {{ forgejo_ui.use_service_worker | bodsch.core.config_bool(true_as='true', false_as='false') }}
+  {% if values.default_show_full_name | default('') | string | length > 0 %}
+DEFAULT_SHOW_FULL_NAME = {{ values.default_show_full_name | bodsch.core.config_bool(true_as='true', false_as='false') }}
   {% endif %}
-  {% if forgejo_ui.only_show_relevant_repos | default('') | string | length > 0 %}
-ONLY_SHOW_RELEVANT_REPOS = {{ forgejo_ui.only_show_relevant_repos | bodsch.core.config_bool(true_as='true', false_as='false') }}
+  {% if values.search_repo_description | default('') | string | length > 0 %}
+SEARCH_REPO_DESCRIPTION = {{ values.search_repo_description | bodsch.core.config_bool(true_as='true', false_as='false') }}
   {% endif %}
-  {% if forgejo_ui.admin is defined and
-        forgejo_ui.admin | count > 0 %}
+  {% if values.use_service_worker | default('') | string | length > 0 %}
+USE_SERVICE_WORKER = {{ values.use_service_worker | bodsch.core.config_bool(true_as='true', false_as='false') }}
+  {% endif %}
+  {% if values.only_show_relevant_repos | default('') | string | length > 0 %}
+ONLY_SHOW_RELEVANT_REPOS = {{ values.only_show_relevant_repos | bodsch.core.config_bool(true_as='true', false_as='false') }}
+  {% endif %}
+  {# ------------------------------------------------------------------------- #}
+  {% if forgejo_version is version_compare('7.0', '>=') %}
+    {% if values.explore_paging_default_sort | default('') | string | length > 0 and
+          values.explore_paging_default_sort in ["recentupdate", "alphabetically", "reverselastlogin", "newest", "oldest"] %}
+EXPLORE_PAGING_DEFAULT_SORT = {{ values.explore_paging_default_sort }}
+    {% endif %}
+    {% if values.preferred_timestamp_tense | default('') | string | length > 0 and
+          values.preferred_timestamp_tense in ["absolute", "mixed"] %}
+PREFERRED_TIMESTAMP_TENSE =
+    {% endif %}
+  {% endif %}
+  {# ------------------------------------------------------------------------- #}
+  {% if forgejo_version is version_compare('7.0.7', '>=') %}
+    {% if values.repo_search_paging_num | default('') | string | length > 0 %}
+REPO_SEARCH_PAGING_NUM = {{ values.repo_search_paging_num }}
+    {% endif %}
+    {% if values.members_paging_num | default('') | string | length > 0 %}
+MEMBERS_PAGING_NUM = {{ values.members_paging_num }}
+    {% endif %}
+    {% if values.packages_paging_num | default('') | string | length > 0 %}
+PACKAGES_PAGING_NUM = {{ values.packages_paging_num }}
+    {% endif %}
+  {% endif %}
+  {# ------------------------------------------------------------------------- #}
+{% endif %}
+{# ------------------------------------------------------------------------- #}
+{% set values = forgejo_ui.admin | bodsch.core.remove_empty_values %}
+{% if values | count > 0 %}
 
 [ui.admin]
-    {% if forgejo_ui.admin.user_paging_num | default('') | string | length > 0 %}
-USER_PAGING_NUM = {{ forgejo_ui.admin.user_paging_num }}
-    {% endif %}
-    {% if forgejo_ui.admin.repo_paging_num | default('') | string | length > 0 %}
-REPO_PAGING_NUM = {{ forgejo_ui.admin.repo_paging_num }}
-    {% endif %}
-    {% if forgejo_ui.admin.notice_paging_num | default('') | string | length > 0 %}
-NOTICE_PAGING_NUM = {{ forgejo_ui.admin.notice_paging_num }}
-    {% endif %}
-    {% if forgejo_ui.admin.org_paging_num | default('') | string | length > 0 %}
-ORG_PAGING_NUM = {{ forgejo_ui.admin.org_paging_num }}
-    {% endif %}
+  {% if values.user_paging_num | default('') | string | length > 0 %}
+USER_PAGING_NUM = {{ values.user_paging_num }}
   {% endif %}
-  {% if forgejo_ui.user is defined and
-        forgejo_ui.user | count > 0 %}
+  {% if values.repo_paging_num | default('') | string | length > 0 %}
+REPO_PAGING_NUM = {{ values.repo_paging_num }}
+  {% endif %}
+  {% if values.notice_paging_num | default('') | string | length > 0 %}
+NOTICE_PAGING_NUM = {{ values.notice_paging_num }}
+  {% endif %}
+  {% if values.org_paging_num | default('') | string | length > 0 %}
+ORG_PAGING_NUM = {{ values.org_paging_num }}
+  {% endif %}
+{% endif %}
+{# ------------------------------------------------------------------------- #}
+{% set values = forgejo_ui.user | bodsch.core.remove_empty_values %}
+{% if values | count > 0 %}
 
 [ui.user]
-    {% if forgejo_ui.user.repo_paging_num | default('') | string | length > 0 %}
-REPO_PAGING_NUM = {{ forgejo_ui.user.repo_paging_num }}
-    {% endif %}
+  {% if values.repo_paging_num | default('') | string | length > 0 %}
+REPO_PAGING_NUM = {{ values.repo_paging_num }}
   {% endif %}
-  {% if forgejo_ui.meta is defined and
-        forgejo_ui.meta | count > 0 %}
+{% endif %}
+{# ------------------------------------------------------------------------- #}
+{% set values = forgejo_ui.meta | bodsch.core.remove_empty_values %}
+{% if values | count > 0 %}
 
 [ui.meta]
-    {% if forgejo_ui.meta.author | default('') | string | length > 0 %}
-AUTHOR = {{ forgejo_ui.meta.author }}
-    {% endif %}
-    {% if forgejo_ui.meta.description | default('') | string | length > 0 %}
-DESCRIPTION = {{ forgejo_ui.meta.description }}
-    {% endif %}
-    {% if forgejo_ui.meta.keywords | count > 0 %}
-KEYWORDS = {{ forgejo_ui.meta.keywords | join(', ') }}
-    {% endif %}
+  {% if values.author | default('') | string | length > 0 %}
+AUTHOR = {{ values.author }}
   {% endif %}
-  {% if forgejo_ui.notification is defined and
-        forgejo_ui.notification | count > 0 %}
+  {% if values.description | default('') | string | length > 0 %}
+DESCRIPTION = {{ values.description }}
+  {% endif %}
+  {% if values.keywords | default([]) | count > 0 %}
+KEYWORDS = {{ values.keywords | join(', ') }}
+  {% endif %}
+{% endif %}
+{# ------------------------------------------------------------------------- #}
+{% set values = forgejo_ui.notification | bodsch.core.remove_empty_values %}
+{% if values | count > 0 %}
 
 [ui.notification]
-    {% if forgejo_ui.notification.min_timeout | default('') | string | length > 0 %}
-MIN_TIMEOUT = {{ forgejo_ui.notification.min_timeout }}
-    {% endif %}
-    {% if forgejo_ui.notification.max_timeout | default('') | string | length > 0 %}
-MAX_TIMEOUT = {{ forgejo_ui.notification.max_timeout }}
-    {% endif %}
-    {% if forgejo_ui.notification.timeout_step | default('') | string | length > 0 %}
-TIMEOUT_STEP = {{ forgejo_ui.notification.timeout_step }}
-    {% endif %}
-    {% if forgejo_ui.notification.event_source_update_time | default('') | string | length > 0 %}
-EVENT_SOURCE_UPDATE_TIME = {{ forgejo_ui.notification.event_source_update_time }}
-    {% endif %}
+  {% if values.min_timeout | default('') | string | length > 0 %}
+MIN_TIMEOUT = {{ values.min_timeout }}
   {% endif %}
-  {% if forgejo_ui.svg is defined and
-        forgejo_ui.svg | count > 0 %}
+  {% if values.max_timeout | default('') | string | length > 0 %}
+MAX_TIMEOUT = {{ values.max_timeout }}
+  {% endif %}
+  {% if values.timeout_step | default('') | string | length > 0 %}
+TIMEOUT_STEP = {{ values.timeout_step }}
+  {% endif %}
+  {% if values.event_source_update_time | default('') | string | length > 0 %}
+EVENT_SOURCE_UPDATE_TIME = {{ values.event_source_update_time }}
+  {% endif %}
+{% endif %}
+{# ------------------------------------------------------------------------- #}
+{% set values = forgejo_ui.svg | bodsch.core.remove_empty_values %}
+{% if values | count > 0 %}
 
 [ui.svg]
-    {% if forgejo_ui.svg.enable_render | default('') | string | length > 0 %}
-ENABLE_RENDER = {{ forgejo_ui.svg.enable_render | bodsch.core.config_bool(true_as='true', false_as='false') }}
-    {% endif %}
+  {% if values.enable_render | default('') | string | length > 0 %}
+ENABLE_RENDER = {{ values.enable_render | bodsch.core.config_bool(true_as='true', false_as='false') }}
   {% endif %}
-  {% if forgejo_ui.csv is defined and
-        forgejo_ui.csv | count > 0 %}
+{% endif %}
+{# ------------------------------------------------------------------------- #}
+{% set values = forgejo_ui.csv | bodsch.core.remove_empty_values %}
+{% if values | count > 0 %}
 
 [ui.csv]
-    {% if forgejo_ui.csv.max_file_size | default('') | string | length > 0 %}
-MAX_FILE_SIZE = {{ forgejo_ui.csv.max_file_size }}
+  {% if values.max_file_size | default('') | string | length > 0 %}
+MAX_FILE_SIZE = {{ values.max_file_size }}
+  {% endif %}
+  {# ------------------------------------------------------------------------- #}
+  {% if forgejo_version is version_compare('8.0', '>=') %}
+    {% if values.max_rows | default('') | string | length > 0 %}
+MAX_ROWS = {{ values.max_rows }}
     {% endif %}
   {% endif %}
+  {# ------------------------------------------------------------------------- #}
+{% endif %}
+{# ------------------------------------------------------------------------- #}

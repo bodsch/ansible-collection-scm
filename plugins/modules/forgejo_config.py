@@ -5,17 +5,16 @@
 # Apache (see LICENSE or https://opensource.org/licenses/Apache-2.0)
 
 from __future__ import absolute_import, division, print_function
-import hashlib
+import os
+import shutil
+import grp
+import pwd
+import datetime
 
 from ansible.module_utils.basic import AnsibleModule
-
-from io import StringIO
-try:
-    from configparser import ConfigParser
-except ImportError:
-    # ver. < 3.0
-    from ConfigParser import ConfigParser
-
+from ansible_collections.bodsch.scm.plugins.module_utils.forgejo_ini import ForgejoIni
+# from ansible_collections.bodsch.scm.plugins.module_utils.forgejo_config_parser import ForgejoConfigParser
+from ansible_collections.bodsch.core.plugins.module_utils.diff import SideBySide
 
 DOCUMENTATION = """
 ---
@@ -38,6 +37,8 @@ EXAMPLES = """
   bodsch.scm.forgejo_config:
     config: "{{ forgejo_config_dir }}/forgejo.ini"
     new_config: "{{ forgejo_config_dir }}/forgejo.new"
+    owner: forgejo
+    group: forgejo
   register: forgejo_config
   notify:
     - restart forgejo
@@ -50,7 +51,7 @@ RETURN = r"""
 # ---------------------------------------------------------------------------------------
 
 
-class ForgejoConfig(object):
+class ForgejoConfigCompare(object):
     """
     """
     module = None
@@ -62,8 +63,139 @@ class ForgejoConfig(object):
 
         self.config = module.params.get("config")
         self.new_config = module.params.get("new_config")
+        self.owner = module.params.get("owner")
+        self.group = module.params.get("group")
+
+        self.ignore_map = {
+            'oauth2': ['JWT_SECRET'],
+            'security': ['INTERNAL_TOKEN']
+        }
 
     def run(self):
+        """ """
+        """
+        Annahme: self.config ist Pfad zu forgejo.ini, self.new_config zu forgejo.new,
+        self.ignore_map ist das Dict für ignore_keys, self.owner/group usw. existieren.
+        """
+        result = dict(
+            failed=False,
+            changed=False,
+            msg="forgejo.ini is up-to-date."
+        )
+
+        # 1) Wenn config nicht existiert: neu kopieren
+        if not os.path.exists(self.config):
+            shutil.copyfile(self.new_config, self.config)
+            shutil.chown(self.config, self.owner, self.group)
+            return dict(
+                failed=False,
+                changed=True,
+                msg="forgejo.ini was created successfully."
+            )
+
+        # 2) Sonst manuell beide Dateien einlesen, OHNE ConfigParser
+        org = ForgejoIni(self.module, path=self.config, ignore_keys=self.ignore_map)
+        new = ForgejoIni(self.module, path=self.new_config, ignore_keys=self.ignore_map)
+
+        # 3) Alle möglichen Sektionen sammeln
+        all_sections = set(org.data.keys()) | set(new.data.keys()) | set(self.ignore_map.keys())
+
+        # 4) Struktur, um Unterschiede zu protokollieren
+        #    Zum Beispiel: differences = { section: {"status": ..., "cs_base": ..., "cs_new": ...}, ... }
+        differences = {}
+
+        for section in sorted(all_sections):
+            # self.module.log(f"  section: '{section}'")
+            cs_base = ""
+            cs_new = ""
+            # a) Items (Key→Value) aus Base/ New holen, oder {} falls fehlt
+            items_base = org.data.get(section, {})
+            items_new = new.data.get(section, {})
+
+            if len(items_base) > 0:
+                cs_base = org.checksum_section(section)
+            if len(items_new) > 0:
+                cs_new = new.checksum_section(section)
+
+            # self.module.log(f"    org data: '{items_base}' type: {type(items_base)} size: {len(items_base)}")
+            # self.module.log(f"    new data: '{items_new}' type: {type(items_new)} size: {len(items_new)}")
+
+            # c) Status bestimmen:
+            #    - "org"      : Sektion nur in Base vorhanden
+            #    - "new"      : Sektion nur in New vorhanden
+            #    - "identical": in beiden vorhanden & gleiche Hashes
+            #    - "modified" : in beiden vorhanden, aber unterschiedliche Hashes
+
+            if cs_base == cs_new:
+                status = "identical"
+            else:
+                if section in org.data and section not in new.data:
+                    status = "org"
+                    self.module.log("  only in org data")
+                elif section not in org.data and section in new.data:
+                    status = "new"
+                    self.module.log("  only in new data")
+                else:  # existiert in beiden
+                    if cs_base == cs_new:
+                        status = "identical"
+                    else:
+                        status = "modified"
+
+            differences[section] = {
+                "status": status,
+                "cs_base": cs_base,
+                "cs_new": cs_new,
+                "items_base": items_base,
+                "items_new": items_new,
+            }
+
+        # 5) Prüfen, ob irgendwo eine Sektion nicht "identical" ist
+        sections_with_changes = [sec for sec, info in differences.items() if info["status"] != "identical"]
+        if not sections_with_changes:
+            # Alles identisch – kein Merge nötig
+            return result
+
+        # org_clean = org.get_cleaned_string()
+        # new_clean = new.get_cleaned_string()
+
+        # side_by_side = SideBySide(
+        #     module=self.module,
+        #     left=org.get_cleaned_string(),
+        #     right=new.get_cleaned_string()
+        # )
+        # self.module.log(f"{side_by_side.diff(width=140)}")
+
+        # 6) Wenn hier, dann mindestens eine Sektion tatsächlich geändert/neu/gelöscht
+        #    Wir können jetzt sections_with_changes ausgeben oder im Log schreiben, z.B.:
+        # self.module.log("Die folgenden Sektionen haben Unterschiede:")
+        # for sec in sections_with_changes:
+        #     info = differences[sec]
+        #     self.module.log(f"  section '{sec}'")
+        #     self.module.log(f"  {info}")
+
+        merged_path = os.path.join(os.path.dirname(self.config), "forgejo.merged")
+
+        # # 7) Backup-Logik wie gehabt
+        # self.create_backup()
+
+        ForgejoIni.merge(
+            module=self.module,
+            base_path=self.config,
+            new_path=self.new_config,
+            output_path=merged_path,
+            ignore_keys=self.ignore_map
+        )
+
+        shutil.copyfile(merged_path, self.config)
+        shutil.chown(self.config, self.owner, self.group)
+
+        return dict(
+            failed=False,
+            changed=True,
+            msg="forgejo.ini was changed."
+        )
+
+    def run_o(self):
         """
         """
         result = dict(
@@ -72,23 +204,51 @@ class ForgejoConfig(object):
             msg="forgejo.ini is up-to-date."
         )
 
-        ignore_map = {
-            '__global__': ['JWT_SECRET'],
-            'security': ['INTERNAL_TOKEN']
-        }
+        if not os.path.exists(self.config):
+            # uid, gid = self.get_file_ownership(self.new_config)
+            # self.module.log(msg=f"  {uid} :: {gid}")
+            shutil.copyfile(self.new_config, self.config)
+            shutil.chown(self.config, self.owner, self.group)
 
-        changed = self.compare_configs(self.config, self.new_config, ignore_map=ignore_map)
-
-        if changed:
-            self.transfer_keys(
-                file1=self.config,
-                file2=self.new_config,
-                section_keys_to_transfer={
-                    'security': ['INTERNAL_TOKEN'],
-                    'oauth2': ['JWT_SECRET']
-                },
-                output_file='/etc/forgejo/forgejo.ini'
+            return dict(
+                failed=False,
+                changed=True,
+                msg="forgejo.ini was created successfully."
             )
+
+        org = ForgejoConfigParser(self.module, path=self.config, ignore_keys=self.ignore_map)
+        new = ForgejoConfigParser(self.module, path=self.new_config, ignore_keys=self.ignore_map)
+
+        # org_clean = org.get_cleaned_string()
+        # new_clean = new.get_cleaned_string()
+
+        # side_by_side = SideBySide(module=self.module, left=org_clean, right=new_clean)
+        # self.module.log(f"{side_by_side.diff(width=140)}")
+
+        if not org.is_equal_to(new):
+            self.module.log("Konfiguration hat sich geändert.")
+            self.module.log(f"Original SHA256 : {org.checksum()}")
+            self.module.log(f"Neu SHA256      : {new.checksum()}")
+
+            side_by_side = SideBySide(module=self.module, left=self.config, right=self.new_config)
+            self.module.log(f"{side_by_side.diff()}")
+
+            merged_config = os.path.join(os.path.dirname(self.config), "forgejo.merged")
+
+            timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M")
+            basename, ext = os.path.splitext(self.config)
+
+            backup_config = f"{basename}_{timestamp}{ext}"
+
+            self.module.log(f"merged_config : {merged_config}")
+            self.module.log(f"backup_config : {backup_config}")
+
+            new.merge_into(base_path=self.config, output_path=merged_config)
+
+            # shutil.move(merged_config, self.config)
+            os.rename(self.config, backup_config)
+            shutil.copyfile(merged_config, self.config)
+            shutil.chown(self.config, self.owner, self.group)
 
             return dict(
                 failed=False,
@@ -98,125 +258,11 @@ class ForgejoConfig(object):
 
         return result
 
-    def read_ini_with_global_section(self, path, global_section="__global__"):
-        """
-        """
-        with open(path, 'r', encoding='utf-8') as f:
-            lines = f.readlines()
-
-        modified_lines = []
-        section_started = False
-
-        for i, line in enumerate(lines):
-            stripped = line.strip()
-            if not stripped or stripped.startswith(';'):
-                modified_lines.append(line)
-                continue
-            if stripped.startswith('['):
-                section_started = True
-                break
-            else:
-                break
-
-        # Nur wenn keine Section direkt am Anfang kommt
-        if not section_started:
-            modified_lines = [f'[{global_section}]\n'] + lines
-        else:
-            modified_lines = lines
-
-        config = ConfigParser()
-        config.optionxform = str
-        config.read_file(StringIO(''.join(modified_lines)))
-        return config
-
-    def compare_configs(self, file1, file2, ignore_map=None):
-
-        changed = False
-        config1 = self.read_ini_with_global_section(file1)
-        config2 = self.read_ini_with_global_section(file2)
-
-        ignore_map = {k.lower(): [key.lower() for key in v] for k, v in (ignore_map or {}).items()}
-
-        all_sections = set(config1.sections()) | set(config2.sections())
-
-        for section in all_sections:
-            if section not in config1 or section not in config2:
-                continue
-
-            ignore_keys = set(ignore_map.get(section, []))
-
-            checksum1 = self.section_checksum(config1, section, ignore_keys)
-            checksum2 = self.section_checksum(config2, section, ignore_keys)
-
-            if checksum1 != checksum2:
-                changed = True
-                self.module.log(f"Difference in section [{section}]")
-                added, removed, changed = self.diff_section(config1, config2, section)
-
-                if added or removed or changed:
-                    for k, v in added:
-                        self.module.log(f"  + added  : {k} = {v}")
-                    for k, v in removed:
-                        self.module.log(f"  - removed: {k} = {v}")
-                    for k, v1, v2 in changed:
-                        self.module.log(f"  ~ changed: {k} = {v1} → {v2}")
-
-        return changed
-
-    def section_checksum(self, config, section, ignore_keys=None):
-        """
-        """
-        ignore_keys = ignore_keys or set()
-        items = [(k, v) for k, v in config[section].items() if k.lower() not in ignore_keys]
-        items.sort()
-        concat = ''.join(f'{k}={v}' for k, v in items)
-
-        return hashlib.md5(concat.encode('utf-8')).hexdigest()
-
-    def transfer_keys(self, file1, file2, section_keys_to_transfer, output_file):
-        """
-        """
-        config1 = self.read_ini_with_global_section(file1)
-        config2 = self.read_ini_with_global_section(file2)
-
-        for section, keys in section_keys_to_transfer.items():
-            if not config1.has_section(section):
-                continue
-
-            if not config2.has_section(section):
-                config2.add_section(section)
-
-            for key in keys:
-                if config1.has_option(section, key):
-                    value = config1.get(section, key)
-                    config2.set(section, key, value)
-
-        # Datei schreiben
-        with open(output_file, 'w', encoding='utf-8') as f:
-            config2.write(f)
-
-    def diff_section(self, config1, config2, section, ignore_keys=None):
-        ignore_keys = set(ignore_keys or [])
-        keys1 = {k: v for k, v in config1.items(section)} if config1.has_section(section) else {}
-        keys2 = {k: v for k, v in config2.items(section)} if config2.has_section(section) else {}
-
-        added = []
-        removed = []
-        changed = []
-
-        for k in keys1:
-            if k in ignore_keys:
-                continue
-            if k not in keys2:
-                removed.append((k, keys1[k]))
-            elif keys1[k] != keys2[k]:
-                changed.append((k, keys1[k], keys2[k]))
-        for k in keys2:
-            if k in ignore_keys or k in keys1:
-                continue
-            added.append((k, keys2[k]))
-
-        return added, removed, changed
+    def get_file_ownership(self, filename):
+        return (
+            pwd.getpwuid(os.stat(filename).st_uid).pw_name,
+            grp.getgrgid(os.stat(filename).st_gid).gr_name
+        )
 
 
 def main():
@@ -233,6 +279,16 @@ def main():
             default="/etc/forgejo/forgejo.new",
             type=str
         ),
+        owner=dict(
+            required=False,
+            type='str',
+            default="forgejo"
+        ),
+        group=dict(
+            required=False,
+            type='str',
+            default="forgejo"
+        ),
     )
 
     module = AnsibleModule(
@@ -240,7 +296,7 @@ def main():
         supports_check_mode=False,
     )
 
-    config = ForgejoConfig(module)
+    config = ForgejoConfigCompare(module)
     result = config.run()
 
     module.log(msg=f"= result : '{result}'")

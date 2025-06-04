@@ -1,20 +1,26 @@
+{% set values = forgejo_admin | bodsch.core.remove_empty_values %}
+{% if values | count > 0 %}
 
 [admin]
-  {% if forgejo_admin.disable_regular_org_creation | default('') | string | length > 0 %}
-DISABLE_REGULAR_ORG_CREATION = {{ forgejo_admin.disable_regular_org_creation | bodsch.core.config_bool(true_as='true', false_as='false') }}
+  {% if values.disable_regular_org_creation | default('') | string | length > 0 %}
+DISABLE_REGULAR_ORG_CREATION = {{ values.disable_regular_org_creation | bodsch.core.config_bool(true_as='true', false_as='false') }}
   {% endif %}
-  {% if forgejo_admin.default_email_notifications | default('') | string | length > 0 and
-        forgejo_admin.default_email_notifications in ["enabled", "onmention", "disabled"] %}
-DEFAULT_EMAIL_NOTIFICATIONS = {{ forgejo_admin.default_email_notifications }}
+  {% if values.default_email_notifications | default('') | string | length > 0 and
+        values.default_email_notifications in ["enabled", "onmention", "disabled"] %}
+DEFAULT_EMAIL_NOTIFICATIONS = {{ values.default_email_notifications }}
   {% endif %}
-  {% if forgejo_admin.user_disabled_features is defined and
-        forgejo_admin.user_disabled_features | count > 0 %}
-USER_DISABLED_FEATURES = {{ forgejo_admin.user_disabled_features | join(', ') }}
+  {# ------------------------------------------------------------------------- #}
+  {% if forgejo_version is version_compare('1.21', '>=') %}
+    {% if values.user_disabled_features | default([]) | count > 0 %}
+USER_DISABLED_FEATURES = {{ values.user_disabled_features | join(', ') }}
+    {% endif %}
   {% endif %}
-  {% if forgejo_admin.external_user_disable_features is defined and
-        forgejo_admin.external_user_disable_features | count > 0 %}
-EXTERNAL_USER_DISABLE_FEATURES = {{ forgejo_admin.external_user_disable_features | join(', ') }}
+  {# ------------------------------------------------------------------------- #}
+  {% if values.external_user_disable_features is defined and
+        values.external_user_disable_features | default([]) | count > 0 %}
+EXTERNAL_USER_DISABLE_FEATURES = {{ values.external_user_disable_features | join(', ') }}
   {% endif %}
-  {% if forgejo_admin.send_notification_email_on_new_user | default('') | string | length > 0 %}
-SEND_NOTIFICATION_EMAIL_ON_NEW_USER = {{ forgejo_admin.send_notification_email_on_new_user | bodsch.core.config_bool(true_as='true', false_as='false') }}
+  {% if values.send_notification_email_on_new_user | default('') | string | length > 0 %}
+SEND_NOTIFICATION_EMAIL_ON_NEW_USER = {{ values.send_notification_email_on_new_user | bodsch.core.config_bool(true_as='true', false_as='false') }}
   {% endif %}
+{% endif %}

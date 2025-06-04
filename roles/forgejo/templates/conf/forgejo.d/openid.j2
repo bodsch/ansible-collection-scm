@@ -1,14 +1,21 @@
+{% set values = forgejo_openid | bodsch.core.remove_empty_values %}
+{% if values | count > 0 %}
 
 [openid]
-  {% if forgejo_openid.enable_openid_signin | default('') | string | length > 0 %}
-ENABLE_OPENID_SIGNIN = {{ forgejo_openid.enable_openid_signin | bodsch.core.config_bool(true_as='true', false_as='false') }}
+  {% if values.enable_openid_signin | default('') | string | length > 0 %}
+ENABLE_OPENID_SIGNIN = {{ values.enable_openid_signin | bodsch.core.config_bool(true_as='true', false_as='false') }}
   {% endif %}
-  {% if forgejo_openid.enable_openid_signup | default('') | string | length > 0 %}
-ENABLE_OPENID_SIGNUP = {{ forgejo_openid.enable_openid_signup | bodsch.core.config_bool(true_as='true', false_as='false') }}
+  {# ------------------------------------------------------------------------- #}
+  {% if forgejo_version is version_compare('1.21.11', '>=') %}
+    {% if values.enable_openid_signup | default('') | string | length > 0 %}
+ENABLE_OPENID_SIGNUP = {{ values.enable_openid_signup | bodsch.core.config_bool(true_as='true', false_as='false') }}
+    {% endif %}
   {% endif %}
-  {% if forgejo_openid.whitelisted_uris | count > 0 %}
-WHITELISTED_URIS = {{ forgejo_openid.whitelisted_uris | join(' ') }}
+  {# ------------------------------------------------------------------------- #}
+  {% if values.whitelisted_uris | default([]) | count > 0 %}
+WHITELISTED_URIS = {{ values.whitelisted_uris | join(' ') }}
   {% endif %}
-  {% if forgejo_openid.blacklisted_uris | count > 0 %}
-BLACKLISTED_URIS = {{ forgejo_openid.blacklisted_uris | join(' ') }}
+  {% if values.blacklisted_uris | default([]) | count > 0 %}
+BLACKLISTED_URIS = {{ values.blacklisted_uris | join(' ') }}
   {% endif %}
+{% endif %}

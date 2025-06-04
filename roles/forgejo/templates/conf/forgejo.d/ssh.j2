@@ -1,17 +1,20 @@
+{% set values = forgejo_ssh | bodsch.core.remove_empty_values %}
+{% if values | count > 0 %}
 
-  {% if forgejo_ssh.minimum_key_sizes is defined and
-        forgejo_ssh.minimum_key_sizes | count > 0 %}
+  {% if values.minimum_key_sizes is defined and
+        values.minimum_key_sizes | count > 0 %}
 [ssh.minimum_key_sizes]
-    {% if forgejo_ssh.minimum_key_sizes.ed25519 | default('') | string | length > 0 %}
-ED25519 = {{ forgejo_ssh.minimum_key_sizes.ed25519 }}
+    {% if values.minimum_key_sizes.ed25519 | default('') | string | length > 0 %}
+ED25519 = {{ values.minimum_key_sizes.ed25519 }}
     {% endif %}
-    {% if forgejo_ssh.minimum_key_sizes.ecdsa | default('') | string | length > 0 %}
-ECDSA = {{ forgejo_ssh.minimum_key_sizes.ecdsa }}
+    {% if values.minimum_key_sizes.ecdsa | default('') | string | length > 0 %}
+ECDSA = {{ values.minimum_key_sizes.ecdsa }}
     {% endif %}
-    {% if forgejo_ssh.minimum_key_sizes.rsa | default('') | string | length > 0 %}
-RSA = {{ forgejo_ssh.minimum_key_sizes.rsa }}
+    {% if values.minimum_key_sizes.rsa | default('') | string | length > 0 %}
+RSA = {{ values.minimum_key_sizes.rsa }}
     {% endif %}
-    {% if forgejo_ssh.minimum_key_sizes.dsa | default('') | string | length > 0 %}
-DSA = {{ forgejo_ssh.minimum_key_sizes.dsa }}
+    {% if values.minimum_key_sizes.dsa | default('') | string | length > 0 %}
+DSA = {{ values.minimum_key_sizes.dsa }}
     {% endif %}
   {% endif %}
+{% endif %}

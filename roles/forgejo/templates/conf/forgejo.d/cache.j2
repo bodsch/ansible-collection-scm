@@ -1,30 +1,48 @@
+{% set values = forgejo_cache | bodsch.core.remove_empty_values %}
+{% if forgejo_version is version_compare('1.21.11', '<') %}
+  {% if values.enabled | default('') | string | length > 0 %}
+    {% set _ = values.pop("enabled") %}
+  {% endif %}
+{% endif %}
+{% set _ = values.pop("last_commit") %}
+{% if values | count > 0 %}
 
 [cache]
-ENABLED = {{ forgejo_cache.enabled | bodsch.core.config_bool(true_as='true', false_as='false') }}
-  {% if forgejo_cache.adapter  | default('') | string | length > 0 and
-        forgejo_cache.adapter in ["memory", "redis", "memcache", "twoqueue"] %}
-ADAPTER = {{ forgejo_cache.adapter }}
+  {% if values.enabled | default('') | string | length > 0 %}
+ENABLED = {{ values.enabled | bodsch.core.config_bool(true_as='true', false_as='false') }}
   {% endif %}
-  {% if forgejo_cache.adapter == "memory" and
-        forgejo_cache.interval | default('') | string | length > 0 %}
-INTERVAL = {{ forgejo_cache.interval }}
+  {% if values.adapter  | default('') | string | length > 0 and
+        values.adapter in ["memory", "redis", "memcache", "twoqueue"] %}
+ADAPTER = {{ values.adapter }}
   {% endif %}
-  {% if forgejo_cache.adapter in ["redis", "memcache", "twoqueue"] and
-        forgejo_cache.host | default('') | string | length > 0 %}
-HOST = {{ forgejo_cache.host }}
+  {% if values.adapter == "memory" and
+        values.interval | default('') | string | length > 0 %}
+INTERVAL = {{ values.interval }}
   {% endif %}
-  {% if forgejo_cache.item_ttl | default('') | string | length > 0 %}
-ITEM_TTL = {{ forgejo_cache.item_ttl }}
+  {% if values.adapter in ["redis", "memcache", "twoqueue"] and
+        values.host | default('') | string | length > 0 %}
+HOST = {{ values.host }}
   {% endif %}
-  {% if forgejo_cache.last_commit | default('') | string | length > 0 and
-        forgejo_cache.last_commit.enabled | default('false') | bool %}
+  {% if values.item_ttl | default('') | string | length > 0 %}
+ITEM_TTL = {{ values.item_ttl }}
+  {% endif %}
+{% endif %}
+{% set values = forgejo_cache.last_commit | bodsch.core.remove_empty_values %}
+{% if forgejo_version is version_compare('1.21.11', '<') %}
+  {% if values.enabled | default('') | string | length > 0 %}
+    {% set _ = values.pop("enabled") %}
+  {% endif %}
+{% endif %}
+{% if values | count > 0 %}
 
 [cache.last_commit]
-ENABLED = {{ forgejo_cache.last_commit.enabled | bodsch.core.config_bool(true_as='true', false_as='false') }}
-    {% if forgejo_cache.last_commit.item_ttl | default('') | string | length > 0 %}
-ITEM_TTL = {{ forgejo_cache.last_commit.item_ttl }}
-    {% endif %}
-    {% if forgejo_cache.last_commit.commits_count | default('') | string | length > 0 %}
-COMMITS_COUNT = 1000
-    {% endif %}
+  {% if values.enabled | default('') | string | length > 0 %}
+ENABLED = {{ values.enabled | bodsch.core.config_bool(true_as='true', false_as='false') }}
   {% endif %}
+  {% if values.item_ttl | default('') | string | length > 0 %}
+ITEM_TTL = {{ values.item_ttl }}
+  {% endif %}
+  {% if values.commits_count | default('') | string | length > 0 %}
+COMMITS_COUNT = 1000
+  {% endif %}
+{% endif %}

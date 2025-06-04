@@ -4,7 +4,7 @@ forgejo_database:
   db_type: sqlite3
   charset: utf8
   path: /var/lib/forgejo/data/forgejo.db
-  log_sql: true
+  log_sql: false
 
 forgejo_repository:
   root: /var/lib/forgejo/data/forgejo-repositories
@@ -38,10 +38,34 @@ forgejo_openid:
   enable_openid_signup: false
 
 forgejo_log:
-  mode: console
-  level: info
+  mode:
+    - "console"
+    - "file"
+    - "file-error"
+  level: Info
   root_path: /var/lib/forgejo/log
   # router: console
+  log_writer:
+    # https://forgejo.org/docs/latest/admin/logging-documentation
+    - name: console                                 # standard console
+      mode: console                                 #
+      level: Info                                   #
+      flags: stdflags                               #
+      colorize: false                               #
+    - name: file
+      mode: file                                    #
+      level: Info                                   #
+      file_name: forgejo.log                        #
+      log_rotate: true                              # true
+      # max_size_shift: 5                             # 28
+      daily_rotate: true                            # true
+      max_days: 2                                   # 7
+      compress: true                                # true
+      compression_level: 1                          # -1
+    - name: file-error
+      mode: file
+      level: Error
+      file_name: forgejo.err                        #
 
 forgejo_security:
   install_lock: true

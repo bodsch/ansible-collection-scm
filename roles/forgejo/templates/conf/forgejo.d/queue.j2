@@ -1,11 +1,11 @@
+{% set values = forgejo_queue | bodsch.core.remove_empty_values %}
+{% if values | count > 0 %}
 
 [queue]
   {% set queue_parameters = [
-    "type", "datadir", "length", "batch_length", "conn_str", "queue_name", "set_name",
-    "wrap_if_necessary", "max_attempts", "timeout", "workers", "max_workers",
-    "block_timeout", "boost_timeout", "boost_workers"] %}
-  {% set default_queue = forgejo_queue.default %}
-  {% set forgejo_queue = forgejo_queue.pop('default') %}
+    "type", "datadir", "length", "batch_length", "conn_str", "queue_name", "set_name", "max_workers"] %}
+  {% set default_queue = values.default %}
+  {% set forgejo_queue = values.pop('default') %}
   {% for k, v in default_queue.items() %}
     {% if k in queue_parameters and v | default('') | string | length > 0 %}
 {{ k | upper }} = {{ v | bodsch.core.config_bool(true_as='true', false_as='false') }}
@@ -16,3 +16,4 @@
       Specific queues can be individually configured with [queue.name]. [queue] provides defaults
       ([queue.issue_indexer] is special due to the old configuration described above)
   #}
+{% endif %}

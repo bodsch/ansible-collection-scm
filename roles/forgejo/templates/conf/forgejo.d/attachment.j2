@@ -1,60 +1,72 @@
+{% set values = forgejo_attachment | bodsch.core.remove_empty_values %}
+{% if values | count > 0 and
+      values.enabled | default('false') | bool %}
 
 [attachment]
-ENABLED = {{ forgejo_attachment.enabled | bodsch.core.config_bool(true_as='true', false_as='false') }}
-  {% if forgejo_attachment.allowed_types is defined and
-        forgejo_attachment.allowed_types | count > 0 %}
-ALLOWED_TYPES = {{ forgejo_attachment.allowed_types | join(', ') }}
+ENABLED = {{ values.enabled | bodsch.core.config_bool(true_as='true', false_as='false') }}
+  {% if values.allowed_types is defined and
+        values.allowed_types | default([]) | count > 0 %}
+ALLOWED_TYPES = {{ values.allowed_types | join(', ') }}
   {% endif %}
-  {% if forgejo_attachment.max_size | default('') | string | length > 0 %}
-MAX_SIZE = {{ forgejo_attachment.max_size }}
+  {% if values.max_size | default('') | string | length > 0 %}
+MAX_SIZE = {{ values.max_size }}
   {% endif %}
-  {% if forgejo_attachment.max_files | default('') | string | length > 0 %}
-MAX_FILES = {{ forgejo_attachment.max_files }}
+  {% if values.max_files | default('') | string | length > 0 %}
+MAX_FILES = {{ values.max_files }}
   {% endif %}
-  {% if forgejo_attachment.storage_type | default('') | string | length > 0 and
-        forgejo_attachment.storage_type in ["local", "minio"] %}
-STORAGE_TYPE = {{ forgejo_attachment.storage_type }}
+  {% if values.storage_type | default('') | string | length > 0 and
+        values.storage_type in ["local", "minio"] %}
+STORAGE_TYPE = {{ values.storage_type }}
   {% endif %}
-  {% if forgejo_attachment.storage_type | default('') | string | length > 0 and
-        forgejo_attachment.storage_type == "minio" and
-        forgejo_attachment.serve_direct | default('') | string | length > 0 %}
-SERVE_DIRECT = {{ forgejo_attachment.serve_direct | bodsch.core.config_bool(true_as='true', false_as='false') }}
+  {% if values.storage_type | default('') | string | length > 0 and
+        values.storage_type == "minio" and
+        values.serve_direct | default('') | string | length > 0 %}
+SERVE_DIRECT = {{ values.serve_direct | bodsch.core.config_bool(true_as='true', false_as='false') }}
   {% endif %}
-  {% if forgejo_attachment.storage_type | default('') | string | length > 0 and
-        forgejo_attachment.storage_type == "local" and
-        forgejo_attachment.path | default('') | string | length > 0 %}
-PATH = {{ forgejo_attachment.path }}
+  {% if values.storage_type | default('') | string | length > 0 and
+        values.storage_type == "local" and
+        values.path | default('') | string | length > 0 %}
+PATH = {{ values.path }}
   {% endif %}
-  {% if forgejo_attachment.storage_type | default('') | string | length > 0 and
-        forgejo_attachment.storage_type == "minio" and
-        forgejo_attachment.minio is defined and
-        forgejo_attachment.minio | count > 0 %}
-    {% if forgejo_attachment.minio.endpoint | default('') | string | length > 0 %}
-MINIO_ENDPOINT = {{ forgejo_attachment.minio.endpoint }}
+  {% if values.storage_type | default('') | string | length > 0 and
+        values.storage_type == "minio" and
+        values.minio is defined and
+        values.minio | count > 0 %}
+    {% if values.minio.endpoint | default('') | string | length > 0 %}
+MINIO_ENDPOINT = {{ values.minio.endpoint }}
     {% endif %}
-    {% if forgejo_attachment.minio.access_key_id | default('') | string | length > 0 %}
-MINIO_ACCESS_KEY_ID = {{ forgejo_attachment.minio.access_key_id }}
+    {% if values.minio.access_key_id | default('') | string | length > 0 %}
+MINIO_ACCESS_KEY_ID = {{ values.minio.access_key_id }}
     {% endif %}
-    {% if forgejo_attachment.minio.secret_access_key | default('') | string | length > 0 %}
-MINIO_SECRET_ACCESS_KEY = {{ forgejo_attachment.minio.secret_access_key }}
+    {% if values.minio.secret_access_key | default('') | string | length > 0 %}
+MINIO_SECRET_ACCESS_KEY = {{ values.minio.secret_access_key }}
     {% endif %}
-    {% if forgejo_attachment.minio.bucket | default('') | string | length > 0 %}
-MINIO_BUCKET = {{ forgejo_attachment.minio.bucket }}
+    {% if values.minio.bucket | default('') | string | length > 0 %}
+MINIO_BUCKET = {{ values.minio.bucket }}
     {% endif %}
-    {% if forgejo_attachment.minio.location | default('') | string | length > 0 %}
-MINIO_LOCATION = {{ forgejo_attachment.minio.location }}
-    {% endif %}
-    {% if forgejo_attachment.minio.base_path | default('') | string | length > 0 %}
-MINIO_BASE_PATH = {{ forgejo_attachment.minio.base_path }}
-    {% endif %}
-    {% if forgejo_attachment.minio.use_ssl | default('') | string | length > 0 %}
-MINIO_USE_SSL = {{ forgejo_attachment.minio.use_ssl | bool | ternary('true', 'false') }}
-    {% endif %}
-    {% if forgejo_attachment.minio.insecure_skip_verify | default('') | string | length > 0 %}
-MINIO_INSECURE_SKIP_VERIFY = {{ forgejo_attachment.minio.insecure_skip_verify | bool | ternary('true', 'false') }}
-    {% endif %}
-    {% if forgejo_attachment.minio.checksum_algorithm | default('') | string | length > 0 and
-          forgejo_attachment.minio.checksum_algorithm in ["default", "md5"] %}
-MINIO_CHECKSUM_ALGORITHM = {{ forgejo_attachment.minio.checksum_algorithm }}
+  {# ------------------------------------------------------------------------- #}
+  {% if forgejo_version is version_compare('1.21.11', '>=') %}
+    {% if values.minio.bucket_lookup | default('') | string | length > 0 and
+          values.minio.bucket_lookup in ["auto", "dns", "path"] %}
+MINIO_BUCKET_LOOKUP = {{ values.minio.bucket_lookup }}
     {% endif %}
   {% endif %}
+  {# ------------------------------------------------------------------------- #}
+    {% if values.minio.location | default('') | string | length > 0 %}
+MINIO_LOCATION = {{ values.minio.location }}
+    {% endif %}
+    {% if values.minio.base_path | default('') | string | length > 0 %}
+MINIO_BASE_PATH = {{ values.minio.base_path }}
+    {% endif %}
+    {% if values.minio.use_ssl | default('') | string | length > 0 %}
+MINIO_USE_SSL = {{ values.minio.use_ssl | bool | ternary('true', 'false') }}
+    {% endif %}
+    {% if values.minio.insecure_skip_verify | default('') | string | length > 0 %}
+MINIO_INSECURE_SKIP_VERIFY = {{ values.minio.insecure_skip_verify | bool | ternary('true', 'false') }}
+    {% endif %}
+    {% if values.minio.checksum_algorithm | default('') | string | length > 0 and
+          values.minio.checksum_algorithm in ["default", "md5"] %}
+MINIO_CHECKSUM_ALGORITHM = {{ values.minio.checksum_algorithm }}
+    {% endif %}
+  {% endif %}
+{% endif %}
