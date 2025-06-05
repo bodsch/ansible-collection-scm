@@ -71,7 +71,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: 🐍 set up python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v5.6.0
         with:
           python-version: "${{ matrix.python_version }}"
 
@@ -124,7 +124,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: 🐍 set up python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v5.6.0
         with:
           python-version: "${{ matrix.python_version }}"
 
@@ -181,7 +181,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: 🐍 set up python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v5.6.0
         with:
           python-version: "${{ matrix.python_version }}"
 
