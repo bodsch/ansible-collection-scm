@@ -3,7 +3,7 @@
 . hooks/molecule.rc
 
 # set -x
-# set -e
+set -e
 
 current_dir=$(pwd)
 
