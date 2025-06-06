@@ -68,7 +68,7 @@ jobs:
 
     steps:
       - name: check out the codebase.
-        uses: actions/checkout@v4
+        uses: actions/checkout@v4.2.2
 
       - name: 🐍 set up python
         uses: actions/setup-python@v5.6.0
@@ -121,7 +121,7 @@ jobs:
 
     steps:
       - name: check out the codebase.
-        uses: actions/checkout@v4
+        uses: actions/checkout@v4.2.2
 
       - name: 🐍 set up python
         uses: actions/setup-python@v5.6.0
@@ -178,7 +178,7 @@ jobs:
 
     steps:
       - name: check out the codebase.
-        uses: actions/checkout@v4
+        uses: actions/checkout@v4.2.2
 
       - name: 🐍 set up python
         uses: actions/setup-python@v5.6.0

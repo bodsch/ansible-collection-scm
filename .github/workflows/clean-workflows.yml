@@ -31,7 +31,7 @@ jobs:
       contents: read
     steps:
       - name: Check out the codebase.
-        uses: actions/checkout@v4
+        uses: actions/checkout@v4.2.2
         with:
           ref: ${{ github.event.workflow_run.head_branch }}
 
