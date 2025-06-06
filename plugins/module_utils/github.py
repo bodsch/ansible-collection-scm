@@ -401,12 +401,15 @@ class GitHub:
 
         for asset in assets:
             name_lower = asset["name"].lower()
-            if (
-                normalized_tag in name_lower
-                and self.system in name_lower
-                and self.architecture in name_lower
-                and any(kw in name_lower for kw in keywords)
-            ):
+
+            name_matches = (
+                normalized_tag in name_lower and
+                self.system in name_lower and
+                self.architecture in name_lower and
+                any(kw in name_lower for kw in keywords)
+            )
+
+            if name_matches:
                 self.module.log(msg=f"  → Gefundenes Checksum-Asset: {asset['name']}")
                 return asset
 
