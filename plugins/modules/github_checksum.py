@@ -16,6 +16,8 @@ from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.bodsch.core.plugins.module_utils.cache.cache_valid import cache_valid
 from ansible_collections.bodsch.core.plugins.module_utils.directory import create_directory
 
+from ansible_collections.bodsch.scm.plugins.module_utils.github import GitHub
+
 __metaclass__ = type
 
 ANSIBLE_METADATA = {
@@ -147,6 +149,7 @@ class GithubChecksum(object):
         self.repository = module.params.get("repository")
         self.github_username = module.params.get("user")
         self.github_password = module.params.get("password")
+        # self.github_token = module.params.get("token")
         self.architecture = Architecture(module.params.get("architecture")).name
         self.system = module.params.get("system").lower()
         self.checksum_file = module.params.get("checksum_file")
@@ -168,12 +171,28 @@ class GithubChecksum(object):
         rc = 10
 
         create_directory(self.cache_directory)
-        data = self.latest_information()
 
-        # self.module.log(msg=f"data: {data} {type(data)} {len(data)}")
-        # self.module.log(msg=f"  - {self.repository}")
-        # self.module.log(msg=f"  - {self.system}")
-        # self.module.log(msg=f"  - {self.architecture}")
+        gh = GitHub(self.module)
+        gh.authentication(username=self.github_username, password=self.github_password, token=self.github_password)
+        gh_result = gh.get_releases(repo_url=f"https://github.com/{self.project}/{self.repository}")
+
+        self.module.log(msg=f" -> {gh_result}")
+
+
+        status, data = self.latest_information()
+
+        self.module.log(msg=f"data: {data} {type(data)} {len(data)}")
+        self.module.log(msg=f"  - {self.repository}")
+        self.module.log(msg=f"  - {self.system}")
+        self.module.log(msg=f"  - {self.architecture}")
+
+        if status != 200:
+            return dict(
+                failed=True,
+                checksum=None,
+                checksums=[],
+                msg=f"An error has occurred. Please check the availability of {self.project}/{self.repository} and version {self.version} at Github!"
+            )
 
         # e9fa07f094b8efa3f1f209dc7d51a7cf428574906c7fd8eac9a3aed08b03ed63  alertmanager-0.25.0.darwin-amd64.tar.gz
         checksum = [x for x in data if re.search(fr".*{self.repository}.*{self.system}.*{self.architecture}.*", x)]
@@ -222,7 +241,7 @@ class GithubChecksum(object):
 
             status_code, output = self.__call_url()
 
-            # self.module.log(msg=f" - output  {output} {type(output)}")
+            self.module.log(msg=f" - output  {output} {type(output)}")
             # convert the strings into a list
             output = output.split("\n")
             # and remove empty elements
@@ -233,7 +252,9 @@ class GithubChecksum(object):
             if status_code == 200:
                 self.save_latest_information(output)
 
-                return output
+                return status_code, output
+            else:
+                return status_code, []
 
     def save_latest_information(self, data):
         """
@@ -244,6 +265,8 @@ class GithubChecksum(object):
     def __call_url(self, method='GET', data=None):
         """
         """
+        self.module.log(msg=f"GithubChecksum::__call_url({method}, {data})")
+
         response = None
 
         headers = {
@@ -252,6 +275,7 @@ class GithubChecksum(object):
         }
 
         github_url = f"{self.github_url}/{self.version}/{self.checksum_file}"
+        self.module.log(msg=f"  url  {github_url}")
 
         try:
             authentication = (self.github_username, self.github_password)
