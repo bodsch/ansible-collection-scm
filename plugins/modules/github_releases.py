@@ -6,17 +6,19 @@
 # SPDX-License-Identifier: Apache-2.0
 
 from __future__ import absolute_import, print_function
-import urllib3
-import requests
-import json
-import os
+# import urllib3
+# import requests
+# import json
+# import os
 import re
 from enum import Enum
 from pathlib import Path
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.bodsch.core.plugins.module_utils.cache.cache_valid import cache_valid
+# from ansible_collections.bodsch.core.plugins.module_utils.cache.cache_valid import cache_valid
 from ansible_collections.bodsch.core.plugins.module_utils.directory import create_directory
+
+from ansible_collections.bodsch.scm.plugins.module_utils.github import GitHub
 
 __metaclass__ = type
 
@@ -146,125 +148,48 @@ class GithubReleases(object):
         self.system = module.params.get("system").lower()
         self.cache_minutes = int(module.params.get("cache"))
 
-        self.github_url = f"https://api.github.com/repos/{self.project}/{self.repository}/releases"
+        self.github_url = f"https://github.com/{self.project}/{self.repository}"
 
         self.cache_directory = f"{Path.home()}/.ansible/cache/github/{self.project}"
-        self.cache_file_name = os.path.join(self.cache_directory, f"{self.repository}_releases.json")
-
-        urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
     def run(self):
         """
         """
         create_directory(self.cache_directory)
-        status_code, data = self.latest_information()
 
-        self.module.log(msg=f" - status_code: {status_code}")
+        gh = GitHub(self.module)
+        gh.architecture(system=self.system, architecture=self.architecture)
+        gh.enable_cache(cache_dir=self.cache_directory)
 
-        if status_code != 200:
-            return dict(
-                status=status_code,
-                msg=f"No release information could be found under {self.github_url}.",
-                # msg = data
-            )
+        gh.authentication(username=self.github_username, password=self.github_password, token=self.github_password)
 
-        download_url = ""
-        urls = []
+        gh_result = gh.get_all_releases(repo_url=self.github_url)
 
-        if isinstance(data, list):
-            """
-            """
-            for d in data:
-                assets = d.get("assets", [])
-                if assets and len(assets) > 0:
-                    for url in assets:
-                        urls.append(url.get("browser_download_url"))
+        if gh_result:
+            if isinstance(gh_result, list):
+                download_urls = [x.get("download_urls") for x in gh_result if x.get("name").lstrip("v") == self.version.lstrip("v")]
 
-        if len(urls) > 0:
-            download_url = [x for x in urls if re.search(fr".*{self.version}.*{self.system}.*{self.architecture}.*", x)][0]
+                try:
+                    if len(download_urls) > 0:
+                        # contains_list = any(isinstance(item, list) for item in download_urls)
+                        download_urls = download_urls[0]
 
-        # self.module.log(msg=f"= download_url: {download_url}")
+                        download_url = [x for x in download_urls if re.search(fr".*{self.version.lstrip("v")}.*{self.system}.*{self.architecture}.*", x)][0]
+
+                        return dict(
+                            status=200,
+                            urls=download_urls,
+                            download_url=download_url
+                        )
+
+                except Exception as e:
+                    self.module.log(msg=f"E: {e}")
+                    pass
 
         return dict(
-            status=status_code,
-            urls=urls,
-            download_url=download_url
+            status=500,
+            msg=f"No release information could be found under {self.github_url}.",
         )
-
-    def latest_information(self):
-        """
-        """
-        output = None
-
-        out_of_cache = cache_valid(self.module, self.cache_file_name, self.cache_minutes, True)
-
-        if not out_of_cache:
-            self.module.log(msg=f" - read from cache  {self.cache_file_name}")
-            with open(self.cache_file_name, "r") as f:
-                output = json.loads(f.read())
-
-                return 200, output
-
-        if not output:
-            self.module.log(msg=f" - read from url  {self.github_url}")
-            status_code, output = self.__call_url()
-
-            if status_code == 200:
-                self.save_latest_information(output)
-
-            return status_code, output
-
-    def save_latest_information(self, data):
-        """
-        """
-        with open(self.cache_file_name, "w") as f:
-            json.dump(data, f, indent=2, sort_keys=True)
-
-    def __call_url(self, method='GET', data=None):
-        """
-        """
-        response = None
-
-        headers = {
-            "Accept": "application/json",
-            "Content-Type": "application/json;charset=utf-8"
-        }
-
-        try:
-            authentication = (self.github_username, self.github_password)
-
-            if method == "GET":
-                response = requests.get(
-                    self.github_url,
-                    headers=headers,
-                    auth=authentication
-                )
-
-            else:
-                self.module.log(msg=f"{method} unsupported")
-                pass
-
-            response.raise_for_status()
-
-            return response.status_code, response.json()
-
-        except requests.exceptions.HTTPError as e:
-            self.module.log(msg=f"HTTPError: {e}")
-
-            status_code = e.response.status_code
-            status_message = e.response.json()
-
-            return status_code, status_message
-
-        except ConnectionError as e:
-            error_text = f"{type(e).__name__} {(str(e) if len(e.args) == 0 else str(e.args[0]))}"
-            self.module.log(msg=f"ConnectionError: {error_text}")
-            return 500, error_text
-
-        except Exception as e:
-            self.module.log(msg=f"ERROR   : {e}")
-
-            return response.status_code, response.json()
 
 
 def main():

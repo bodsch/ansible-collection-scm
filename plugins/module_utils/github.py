@@ -14,15 +14,12 @@ class GitHub:
     herunterzuladen und ggf. per Checksumme zu verifizieren.
     """
 
-    def __init__(self, module, system: str, architecture: str):
+    def __init__(self, module):
         """
         Initialisiert die Klasse mit einem Ansible-Modulobjekt, setzt Header und Base-URL.
         """
         self.module = module
-        self.system = system
-        self.architecture = architecture
-
-        self.module.log(msg=f"GitHub::__init__({system}, {architecture})")
+        self.module.log(msg=f"GitHub::__init__()")
 
         # Token für Authentifizierung (optional)
         self.github_token: Optional[str] = None
@@ -38,7 +35,7 @@ class GitHub:
         self.cache_minutes: int = 0
 
         # Regex, um GitHub-URLs (owner/repo) zu erkennen
-        self.github_url_re = re.compile(r"https://github\.com/([^/\s]+)/([^/\s]+)(?:/.*)?")
+        self.github_url_re = re.compile(r"https://.*github\.com/([^/\s]+)/([^/\s]+)(?:/.*)?")
 
     def authentication(self, username: str = None, password: str = None, token: Optional[str] = None):
         """
@@ -58,6 +55,13 @@ class GitHub:
 
         self.cache_dir = Path(cache_dir)
         self.cache_minutes = cache_minutes
+
+    def architecture(self, system: str, architecture: str):
+
+        self.module.log(msg=f"GitHub::architecture({system}, {architecture})")
+
+        self.system = system
+        self.architecture = architecture
 
     def parse_owner_repo(self, repo_url: str) -> Tuple[str, str]:
         """
@@ -93,7 +97,7 @@ class GitHub:
 
         # Prüfe mit cache_valid: Gibt False zurück, wenn die Datei existiert und jünger als cache_minutes ist.
         is_still_valid = not cache_valid(self.module, str(cache_path), self.cache_minutes, True)
-        self.module.log(msg=f" cache is valid: {is_still_valid}")
+        # self.module.log(msg=f" cache is valid: {is_still_valid}")
 
         if is_still_valid and cache_path.exists():
             try:
@@ -233,11 +237,19 @@ class GitHub:
                 break
 
             for r in data:
+                download_urls = []
+
+                assets = r.get("assets", [])
+                if assets and len(assets) > 0:
+                    for url in assets:
+                        download_urls.append(url.get("browser_download_url"))
+
                 all_releases.append({
                     "name": r.get("name"),
                     "tag_name": r.get("tag_name"),
                     "published_at": r.get("published_at"),
-                    "url": r.get("html_url")
+                    "url": r.get("html_url"),
+                    "download_urls": download_urls
                 })
             page += 1
 

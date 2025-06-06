@@ -2,18 +2,12 @@
 # -*- coding: utf-8 -*-
 
 from __future__ import absolute_import, print_function
-import urllib3
-# import requests
-# import json
+# import urllib3
 import os
-# import re
 from enum import Enum
-
-# from packaging.version import parse as parseVersion
 from pathlib import Path
 
 from ansible.module_utils.basic import AnsibleModule
-# from ansible_collections.bodsch.core.plugins.module_utils.cache.cache_valid import cache_valid
 from ansible_collections.bodsch.core.plugins.module_utils.directory import create_directory
 
 from ansible_collections.bodsch.scm.plugins.module_utils.github import GitHub
@@ -162,37 +156,21 @@ class GithubChecksum(object):
         self.cache_directory = f"{Path.home()}/.ansible/cache/github/{self.project}/{self.repository}"
         self.cache_file_name = os.path.join(self.cache_directory, f"{self.version}_{self.checksum_file}")
 
-        # self.module.log(msg="-------------------------------------------------")
-        # self.module.log(msg=f"  - repository   : {self.repository}")
-        # self.module.log(msg=f"  - system       : {self.system}")
-        # self.module.log(msg=f"  - architecture : {self.architecture}")
-        # self.module.log(msg=f"  - checksum_file: {self.checksum_file}")
-        # self.module.log(msg="-------------------------------------------------")
-
-        urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+        # urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
     def run(self):
         """
         """
-        checksum = None
         rc = 10
 
         create_directory(self.cache_directory)
 
-        gh = GitHub(self.module, system=self.system, architecture=self.architecture)
+        gh = GitHub(self.module)
+        gh.architecture(system=self.system, architecture=self.architecture)
         gh.enable_cache(cache_dir=self.cache_directory)
-
         gh.authentication(username=self.github_username, password=self.github_password, token=self.github_password)
-        # gh_result = gh.get_all_releases(repo_url=f"https://github.com/{self.project}/{self.repository}")
-        # gh_result = gh.get_latest_release(repo_url=f"https://github.com/{self.project}/{self.repository}")
-        # self.module.log(msg=f" -> {gh_result}")
-        #
-        # gh_result = gh.get_releases(repo_url=f"https://github.com/{self.project}/{self.repository}")
-        # self.module.log(msg=f" -> {gh_result}")
 
         release = gh.release_exists(repo_url=f"https://github.com/{self.project}/{self.repository}", tag=self.version)
-
-        self.module.log(msg=f" release: {release}")
 
         if len(release) == 0:
             return dict(
@@ -203,17 +181,13 @@ class GithubChecksum(object):
             )
 
         gh_checksum_data = gh.get_checksum_asset(owner=self.project, repo=self.repository, tag=self.version)
-        self.module.log(msg=f" -> has checksum data: {gh_checksum_data}")
 
         if gh_checksum_data:
             url = gh_checksum_data.get("url")
-            # checksum_file = url.split('/')[-1:]
             cache_file_name = os.path.join(self.cache_directory, f"{self.checksum_file}")
-
             gh.download_checksum(url, filename=cache_file_name)
 
         data, gh_checksum = gh.checksum(repo=self.repository, filename=cache_file_name)
-        self.module.log(msg=f" -> has checksum: {gh_checksum}")
 
         if len(gh_checksum) > 0:
             rc = 0
@@ -224,164 +198,6 @@ class GithubChecksum(object):
             checksum=gh_checksum,
             checksums=data
         )
-
-        # status, data = self.latest_information()
-        #
-        # self.module.log(msg="-------------------------------------------------")
-        # self.module.log(msg=f"data: {data} {type(data)} {len(data)}")
-        # self.module.log(msg=f"  - {self.repository}")
-        # self.module.log(msg=f"  - {self.system}")
-        # self.module.log(msg=f"  - {self.architecture}")
-        # self.module.log(msg="-------------------------------------------------")
-        #
-        # if status != 200:
-        #     return dict(
-        #         failed=True,
-        #         checksum=None,
-        #         checksums=[],
-        #         msg=f"An error has occurred. Please check the availability of {self.project}/{self.repository} and version {self.version} at Github!"
-        #     )
-        #
-        # # e9fa07f094b8efa3f1f209dc7d51a7cf428574906c7fd8eac9a3aed08b03ed63  alertmanager-0.25.0.darwin-amd64.tar.gz
-        # checksum = [x for x in data if re.search(fr".*{self.repository}.*{self.system}.*{self.architecture}.*", x)]
-        #
-        # if isinstance(checksum, list) and len(checksum) == 1:
-        #     checksum = checksum[0]
-        # else:
-        #     if isinstance(data, list) and len(data) == 1:
-        #         """
-        #             single entry
-        #         """
-        #         _chk = data[0].split(" ")
-        #         _len = len(_chk)
-        #
-        #         if _len == 1:
-        #             checksum = _chk[0]
-        #
-        # if isinstance(checksum, str):
-        #     checksum = checksum.split(" ")[0]
-        #
-        # if len(checksum) > 0:
-        #     rc = 0
-        #
-        # return dict(
-        #     failed=False,
-        #     rc=rc,
-        #     checksum=checksum,
-        #     checksums=data
-        # )
-
-#     def latest_information(self):
-#         """
-#         """
-#         output = None
-#
-#         out_of_cache = cache_valid(self.module, self.cache_file_name, self.cache_minutes, True)
-#
-#         if not out_of_cache:
-#             with open(self.cache_file_name, "r") as f:
-#                 output = json.loads(f.read())
-#
-#                 return output
-#
-#         if not output:
-#             self.module.log(msg=f" - read from url  {self.github_url}")
-#
-#             status_code, output = self.__call_url()
-#
-#             self.module.log(msg=f" - output  {output} {type(output)}")
-#             # convert the strings into a list
-#             output = output.split("\n")
-#             # and remove empty elements
-#             output[:] = [x for x in output if x]
-#
-#             self.module.log(msg=f" - output  {output} {type(output)}")
-#
-#             if status_code == 200:
-#                 self.save_latest_information(output)
-#
-#                 return status_code, output
-#             else:
-#                 return status_code, []
-#
-#     def save_latest_information(self, data):
-#         """
-#         """
-#         with open(self.cache_file_name, "w") as f:
-#             json.dump(data, f, indent=2, sort_keys=True)
-#
-#     def __call_url(self, method='GET', data=None):
-#         """
-#         """
-#         self.module.log(msg=f"GithubChecksum::__call_url({method}, {data})")
-#
-#         response = None
-#
-#         headers = {
-#             "Accept": "application/json",
-#             "Content-Type": "application/json;charset=utf-8"
-#         }
-#
-#         github_url = f"{self.github_url}/{self.version}/{self.checksum_file}"
-#         self.module.log(msg=f"  url  {github_url}")
-#
-#         try:
-#             authentication = (self.github_username, self.github_password)
-#
-#             if method == "GET":
-#                 response = requests.get(
-#                     github_url,
-#                     headers=headers,
-#                     auth=authentication
-#                 )
-#
-#             else:
-#                 print("unsupported")
-#                 pass
-#
-#             response.raise_for_status()
-#
-#             self.module.log(msg=f" text    : {response.text} / {type(response.text)}")
-#             # self.module.log(msg=f" json    : {response.json()} / {type(response.json())}")
-#             self.module.log(msg=f" headers : {response.headers}")
-#             self.module.log(msg=f" code    : {response.status_code}")
-#             self.module.log(msg="------------------------------------------------------------------")
-#
-#             return response.status_code, response.text
-#
-#         except requests.exceptions.HTTPError as e:
-#             self.module.log(msg=f"ERROR   : {e}")
-#
-#             status_code = e.response.status_code
-#             status_message = e.response.text
-#             # self.module.log(msg=f" status_message : {status_message} / {type(status_message)}")
-#             # self.module.log(msg=f" status_message : {e.response.json()}")
-#
-#             return status_code, status_message
-#
-#         except ConnectionError as e:
-#             error_text = f"{type(e).__name__} {(str(e) if len(e.args) == 0 else str(e.args[0]))}"
-#             self.module.log(msg=f"ERROR   : {error_text}")
-#
-#             self.module.log(msg="------------------------------------------------------------------")
-#             return 500, error_text
-#
-#         except Exception as e:
-#             self.module.log(msg=f"ERROR   : {e}")
-#             # self.module.log(msg=f" text    : {response.text} / {type(response.text)}")
-#             # self.module.log(msg=f" json    : {response.json()} / {type(response.json())}")
-#             # self.module.log(msg=f" headers : {response.headers}")
-#             # self.module.log(msg=f" code    : {response.status_code}")
-#             # self.module.log(msg="------------------------------------------------------------------")
-#
-#             return response.status_code, response.text
-#
-#     def version_sort(self, version_list):
-#         """
-#         """
-#         version_list.sort(key=parseVersion)
-#
-#         return version_list
 
 
 def main():
