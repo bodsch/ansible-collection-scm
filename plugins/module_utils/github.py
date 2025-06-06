@@ -160,3 +160,21 @@ class GitHub():
             if any(kw in asset["name"].lower() for kw in checksum_keywords):
                 return True
         return False
+
+    def download_asset(self, url, filename):
+        response = requests.get(url, headers=self.headers)
+        if response.status_code == 200:
+            with open(filename, 'wb') as f:
+                f.write(response.content)
+        else:
+            raise Exception(f"Fehler beim Herunterladen der Datei: {response.status_code}")
+
+
+"""
+gh = GitHub()
+tag = "v1.2.3"
+if gh.has_checksum_file("octocat", "Hello-World", tag):
+    print(f"Für Release {tag} gibt es ein Checksum-File.")
+else:
+    print(f"Kein Checksum-File für Release {tag} gefunden.")
+"""
