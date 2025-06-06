@@ -5,7 +5,7 @@
 [cors]
 ENABLED = {{ values.enabled | bodsch.core.config_bool(true_as='true', false_as='false') }}
   {# ------------------------------------------------------------------------- #}
-  {% if forgejo_version is version_compare('1.21.11', '=<') %}
+  {% if forgejo_version is version_compare('1.21.11', '<=') %}
     {% if values.scheme | default('') | string | length > 0 %}
 SCHEME = {{ values.scheme }}
     {% endif %}
@@ -16,7 +16,7 @@ SCHEME = {{ values.scheme }}
 ALLOW_DOMAIN = {{ values.allow_domain | join(', ') }}
   {% endif %}
   {# ------------------------------------------------------------------------- #}
-  {% if forgejo_version is version_compare('1.21.11', '=<') %}
+  {% if forgejo_version is version_compare('1.21.11', '<=') %}
     {% if values.allow_subdomain | default('') | string | length > 0 %}
 ALLOW_SUBDOMAIN = {{ values.allow_subdomain | bodsch.core.config_bool(true_as='true', false_as='false') }}
     {% endif %}
