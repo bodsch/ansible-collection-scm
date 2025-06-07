@@ -171,16 +171,27 @@ class GithubReleases(object):
 
                 try:
                     if len(download_urls) > 0:
-                        # contains_list = any(isinstance(item, list) for item in download_urls)
                         download_urls = download_urls[0]
 
-                        download_url = [x for x in download_urls if re.search(fr".*{self.version.lstrip("v")}.*{self.system}.*{self.architecture}.*", x)][0]
+                        matches = [
+                            x for x in download_urls
+                            if re.search(fr".*{self.version.lstrip('v')}.*{self.system}.*{self.architecture}.*", x)
+                        ]
 
-                        return dict(
-                            status=200,
-                            urls=download_urls,
-                            download_url=download_url
-                        )
+                        # contains_list = any(isinstance(item, list) for item in download_urls)
+                        if matches:
+                            download_url = matches[0]
+
+                            return dict(
+                                status=200,
+                                urls=download_urls,
+                                download_url=download_url
+                            )
+                        else:
+                            return dict(
+                                status=500,
+                                msg="No matching download URL found."
+                            )
 
                 except Exception as e:
                     self.module.log(msg=f"E: {e}")
