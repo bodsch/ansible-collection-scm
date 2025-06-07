@@ -31,7 +31,7 @@ SSL_MODE = {{ values.ssl_mode }}
         {% endif %}
       {% endif %}
       {# ------------------------------------------------------------------------- #}
-      {% if forgejo_version is version_compare('1.21.11', '=<') %}
+      {% if forgejo_version is version_compare('1.21.11', '<=') %}
         {% if values.charset | default('') | string | length > 0 %}
 CHARSET = {{ values.charset }}
         {% endif %}

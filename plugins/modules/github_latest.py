@@ -6,9 +6,6 @@
 # SPDX-License-Identifier: Apache-2.0
 
 from __future__ import absolute_import, print_function
-import urllib3
-import requests
-import json
 import os
 import re
 
@@ -18,8 +15,9 @@ from packaging.version import InvalidVersion
 from pathlib import Path
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.bodsch.core.plugins.module_utils.cache.cache_valid import cache_valid
 from ansible_collections.bodsch.core.plugins.module_utils.directory import create_directory
+
+from ansible_collections.bodsch.scm.plugins.module_utils.github import GitHub
 
 __metaclass__ = type
 
@@ -174,7 +172,8 @@ class GithubLatest(object):
         self.github_tags = module.params.get("github_tags")
         self.filter_elements = module.params.get("filter_elements")
 
-        self.github_url = f"https://api.github.com/repos/{self.project}/{self.repository}"
+        # self.github_url = f"https://api.github.com/repos/{self.project}/{self.repository}"
+        self.github_url = f"https://github.com/{self.project}/{self.repository}"
 
         url_path = "releases"
 
@@ -184,130 +183,33 @@ class GithubLatest(object):
 
         self.github_url = f"{self.github_url}/{url_path}"
 
-        # self.module.log(msg=f"github url: {self.github_url}")
-
         self.cache_directory = f"{Path.home()}/.ansible/cache/github/{self.project}"
         self.cache_file_name = os.path.join(self.cache_directory, f"{self.repository}_latest_{url_path}.json")
-        # self.cache_minutes = 60
-
-        urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
     def run(self):
         """
         """
         create_directory(self.cache_directory)
-        data = self.latest_information()
 
-        self.module.log(f"data: {data}")
-        # self.module.log(f"GH releases: {self.github_releases}")
-        # self.module.log(f"GH tags    : {self.github_tags}")
+        gh = GitHub(self.module)
+        gh.enable_cache(cache_dir=self.cache_directory)
+        gh.authentication(username=self.github_username, password=self.github_password, token=self.github_password)
+
+        gh_releases = gh.get_releases(self.github_url)
 
         if self.github_releases:
-            releases = [v.get("tag_name") for v in data if v.get('tag_name', None)]
+            releases = [v.get("tag_name") for v in gh_releases if v.get('tag_name', None)]
         else:
-            releases = [v.get("name") for v in data if v.get('name', None)]
+            releases = [v.get("name") for v in gh_releases if v.get('name', None)]
 
         releases = self.version_sort(releases)
-        self.module.log(msg=f"releases: {releases}")
 
         latest_release = releases[-1:][0]
-
-        self.module.log(msg=f"latest_release: {latest_release}")
 
         return dict(
             failed=False,
             latest_release=latest_release
         )
-
-    def latest_information(self):
-        """
-        """
-        output = None
-
-        out_of_cache = cache_valid(self.module, self.cache_file_name, self.cache_minutes, True)
-
-        if not out_of_cache:
-            self.module.log(msg=f" - read from cache  {self.cache_file_name}")
-            with open(self.cache_file_name, "r") as f:
-                output = json.loads(f.read())
-
-                return output
-
-        if not output:
-            self.module.log(msg=f" - read from url  {self.github_url}")
-            status_code, output = self.__call_url()
-
-            if status_code == 200:
-                self.save_latest_information(output)
-
-                return output
-
-    def save_latest_information(self, data):
-        """
-        """
-        with open(self.cache_file_name, "w") as f:
-            json.dump(data, f, indent=2, sort_keys=True)
-
-    def __call_url(self, method='GET', data=None):
-        """
-        """
-        response = None
-
-        headers = {
-            "Accept": "application/json",
-            "Content-Type": "application/json;charset=utf-8"
-        }
-
-        try:
-            authentication = (self.github_username, self.github_password)
-
-            if method == "GET":
-                response = requests.get(
-                    self.github_url,
-                    headers=headers,
-                    auth=authentication
-                )
-
-            else:
-                print("unsupported")
-                pass
-
-            response.raise_for_status()
-
-            # self.module.log(msg=f" text    : {response.text} / {type(response.text)}")
-            # self.module.log(msg=f" json    : {response.json()} / {type(response.json())}")
-            # self.module.log(msg=f" headers : {response.headers}")
-            # self.module.log(msg=f" code    : {response.status_code}")
-            # self.module.log(msg="------------------------------------------------------------------")
-
-            return response.status_code, response.json()
-
-        except requests.exceptions.HTTPError as e:
-            self.module.log(msg=f"ERROR   : {e}")
-
-            status_code = e.response.status_code
-            status_message = e.response.json()
-            # self.module.log(msg=f" status_message : {status_message} / {type(status_message)}")
-            # self.module.log(msg=f" status_message : {e.response.json()}")
-
-            return status_code, status_message
-
-        except ConnectionError as e:
-            error_text = f"{type(e).__name__} {(str(e) if len(e.args) == 0 else str(e.args[0]))}"
-            self.module.log(msg=f"ERROR   : {error_text}")
-
-            self.module.log(msg="------------------------------------------------------------------")
-            return 500, error_text
-
-        except Exception as e:
-            self.module.log(msg=f"ERROR   : {e}")
-            # self.module.log(msg=f" text    : {response.text} / {type(response.text)}")
-            # self.module.log(msg=f" json    : {response.json()} / {type(response.json())}")
-            # self.module.log(msg=f" headers : {response.headers}")
-            # self.module.log(msg=f" code    : {response.status_code}")
-            # self.module.log(msg="------------------------------------------------------------------")
-
-            return response.status_code, response.json()
 
     def version_sort(self, version_list):
         """
@@ -320,7 +222,7 @@ class GithubLatest(object):
             filter_elements = "|".join(self.filter_elements)
             filter_elements = f".*({filter_elements}).*"
 
-            self.module.log(msg=f"filter_elements: {filter_elements}")
+            # self.module.log(msg=f"filter_elements: {filter_elements}")
 
             version_list = [x for x in version_list if not re.match(filter_elements, x)]
 

@@ -68,7 +68,7 @@ jobs:
 
     steps:
       - name: check out the codebase.
-        uses: actions/checkout@v4
+        uses: actions/checkout@v4.2.2
         with:
           path: 'ansible-collection-scm'
           ref: ${{ github.event.workflow_run.head_branch }}
