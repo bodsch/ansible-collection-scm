@@ -1,0 +1,18 @@
+---
+repos:
+  - repo: local
+    hooks:
+      - id: flake8-local
+        name: flake8 (lokal)
+        entry: flake8
+        language: system
+        types: [python]
+        exclude: |
+          ^(\.git|\.venv|env|venv|build|dist|__pycache__)/
+        args: [--max-line-length=150]
+
+      - id: pycodestyle-custom
+        name: pycodestyle (custom)
+        entry: bash -c 'pycodestyle --max-line-length=150 --exclude=.git,__pycache__,venv,build,dist .'
+        language: system
+        types: [python]

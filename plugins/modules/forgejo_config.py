@@ -9,12 +9,9 @@ import os
 import shutil
 import grp
 import pwd
-import datetime
 
 from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.bodsch.scm.plugins.module_utils.forgejo_ini import ForgejoIni
-# from ansible_collections.bodsch.scm.plugins.module_utils.forgejo_config_parser import ForgejoConfigParser
-from ansible_collections.bodsch.core.plugins.module_utils.diff import SideBySide
 
 DOCUMENTATION = """
 ---
@@ -194,69 +191,6 @@ class ForgejoConfigCompare(object):
             changed=True,
             msg="forgejo.ini was changed."
         )
-
-    def run_o(self):
-        """
-        """
-        result = dict(
-            failed=False,
-            changed=False,
-            msg="forgejo.ini is up-to-date."
-        )
-
-        if not os.path.exists(self.config):
-            # uid, gid = self.get_file_ownership(self.new_config)
-            # self.module.log(msg=f"  {uid} :: {gid}")
-            shutil.copyfile(self.new_config, self.config)
-            shutil.chown(self.config, self.owner, self.group)
-
-            return dict(
-                failed=False,
-                changed=True,
-                msg="forgejo.ini was created successfully."
-            )
-
-        org = ForgejoConfigParser(self.module, path=self.config, ignore_keys=self.ignore_map)
-        new = ForgejoConfigParser(self.module, path=self.new_config, ignore_keys=self.ignore_map)
-
-        # org_clean = org.get_cleaned_string()
-        # new_clean = new.get_cleaned_string()
-
-        # side_by_side = SideBySide(module=self.module, left=org_clean, right=new_clean)
-        # self.module.log(f"{side_by_side.diff(width=140)}")
-
-        if not org.is_equal_to(new):
-            self.module.log("Konfiguration hat sich geändert.")
-            self.module.log(f"Original SHA256 : {org.checksum()}")
-            self.module.log(f"Neu SHA256      : {new.checksum()}")
-
-            side_by_side = SideBySide(module=self.module, left=self.config, right=self.new_config)
-            self.module.log(f"{side_by_side.diff()}")
-
-            merged_config = os.path.join(os.path.dirname(self.config), "forgejo.merged")
-
-            timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M")
-            basename, ext = os.path.splitext(self.config)
-
-            backup_config = f"{basename}_{timestamp}{ext}"
-
-            self.module.log(f"merged_config : {merged_config}")
-            self.module.log(f"backup_config : {backup_config}")
-
-            new.merge_into(base_path=self.config, output_path=merged_config)
-
-            # shutil.move(merged_config, self.config)
-            os.rename(self.config, backup_config)
-            shutil.copyfile(merged_config, self.config)
-            shutil.chown(self.config, self.owner, self.group)
-
-            return dict(
-                failed=False,
-                changed=True,
-                msg="forgejo.ini was changed."
-            )
-
-        return result
 
     def get_file_ownership(self, filename):
         return (

@@ -19,7 +19,7 @@ class GitHub:
         Initialisiert die Klasse mit einem Ansible-Modulobjekt, setzt Header und Base-URL.
         """
         self.module = module
-        self.module.log(msg=f"GitHub::__init__()")
+        self.module.log(msg="GitHub::__init__()")
 
         # Token für Authentifizierung (optional)
         self.github_token: Optional[str] = None

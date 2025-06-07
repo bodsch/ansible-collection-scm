@@ -1,19 +1,28 @@
 [flake8]
 
+# E203: https://github.com/python/black/issues/315
+# ignore = D,E741,W503,W504,H,E501,E203
 # E221 multiple spaces before operator
 # E251 unexpected spaces around keyword / parameter equals
+# E203 für Black-Kompatibilität
+# W503 für Zeilenumbruch-Operator)
 
-# ignore = E221,E251
+ignore = 
+  E203,
+  W504
 
 exclude =
   # No need to traverse our git directory
   .git,
   # There's no value in checking cache directories
   __pycache__,
-  .tox
-
-# E203: https://github.com/python/black/issues/315
-# ignore = D,E741,W503,W504,H,E501,E203
+  .tox,
+  molecule,
+  hooks,
+  tools,
 
 max-line-length = 195
 
+# Optionale Erweiterung: zeige absolute Pfade
+show-source = true
+count = true
