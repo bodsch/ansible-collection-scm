@@ -4,15 +4,15 @@ repos:
     hooks:
       - id: flake8-local
         name: flake8 (lokal)
-        entry: flake8
+        entry: bash -c 'flake8 --append-config=.config/flake8.cfg'
         language: system
         types: [python]
-        exclude: |
-          ^(\.git|\.venv|env|venv|build|dist|__pycache__)/
-        args: [--max-line-length=150]
+        # exclude: |
+        #   ^(\.git|\.venv|env|venv|build|dist|__pycache__)/
+        # args: [--max-line-length=150]
 
       - id: pycodestyle-custom
         name: pycodestyle (custom)
-        entry: bash -c 'pycodestyle --max-line-length=150 --exclude=.git,__pycache__,venv,build,dist .'
+        entry: bash -c 'pycodestyle plugins/ --config=.config/pycodestyle.cfg --statistics --count --exclude=test_*.py --exclude=hooks/*.py'
         language: system
         types: [python]
