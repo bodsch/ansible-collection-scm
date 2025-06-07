@@ -47,6 +47,7 @@ jobs:
           - "3.10"
           - "3.11"
           - "3.12"
+          - "3.13"
 
     steps:
       - name: Check out the codebase.
@@ -67,5 +68,36 @@ jobs:
       - name: Lint code.
         run: |
           pycodestyle plugins/ --config=.config/pycodestyle.cfg --statistics --count --exclude=test_*.py --exclude=hooks/*.py
+
+  flake8:
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        python_version:
+          - "3.10"
+          - "3.11"
+          - "3.12"
+          - "3.13"
+
+    steps:
+      - name: Check out the codebase.
+        uses: actions/checkout@v4.2.2
+        with:
+          ref: ${{ github.event.workflow_run.head_branch }}
+
+      - name: 🐍 set up python
+        uses: actions/setup-python@v5.6.0
+        with:
+          python-version: "${{ matrix.python_version }}"
+
+      - name: Install test dependencies.
+        run: |
+          python3 -m pip install --upgrade pip
+          python3 -m pip install flake8
+
+      - name: Lint code.
+        run: |
+          flake8
 
 ...
