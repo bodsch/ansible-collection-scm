@@ -1,3 +1,4 @@
+
 import re
 import requests
 import hashlib
@@ -267,12 +268,13 @@ class GitHub:
 
         cache_filename = f"release_artefacts_{tag}.json"
         cache_path = self._cache_path(cache_filename)
-
         cached = self._cached_data(cache_path)
+
         if cached is not None:
             return cached
 
         api_url = f"{self.base_api_url}/repos/{owner}/{repo}/releases/tags/{tag}"
+
         response = self._get_request(api_url)
         status = response.status_code
 
@@ -302,10 +304,13 @@ class GitHub:
         Gibt True zurück, falls vorhanden, sonst False.
         """
         self.module.log(msg=f"GitHub::release_exists(repo_url={repo_url}, tag={tag})")
+
         all_rel = self.get_all_releases(repo_url)
         norm_tag = tag.lstrip("v")
 
-        return [entry for entry in all_rel if entry.get("name", "").lstrip("v") == norm_tag]
+        matching = self.filter_by_version(all_rel, norm_tag)
+
+        return matching # [entry for entry in all_rel if entry.get("name", "").lstrip("v") == norm_tag]
 
         # for entry in all_rel:
         #     if entry.get("tag_name", "").lstrip("v") == norm_tag:
@@ -393,6 +398,7 @@ class GitHub:
         """
         self.module.log(msg=f"GitHub::get_checksum_asset(owner={owner}, repo={repo}, tag={tag})")
         assets = self.release_assets(owner, repo, tag)
+
         if not assets:
             return None
 
@@ -401,6 +407,13 @@ class GitHub:
 
         for asset in assets:
             name_lower = asset["name"].lower()
+            name_matches = (
+                any(kw in name_lower for kw in keywords)
+            )
+
+            if name_matches:
+                # self.module.log(msg=f"  → Gefundenes Checksum-Asset: {asset['name']}")
+                return asset
 
             name_matches = (
                 normalized_tag in name_lower and
@@ -410,7 +423,7 @@ class GitHub:
             )
 
             if name_matches:
-                self.module.log(msg=f"  → Gefundenes Checksum-Asset: {asset['name']}")
+                # self.module.log(msg=f"  → Gefundenes Checksum-Asset: {asset['name']}")
                 return asset
 
         return None
@@ -495,11 +508,8 @@ class GitHub:
         cache_file = self._cache_path(filename)
         cached_data = self._cached_data(cache_file)
 
-        self.module.log(msg=f" - {cached_data} {type(cached_data)}")
-
         if cached_data:
             checksum = [x for x in cached_data if re.search(fr".*{repo}.*{self.system}.*{self.architecture}.*", x)]
-            self.module.log(msg=f" - {checksum}")
 
             if isinstance(checksum, list) and len(checksum) == 1:
                 checksum = checksum[0]
@@ -520,3 +530,21 @@ class GitHub:
             return cached_data, checksum
 
         return None
+
+    def filter_by_version(self, entries: list, version: str):
+        """
+        Gibt alle Einträge zurück, deren name- oder tag_name-Feld
+        auf die gegebene Version passt.
+        """
+        self.module.log(msg=f"GitHub::filter_by_version(entries, version={version})")
+
+        # Erzeuge ein Regex, das entweder mit "v0.7.0", "0.7.0" am Anfang von name/tag_name matcht
+        pattern = re.compile(rf"^v?{re.escape(version)}(?:\b|/)")
+        filtered = []
+        for e in entries:
+            name = e.get("name", "")
+            tag  = e.get("tag_name", "")
+            if pattern.match(tag) or pattern.match(name):
+                filtered.append(e)
+
+        return filtered

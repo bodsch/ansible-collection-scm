@@ -164,6 +164,7 @@ class GithubChecksum(object):
         rc = 10
 
         create_directory(self.cache_directory)
+        cache_file_name = os.path.join(self.cache_directory, f"{self.checksum_file}")
 
         gh = GitHub(self.module)
         gh.architecture(system=self.system, architecture=self.architecture)
@@ -184,7 +185,6 @@ class GithubChecksum(object):
 
         if gh_checksum_data:
             url = gh_checksum_data.get("url")
-            cache_file_name = os.path.join(self.cache_directory, f"{self.checksum_file}")
             gh.download_checksum(url, filename=cache_file_name)
 
         data, gh_checksum = gh.checksum(repo=self.repository, filename=cache_file_name)
@@ -255,7 +255,7 @@ def main():
     api = GithubChecksum(module)
     result = api.run()
 
-    module.log(msg=f"= result : {result}")
+    # module.log(msg=f"= result : {result}")
 
     module.exit_json(**result)
 
