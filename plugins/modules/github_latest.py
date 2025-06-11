@@ -6,12 +6,8 @@
 # SPDX-License-Identifier: Apache-2.0
 
 from __future__ import absolute_import, print_function
-import os
+
 import re
-
-from packaging.version import parse as parseVersion
-from packaging.version import InvalidVersion
-
 from pathlib import Path
 
 from ansible.module_utils.basic import AnsibleModule
@@ -184,7 +180,7 @@ class GithubLatest(object):
         self.github_url = f"{self.github_url}/{url_path}"
 
         self.cache_directory = f"{Path.home()}/.ansible/cache/github/{self.project}"
-        self.cache_file_name = os.path.join(self.cache_directory, f"{self.repository}_latest_{url_path}.json")
+        self.cache_file_name = f"{self.repository}_releases.json"
 
     def run(self):
         """
@@ -192,54 +188,27 @@ class GithubLatest(object):
         create_directory(self.cache_directory)
 
         gh = GitHub(self.module)
-        gh.enable_cache(cache_dir=self.cache_directory)
+        gh.enable_cache(cache_dir=self.cache_directory, cache_file=self.cache_file_name)
         gh.authentication(username=self.github_username, password=self.github_password, token=self.github_password)
 
         gh_releases = gh.get_releases(self.github_url)
+        gh_latest_release = gh.latest_published(gh_releases)
 
-        if self.github_releases:
-            releases = [v.get("tag_name") for v in gh_releases if v.get('tag_name', None)]
+        if self.github_tags:
+            latest_release = gh_latest_release.get("tag_name", None)
         else:
-            releases = [v.get("name") for v in gh_releases if v.get('name', None)]
+            latest_release = gh_latest_release.get("name", None)
 
-        releases = self.version_sort(releases)
-
-        latest_release = releases[-1:][0]
+            if latest_release:
+                pattern = re.compile(r'^\s*(\d+(?:\.\d+){1,})')
+                match = pattern.match(latest_release)
+                if match:
+                    latest_release = match.group(1)
 
         return dict(
             failed=False,
-            latest_release=latest_release
+            latest_release=latest_release.lstrip("v")
         )
-
-    def version_sort(self, version_list):
-        """
-        """
-        # filter beta version
-        if self.without_beta:
-            self.filter_elements.append("beta")
-
-        if self.filter_elements and len(self.filter_elements) > 0:
-            filter_elements = "|".join(self.filter_elements)
-            filter_elements = f".*({filter_elements}).*"
-
-            # self.module.log(msg=f"filter_elements: {filter_elements}")
-
-            version_list = [x for x in version_list if not re.match(filter_elements, x)]
-
-        self.module.log(msg=f"version_list: {version_list}")
-
-        # remove "v" or "V" from version
-        if self.only_version:
-            version_list = [x.replace("v", "").replace("V", "") for x in version_list]
-
-        try:
-            version_list.sort(key=parseVersion)
-        except InvalidVersion as e:
-            self.module.log(msg=f"ERROR   : {e}")
-        except Exception as e:
-            self.module.log(msg=f"ERROR   : {e}")
-
-        return version_list
 
 
 def main():
@@ -305,7 +274,7 @@ def main():
     api = GithubLatest(module)
     result = api.run()
 
-    module.log(msg=f"= result : {result}")
+    # module.log(msg=f"= result : {result}")
 
     module.exit_json(**result)
 

@@ -3,9 +3,11 @@ import re
 import requests
 import hashlib
 import json
+
 from pathlib import Path
 from typing import Optional, Tuple, Union, List, Dict
 
+from ansible_collections.bodsch.scm.plugins.module_utils.release_finder import ReleaseFinder
 from ansible_collections.bodsch.core.plugins.module_utils.cache.cache_valid import cache_valid
 
 
@@ -20,7 +22,7 @@ class GitHub:
         Initialisiert die Klasse mit einem Ansible-Modulobjekt, setzt Header und Base-URL.
         """
         self.module = module
-        self.module.log(msg="GitHub::__init__()")
+        # self.module.log(msg="GitHub::__init__()")
 
         # Token für Authentifizierung (optional)
         self.github_token: Optional[str] = None
@@ -42,24 +44,25 @@ class GitHub:
         """
         Legt einen Authorization-Header mit Personal-Access-Token an, falls gegeben.
         """
-        self.module.log(msg=f"GitHub::authentication(token={'***' if token else None})")
+        # self.module.log(msg=f"GitHub::authentication(token={'***' if token else None})")
         if token:
             self.github_token = token
             self.headers["Authorization"] = f"token {token}"
 
-    def enable_cache(self, cache_dir: str, cache_minutes: int = 60):
+    def enable_cache(self, cache_dir: str, cache_file: str = None, cache_minutes: int = 60):
         """
         Setzt `self.cache_dir` und `self.cache_minutes`. Es wird NICHT
         versucht, das Verzeichnis anzulegen, da das außen bereits sichergestellt ist.
         """
-        self.module.log(msg=f"GitHub::enable_cache(cache_dir={cache_dir}, cache_minutes={cache_minutes})")
+        # self.module.log(msg=f"GitHub::enable_cache(cache_dir={cache_dir}, cache_file={cache_file}, cache_minutes={cache_minutes})")
 
         self.cache_dir = Path(cache_dir)
+        self.cache_file = cache_file
         self.cache_minutes = cache_minutes
 
     def architecture(self, system: str, architecture: str):
 
-        self.module.log(msg=f"GitHub::architecture({system}, {architecture})")
+        # self.module.log(msg=f"GitHub::architecture({system}, {architecture})")
 
         self.system = system
         self.architecture = architecture
@@ -92,7 +95,8 @@ class GitHub:
         Liest eine Cache-Datei, wenn sie existiert und noch gültig ist. Gibt deren
         Inhalt (aus JSON) zurück oder None, falls kein gültiger Cache vorliegt.
         """
-        self.module.log(msg=f"GitHub::_cached_data(cache_path={cache_path})")
+        # self.module.log(msg=f"GitHub::_cached_data(cache_path={cache_path})")
+
         if not self.cache_dir:
             return None
 
@@ -116,7 +120,8 @@ class GitHub:
         """
         Schreibt `data` als JSON in die Cache-Datei `cache_path`, falls Cache aktiviert.
         """
-        self.module.log(msg=f"GitHub::_write_cache(cache_path={cache_path})")
+        # self.module.log(msg=f"GitHub::_write_cache(cache_path={cache_path})")
+
         if not self.cache_dir:
             return
 
@@ -131,7 +136,8 @@ class GitHub:
         Wrapper um requests.get, damit wir Logging zentralisieren und ggf. später
         Timeouts/Proxy-Einstellungen zentral ergänzen können.
         """
-        self.module.log(msg=f"GitHub::_get_request(url={url}, params={params}, stream={stream})")
+        # self.module.log(msg=f"GitHub::_get_request(url={url}, params={params}, stream={stream})")
+
         return requests.get(url, headers=self.headers, params=params, stream=stream)
 
     def get_releases(self, repo_url: str, count: int = 10) -> Union[List[Dict], Dict]:
@@ -146,10 +152,10 @@ class GitHub:
         Falls 404: {"repo": repo_url, "tag": None, "published": None}
         Sonst bei anderem Fehler: {"repo": repo_url, "error": "Fehlercode ..."}
         """
-        self.module.log(msg=f"GitHub::get_releases(repo_url={repo_url}, count={count})")
+        # self.module.log(msg=f"GitHub::get_releases(repo_url={repo_url}, count={count})")
 
         owner, repo = self.parse_owner_repo(repo_url)
-        cache_filename = "releases.json"
+        cache_filename = self.cache_file or "releases.json"
         cache_path = self._cache_path(cache_filename)
 
         cached = self._cached_data(cache_path)
@@ -188,7 +194,8 @@ class GitHub:
           { "repo": repo_url, "tag": "v1.2.3" oder None, "published": ISO-Zeitstempel oder None }
         Oder im Fehlerfall z.B. {"repo": repo_url, "error": "..."}.
         """
-        self.module.log(msg=f"GitHub::get_latest_release(repo_url={repo_url})")
+        # self.module.log(msg=f"GitHub::get_latest_release(repo_url={repo_url})")
+
         releases = self.get_releases(repo_url, count=1)
 
         if isinstance(releases, dict):
@@ -211,27 +218,28 @@ class GitHub:
         Cacht das Ergebnis in "all_releases.json". Gibt eine Liste von Dicts zurück,
         analog zu get_releases(). Löst Exception aus, wenn ein HTTP-Fehler != 200 auftritt.
         """
-        self.module.log(msg=f"GitHub::get_all_releases(repo_url={repo_url})")
+        # self.module.log(msg=f"GitHub::get_all_releases(repo_url={repo_url})")
 
         owner, repo = self.parse_owner_repo(repo_url)
         cache_filename = "all_releases.json"
         cache_path = self._cache_path(cache_filename)
 
         cached = self._cached_data(cache_path)
+
         if cached is not None:
-            return cached  # Bereits aus JSON geladen
+            return cached
 
         all_releases: List[Dict] = []
         page = 1
 
         while True:
-            params = {"per_page": 100, "page": page}
+            params = {"per_page": 200, "page": page}
             api_url = f"{self.base_api_url}/repos/{owner}/{repo}/releases"
             response = self._get_request(api_url, params=params)
             status = response.status_code
 
             if status != 200:
-                raise Exception(f"Fehler beim Abrufen der Releases (Seite {page}): {status}")
+                raise Exception(f"Error when retrieving the releases (page {page}): {status}")
 
             data = response.json()
             if not data:
@@ -264,7 +272,7 @@ class GitHub:
           [ { "name": "<Dateiname>", "url": "<browser_download_url>", "size": <bytes> }, ... ]
         Oder None, wenn das Release (Tag) nicht existiert (HTTP 404). Löst bei anderem Fehler eine Exception aus.
         """
-        self.module.log(msg=f"GitHub::release_assets(owner={owner}, repo={repo}, tag={tag})")
+        # self.module.log(msg=f"GitHub::release_assets(owner={owner}, repo={repo}, tag={tag})")
 
         cache_filename = f"release_artefacts_{tag}.json"
         cache_path = self._cache_path(cache_filename)
@@ -303,19 +311,14 @@ class GitHub:
         Prüft, ob für ein Repo ein Release mit dem exakten Tag existiert.
         Gibt True zurück, falls vorhanden, sonst False.
         """
-        self.module.log(msg=f"GitHub::release_exists(repo_url={repo_url}, tag={tag})")
+        # self.module.log(msg=f"GitHub::release_exists(repo_url={repo_url}, tag={tag})")
 
         all_rel = self.get_all_releases(repo_url)
         norm_tag = tag.lstrip("v")
 
-        matching = self.filter_by_version(all_rel, norm_tag)
+        matching = self.filter_by_semver(all_rel, norm_tag)
 
-        return matching  # [entry for entry in all_rel if entry.get("name", "").lstrip("v") == norm_tag]
-
-        # for entry in all_rel:
-        #     if entry.get("tag_name", "").lstrip("v") == norm_tag:
-        #         return True
-        # return False
+        return matching
 
     def _download_file(self, url: str, dest_path: Path, stream: bool = False) -> None:
         """
@@ -324,7 +327,8 @@ class GitHub:
         - Bei stream=True: Binär-Download via iter_content
         - Bei stream=False: Text-Download; speichert Zeilen in JSON-kompatiblem Format
         """
-        self.module.log(msg=f"GitHub::_download_file(url={url}, dest={dest_path}, stream={stream})")
+        # self.module.log(msg=f"GitHub::_download_file(url={url}, dest={dest_path}, stream={stream})")
+
         response = self._get_request(url, stream=stream)
         status = response.status_code
 
@@ -347,7 +351,8 @@ class GitHub:
         Lädt das Asset von `url` herunter und speichert es als lokale Datei `filename`.
         Streamt binäre Daten (z.B. .zip, .tar.gz).
         """
-        self.module.log(msg=f"GitHub::download_asset(url={url}, filename={filename})")
+        # self.module.log(msg=f"GitHub::download_asset(url={url}, filename={filename})")
+
         dest = Path(filename)
         self._download_file(url, dest, stream=True)
 
@@ -356,7 +361,8 @@ class GitHub:
         Lädt eine Checksum-Datei (Text) von `url` herunter und speichert sie
         als JSON-Cache (Liste von Zeilen) in `filename`. (Kein reines Binär-Download.)
         """
-        self.module.log(msg=f"GitHub::download_checksum(url={url}, filename={filename})")
+        # self.module.log(msg=f"GitHub::download_checksum(url={url}, filename={filename})")
+
         dest = Path(filename)
         self._download_file(url, dest, stream=False)
 
@@ -365,7 +371,8 @@ class GitHub:
         Berechnet den Hash von `filepath` blockweise (standardmäßig SHA256)
         und gibt den Hex-String zurück.
         """
-        self.module.log(msg=f"GitHub::compute_hash(filepath={filepath}, algorithm={algorithm})")
+        # self.module.log(msg=f"GitHub::compute_hash(filepath={filepath}, algorithm={algorithm})")
+
         hasher = hashlib.new(algorithm)
         block_size = 65536  # 64 KiB
         with open(filepath, "rb") as f:
@@ -380,7 +387,8 @@ class GitHub:
         vorliegt. Sucht nach `target_filename` in der zweiten Spalte
         und gibt den zugehörigen Hex-Hash zurück. Löst ValueError, falls keine passende Zeile.
         """
-        self.module.log(msg=f"GitHub::parse_checksum_file({checksum_path}, {target_filename})")
+        # self.module.log(msg=f"GitHub::parse_checksum_file({checksum_path}, {target_filename})")
+
         with open(checksum_path, "r", encoding="utf-8") as f:
             for line in f:
                 parts = line.strip().split()
@@ -396,7 +404,8 @@ class GitHub:
         ein Asset-Name existiert, der eine der Begriffe ["sha256", "sha512", "checksum", "sum"] enthält.
         Ansonsten None.
         """
-        self.module.log(msg=f"GitHub::get_checksum_asset(owner={owner}, repo={repo}, tag={tag})")
+        # self.module.log(msg=f"GitHub::get_checksum_asset(owner={owner}, repo={repo}, tag={tag})")
+
         assets = self.release_assets(owner, repo, tag)
 
         if not assets:
@@ -434,7 +443,8 @@ class GitHub:
         das einen der Begriffe ["sha256", "sha512", "checksum", "sum"] enthält.
         Sonst False.
         """
-        self.module.log(msg=f"GitHub::has_checksum_file(owner={owner}, repo={repo}, tag={tag})")
+        # self.module.log(msg=f"GitHub::has_checksum_file(owner={owner}, repo={repo}, tag={tag})")
+
         assets = self.release_assets(owner, repo, tag)
         if not assets:
             return False
@@ -454,7 +464,8 @@ class GitHub:
         Hash aus der Checksum-Datei. Gibt True zurück, wenn beide übereinstimmen,
         sonst False. Löst Exceptions, falls Assets/Checksum-Datei fehlen.
         """
-        self.module.log(msg=f"GitHub::verify_release(repo_url={repo_url}, tag={tag}, algorithm={algorithm})")
+        # self.module.log(msg=f"GitHub::verify_release(repo_url={repo_url}, tag={tag}, algorithm={algorithm})")
+
         owner, repo = self.parse_owner_repo(repo_url)
 
         assets = self.release_assets(owner, repo, tag)
@@ -503,7 +514,7 @@ class GitHub:
     def checksum(self, repo: str, filename: str):
         """
         """
-        self.module.log(msg=f"GitHub::checksum(filename={filename})")
+        # self.module.log(msg=f"GitHub::checksum(filename={filename})")
 
         cache_file = self._cache_path(filename)
         cached_data = self._cached_data(cache_file)
@@ -531,20 +542,68 @@ class GitHub:
 
         return None
 
+    def filter_by_semver(self, entries: list, version: str):
+        """
+        SemVer-basiertes Filtern: parst alle tag_name/name-Felder
+        und vergleicht sie als Version-Objekte.
+        """
+        # self.module.log(msg=f"GitHub::filter_by_semver(entries, {version})")
+
+        from packaging.version import Version, InvalidVersion
+        try:
+            target = Version(version)
+        except InvalidVersion:
+            _msg = f"Invalid version specification: {version!r}"
+            self.module.log(_msg)
+            raise ValueError(_msg)
+
+        result = []
+        for e in entries:
+            for key in ('tag_name', 'name'):
+                raw = e.get(key)
+                if not raw:
+                    continue
+                # 'v' am Anfang ignorieren
+                candidate = raw.lstrip('v')
+                try:
+                    if Version(candidate) == target:
+                        result.append(e)
+                        break
+                except InvalidVersion:
+                    # z. B. "0.5-11-gb9a2814" lässt sich u.U. nicht parse-en
+                    continue
+        return result
+
     def filter_by_version(self, entries: list, version: str):
         """
         Gibt alle Einträge zurück, deren name- oder tag_name-Feld
         auf die gegebene Version passt.
         """
-        self.module.log(msg=f"GitHub::filter_by_version(entries, version={version})")
+        # self.module.log(msg=f"GitHub::filter_by_version(entries, {version})")
 
         # Erzeuge ein Regex, das entweder mit "v0.7.0", "0.7.0" am Anfang von name/tag_name matcht
         pattern = re.compile(rf"^v?{re.escape(version)}(?:\b|/)")
         filtered = []
-        for e in entries:
-            name = e.get("name", "")
-            tag = e.get("tag_name", "")
-            if pattern.match(tag) or pattern.match(name):
-                filtered.append(e)
+
+        try:
+            for e in entries:
+                # self.module.log(msg=f" - e: {e}")
+                name = e.get("name", None)
+                tag = e.get("tag_name", None)
+                if name or tag:
+                    if pattern.match(tag) or pattern.match(name):
+                        filtered.append(e)
+        except Exception as e:
+            self.module.log(msg=f"ERROR: {e}")
 
         return filtered
+
+    def latest_published(self, releases: list = []) -> dict:
+        """
+        """
+        # self.module.log(msg=f"GitHub::latest_published(releases)")
+
+        rf = ReleaseFinder(releases=releases)
+        latest = rf.find_latest()
+
+        return latest

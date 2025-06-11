@@ -154,7 +154,7 @@ class GithubChecksum(object):
         self.github_url = f"https://github.com/{self.project}/{self.repository}/releases/download"
 
         self.cache_directory = f"{Path.home()}/.ansible/cache/github/{self.project}/{self.repository}"
-        self.cache_file_name = os.path.join(self.cache_directory, f"{self.version}_{self.checksum_file}")
+        self.cache_file_name = f"{self.version}_{self.checksum_file}"
 
         # urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
@@ -164,7 +164,7 @@ class GithubChecksum(object):
         rc = 10
 
         create_directory(self.cache_directory)
-        cache_file_name = os.path.join(self.cache_directory, f"{self.checksum_file}")
+        cache_file_name = os.path.join(self.cache_directory, f"{self.cache_file_name}")
 
         gh = GitHub(self.module)
         gh.architecture(system=self.system, architecture=self.architecture)

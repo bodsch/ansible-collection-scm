@@ -151,6 +151,7 @@ class GithubReleases(object):
         self.github_url = f"https://github.com/{self.project}/{self.repository}"
 
         self.cache_directory = f"{Path.home()}/.ansible/cache/github/{self.project}"
+        self.cache_file_name = f"{self.repository}_releases.json"
 
     def run(self):
         """
@@ -252,7 +253,7 @@ def main():
     api = GithubReleases(module)
     result = api.run()
 
-    module.log(msg=f"= result : {result}")
+    # module.log(msg=f"= result : {result}")
 
     module.exit_json(**result)
 
