@@ -310,7 +310,7 @@ class GitHub:
 
         matching = self.filter_by_version(all_rel, norm_tag)
 
-        return matching # [entry for entry in all_rel if entry.get("name", "").lstrip("v") == norm_tag]
+        return matching  # [entry for entry in all_rel if entry.get("name", "").lstrip("v") == norm_tag]
 
         # for entry in all_rel:
         #     if entry.get("tag_name", "").lstrip("v") == norm_tag:
@@ -543,7 +543,7 @@ class GitHub:
         filtered = []
         for e in entries:
             name = e.get("name", "")
-            tag  = e.get("tag_name", "")
+            tag = e.get("tag_name", "")
             if pattern.match(tag) or pattern.match(name):
                 filtered.append(e)
 
