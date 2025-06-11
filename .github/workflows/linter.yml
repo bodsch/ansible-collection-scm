@@ -98,6 +98,6 @@ jobs:
 
       - name: Lint code.
         run: |
-          flake8 --append-config=.config/flake8.cfg
+          flake8 --append-config=.config/pycodestyle.cfg
 
 ...
