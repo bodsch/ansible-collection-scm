@@ -603,7 +603,7 @@ class GitHub:
         """
         # self.module.log(msg=f"GitHub::latest_published(releases)")
 
-        rf = ReleaseFinder(releases=releases)
+        rf = ReleaseFinder(module=self.module, releases=releases)
         latest = rf.find_latest()
 
         return latest

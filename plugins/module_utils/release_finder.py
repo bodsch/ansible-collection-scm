@@ -10,12 +10,13 @@ class ReleaseFinder:
     """
     To find the latest release entry from a list of releases.
     """
-    def __init__(self, releases: List[Dict[str, Any]]) -> None:
+    def __init__(self, module: any, releases: List[Dict[str, Any]]) -> None:
         """
         Initialises the ReleaseFinder with raw release data.
 
         :param releases:  List of dictionaries with keys “tag_name”, “published_at”, “name”, etc.
         """
+        self.module = module
         self.releases = releases
 
     def _parse_date_iso(self, release: Dict[str, Any]) -> Optional[datetime]:
@@ -61,10 +62,14 @@ class ReleaseFinder:
         Builds a tuple (Date, SemVer, ReleaseDict) for sorting.
         Returns None if no date was found.
         """
+        # self.module.log(msg=f"ReleaseFinder::_get_candidate({release}")
+
         dt = self._parse_date_iso(release) or self._parse_date_from_name(release)
         if dt is None:
             return None
         sem = self._parse_semver(release)
+        # self.module.log(msg=f"dt={dt}, sem={sem}, release={release}")
+
         return dt, sem, release
 
     def find_latest(self) -> Optional[Dict[str, Any]]:
@@ -73,9 +78,19 @@ class ReleaseFinder:
 
         :return: The release dictionary of the latest entry or None if there is no valid release.
         """
+        # self.module.log(msg=f"ReleaseFinder::find_latest()")
+
         candidates = filter(None, (self._get_candidate(r) for r in self.releases))
+
         try:
             _, _, latest = max(candidates, key=lambda x: (x[0], x[1]))
+
+            _name = latest.get("name", None)
+            _tag_name = latest.get("tag_name", None)
+
+            if len(_name) == 0:
+                latest["name"] = _tag_name
+
             return latest
         except ValueError:
             return None

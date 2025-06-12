@@ -21,6 +21,15 @@ This collection aims to provide a set of small Ansible modules and helper functi
     - Ubuntu 22.04
 
 
+## Requirements & Dependencies
+
+- `python-dateutil`
+
+```bash
+pip install python-dateutil
+```
+
+
 ## Contribution
 
 Please read [Contribution](CONTRIBUTING.md)
