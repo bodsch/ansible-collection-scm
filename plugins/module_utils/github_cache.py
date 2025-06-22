@@ -12,7 +12,7 @@ class GitHubCache:
     def __init__(self, module, cache_dir: str, cache_file: str, cache_minutes: int):
 
         self.module = module
-        self.module.log(msg=f"GitHubCache::__init__({cache_dir}, {cache_file}, {cache_minutes})")
+        # self.module.log(msg=f"GitHubCache::__init__({cache_dir}, {cache_file}, {cache_minutes})")
 
         self.cache_dir = Path(cache_dir)
         self.cache_file = cache_file
@@ -25,7 +25,7 @@ class GitHubCache:
             Gibt den vollständigen Pfad zu einer Cache-Datei zurück,
             basierend auf `self.cache_dir` und `filename`.
         """
-        self.module.log(msg=f"GitHubCache::cache_path(filename={filename})")
+        # self.module.log(msg=f"GitHubCache::cache_path(filename={filename})")
 
         if not self.cache_dir:
             # Falls jemand `get_releases()` o.ä. aufruft, ohne `enable_cache()` vorher,
@@ -39,7 +39,7 @@ class GitHubCache:
             Liest eine Cache-Datei, wenn sie existiert und noch gültig ist.
             Gibt deren Inhalt (aus JSON) zurück oder None, falls kein gültiger Cache vorliegt.
         """
-        self.module.log(msg=f"GitHubCache::cached_data(cache_path={cache_path})")
+        # self.module.log(msg=f"GitHubCache::cached_data(cache_path={cache_path})")
 
         if not self.cache_dir:
             return None
@@ -47,8 +47,8 @@ class GitHubCache:
         # Prüfe mit cache_valid: Gibt False zurück, wenn die Datei existiert und jünger als cache_minutes ist.
         is_still_valid = not cache_valid(self.module, str(cache_path), self.cache_minutes, True)
 
-        _valid = "not " if not is_still_valid else ""
-        self.module.log(msg=f" - cache is {_valid}valid.")
+        # _valid = "not " if not is_still_valid else ""
+        # self.module.log(msg=f" - cache is {_valid}valid.")
 
         if is_still_valid and cache_path.exists():
             try:
@@ -66,7 +66,7 @@ class GitHubCache:
         """
             Schreibt `data` als JSON in die Cache-Datei `cache_path`, falls Cache aktiviert.
         """
-        self.module.log(msg=f"GitHubCache::write_cache(cache_path={cache_path})")
+        # self.module.log(msg=f"GitHubCache::write_cache(cache_path={cache_path})")
 
         if not self.cache_dir:
             return

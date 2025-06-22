@@ -1,7 +1,6 @@
 
 import re
 import time
-import json
 import requests
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
@@ -11,36 +10,6 @@ from typing import Optional, Tuple, Union, List, Dict
 
 from ansible_collections.bodsch.scm.plugins.module_utils.github_cache import GitHubCache
 from ansible_collections.bodsch.scm.plugins.module_utils.release_finder import ReleaseFinder
-
-"""
-# github_releases:
-        gh = GitHub(self.module)
-        gh.architecture(system=self.system, architecture=self.architecture)
-        gh.enable_cache(cache_dir=self.cache_directory)
-        gh.authentication(username=self.github_username, password=self.github_password, token=self.github_password)
-
-        status_code, gh_result, error = gh.get_all_releases(repo_url=self.github_url)
-
-# github_latest:
-        gh = GitHub(self.module)
-        gh.enable_cache(cache_dir=self.cache_directory, cache_file=self.cache_file_name)
-        gh.authentication(username=self.github_username, password=self.github_password, token=self.github_password)
-
-        gh_releases = gh.get_releases(self.github_url)
-        gh_latest_release = gh.latest_published(gh_releases)
-
-# github_checksum:
-        gh = GitHub(self.module)
-        gh.architecture(system=self.system, architecture=self.architecture)
-        gh.enable_cache(cache_dir=self.cache_directory)
-        gh.authentication(username=self.github_username, password=self.github_password, token=self.github_password)
-
-        release = gh.release_exists(repo_url=f"https://github.com/{self.project}/{self.repository}", tag=self.version)
-        gh_checksum_data = gh.get_checksum_asset(owner=self.project, repo=self.repository, tag=self.version)
-            gh.download_checksum(url, filename=cache_file_name)
-
-        data, gh_checksum = gh.checksum(repo=self.repository, filename=cache_file_name)
-"""
 
 
 class GitHub:
@@ -52,7 +21,7 @@ class GitHub:
         Initialisiert die Klasse mit einem Ansible-Modulobjekt, setzt Header und Base-URL.
         """
         self.module = module
-        self.module.log(msg=f"GitHub::__init__(owner={owner}, repository={repository}, auth)")
+        # self.module.log(msg=f"GitHub::__init__(owner={owner}, repository={repository}, auth)")
 
         # Token für Authentifizierung (optional)
         self.gh_auth_token: Optional[str] = None
@@ -82,7 +51,7 @@ class GitHub:
         """
         Legt einen Authorization-Header mit Personal-Access-Token an, falls gegeben.
         """
-        self.module.log(msg=f"GitHub::authentication(token={'***' if token else None})")
+        # self.module.log(msg=f"GitHub::authentication(token={'***' if token else None})")
         if token:
             self.gh_auth_token = token
             self.headers["Authorization"] = f"token {token}"
@@ -91,7 +60,7 @@ class GitHub:
         """
             Instanziert den GitHubCache Helper
         """
-        self.module.log(msg=f"GitHub::enable_cache(cache_file={cache_file}, cache_minutes={cache_minutes})")
+        # self.module.log(msg=f"GitHub::enable_cache(cache_file={cache_file}, cache_minutes={cache_minutes})")
 
         cache_directory = f"{Path.home()}/.cache/ansible/github/{self.github_owner}/{self.github_repository}"
         self.cache_file = cache_file
@@ -105,7 +74,7 @@ class GitHub:
 
     def architecture(self, system: str, architecture: str):
 
-        self.module.log(msg=f"GitHub::architecture({system}, {architecture})")
+        # self.module.log(msg=f"GitHub::architecture({system}, {architecture})")
 
         self.system = system
         self.architecture = architecture
@@ -124,9 +93,8 @@ class GitHub:
         Falls 404: {"repo": repo_url, "tag": None, "published": None}
         Sonst bei anderem Fehler: {"repo": repo_url, "error": "Fehlercode ..."}
         """
-        self.module.log(msg=f"GitHub::get_releases(repo_url={repo_url}, count={count})")
+        # self.module.log(msg=f"GitHub::get_releases(repo_url={repo_url}, count={count})")
 
-        # owner, repo = self._parse_owner_repo(repo_url)
         cache_filename = self.cache_file or "releases.json"
         cache_path = self.gh_cache.cache_path(cache_filename)
 
@@ -138,14 +106,12 @@ class GitHub:
         params = {"per_page": min(count, 500)}
 
         (status_code, releases, error) = self._get_request(api_url, params=params)
-        # status = response.status_code
 
         if status_code != 200:
-            self.module.log(f"ERROR: {error}")
+            # self.module.log(f"ERROR: {error}")
             return (status_code, [], error)
 
         if status_code == 200:
-            # releases = releases  # response.json()
             result = [
                 {
                     "name": r.get("name"),
@@ -170,17 +136,13 @@ class GitHub:
 
         Cacht das Ergebnis in "release_artefacts.json".
         Gibt eine Liste von Dicts zurück, analog zu get_releases().
-        Löst Exception aus, wenn ein HTTP-Fehler != 200 auftritt.
         """
-        self.module.log(msg=f"GitHub::get_all_releases(repo_url={repo_url})")
+        # self.module.log(msg=f"GitHub::get_all_releases(repo_url={repo_url})")
 
-        # owner, repo = self._parse_owner_repo(repo_url)
         cache_filename = "release_artefacts.json"
         cache_path = self.gh_cache.cache_path(cache_filename)
 
         cached = self.gh_cache.cached_data(cache_path)
-
-        self.module.log(f"cached: {cached}")
 
         if cached is not None:
             return (200, cached, None)
@@ -193,11 +155,11 @@ class GitHub:
             (status_code, releases, error) = self._get_request(api_url)
 
             if status_code != 200:
-                self.module.log(f"ERROR: {error}")
+                # self.module.log(f"ERROR: {error}")
                 return (status_code, [], error)
 
             for release in releases:
-                # self.module.log(f"  -> {release}")
+                # # self.module.log(f"  -> {release}")
                 try:
                     # Manche Releases können keine Assets enthalten
                     assets = release.get("assets", [])
@@ -213,129 +175,78 @@ class GitHub:
 
                     all_releases.append(filtered_release)
                 except Exception as e:
-                    self.module.log(f"Fehler beim Verarbeiten eines Release-Eintrags: {e}")
+                    self.module.log(f"Error when processing a release entry: {e}")
                     continue  # Weiter mit dem nächsten Eintrag
 
         except Exception as e:
-            self.module.log(f" - ERROR : {e}")
+            self.module.log(f"ERROR : {e}")
+            pass
 
         self.gh_cache.write_cache(cache_path, all_releases)
-
-        self.module.log(f"= all_releases: {all_releases}")
 
         return (status_code, all_releases, None)
-        # return all_releases
-
-        # while True:
-        #     params = {"per_page": 300, "page": page}
-        #     api_url = f"{self.base_api_url}/repos/{owner}/{repo}/releases"
-        #
-        #     status = 0
-        #
-        #     try:
-        #         response = self._get_request(api_url, params=params)
-        #         status = response.status_code
-        #
-        #         self.module.log(f" - status: {status}")
-        #     except Exception as e:
-        #         self.module.log(f" - ERROR : {e}")
-        #
-        #     if status != 200:
-        #         _error=f"Error when retrieving the releases (page {page}): {status}"
-        #         self.module.log(_error)
-        #         raise Exception(_error)
-        #
-        #     try:
-        #         data = response.json()
-        #     except Exception as e:
-        #         self.module.log(f" - ERROR: {e}")
-        #
-        #     if not data:
-        #         break
-        #
-        #     self.module.log(f" - data: {len(data)}")
-        #
-        #     for r in data:
-        #         download_urls = []
-        #
-        #         assets = r.get("assets", [])
-        #         if assets and len(assets) > 0:
-        #             for url in assets:
-        #                 download_urls.append(url.get("browser_download_url"))
-        #
-        #         all_releases.append({
-        #             "name": r.get("name"),
-        #             "tag_name": r.get("tag_name"),
-        #             "published_at": r.get("published_at"),
-        #             "url": r.get("html_url"),
-        #             "download_urls": download_urls
-        #         })
-        #     page += 1
-
-        self.gh_cache.write_cache(cache_path, all_releases)
-
-        self.module.log(f"= all_releases: {all_releases}")
-
-        return all_releases
 
     def latest_published(self, releases: list = []) -> dict:
         """
         """
-        self.module.log(msg=f"GitHub::latest_published(releases={releases})")
+        # self.module.log(msg=f"GitHub::latest_published(releases={releases})")
 
         rf = ReleaseFinder(module=self.module, releases=releases)
         latest = rf.find_latest()
 
         return latest
 
-    def release_exists(self, repo_url: str, tag: str) -> bool:
+    def release_exists(self, tag: str) -> bool:
         """
-        Prüft, ob für ein Repo ein Release mit dem exakten Tag existiert.
-        Gibt True zurück, falls vorhanden, sonst False.
+            Prüft, ob für ein Repo ein Release mit dem exakten Tag existiert.
+            Gibt True zurück, falls vorhanden, sonst False.
         """
-        self.module.log(msg=f"GitHub::release_exists(repo_url={repo_url}, tag={tag})")
+        # self.module.log(msg=f"GitHub::release_exists(tag={tag})")
 
-        all_rel = self.get_all_releases(repo_url)
-        norm_tag = tag.lstrip("v")
+        repo_url = f"https://github.com/{self.github_owner}/{self.github_repository}"
+        status_code, gh_result, error = self.get_all_releases(repo_url)
 
-        matching = self.filter_by_semver(all_rel, norm_tag)
+        if status_code == 200:
+            norm_tag = tag.lstrip("v")
+            matching = self._filter_by_semver(gh_result, norm_tag)
+            return matching
 
-        return matching
+        return []
 
     def download_checksum(self, url: str, filename: str) -> None:
         """
         Lädt eine Checksum-Datei (Text) von `url` herunter und speichert sie
         als JSON-Cache (Liste von Zeilen) in `filename`. (Kein reines Binär-Download.)
         """
-        self.module.log(msg=f"GitHub::download_checksum(url={url}, filename={filename})")
+        # self.module.log(msg=f"GitHub::download_checksum(url={url}, filename={filename})")
 
         dest = Path(filename)
         self._download_file(url, dest, stream=False)
 
-    def get_checksum_asset(self, owner: str, repo: str, tag: str) -> Optional[Dict]:
+    def get_checksum_asset(self, tag: str) -> Optional[Dict]:
         """
         Gibt das erste gefundene Checksum-Asset zurück, falls unter den Release-Assets
         ein Asset-Name existiert, der eine der Begriffe ["sha256", "sha512", "checksum", "sum"] enthält.
         Ansonsten None.
         """
-        self.module.log(msg=f"GitHub::get_checksum_asset(owner={owner}, repo={repo}, tag={tag})")
+        # self.module.log(msg=f"GitHub::get_checksum_asset(tag={tag})")
 
-        assets = self.release_assets(owner, repo, tag)
+        status_code, releases, error = self._release_assets(tag)
 
-        if not assets:
+        if status_code != 200:
             return None
 
         normalized_tag = tag.lstrip("v").lower()
         keywords = ["sha256", "sha512", "checksum", "sum"]
 
-        for asset in assets:
+        for asset in releases:
             name_lower = asset["name"].lower()
             name_matches = (
                 any(kw in name_lower for kw in keywords)
             )
 
             if name_matches:
-                self.module.log(msg=f"  → Gefundenes Checksum-Asset: {asset['name']}")
+                # # self.module.log(msg=f"  → Checksum asset found: {asset['name']}")
                 return asset
 
             name_matches = (
@@ -346,7 +257,7 @@ class GitHub:
             )
 
             if name_matches:
-                self.module.log(msg=f"  → Gefundenes Checksum-Asset: {asset['name']}")
+                # # self.module.log(msg=f"  → Checksum asset found: {asset['name']}")
                 return asset
 
         return None
@@ -354,7 +265,7 @@ class GitHub:
     def checksum(self, repo: str, filename: str):
         """
         """
-        self.module.log(msg=f"GitHub::checksum(filename={filename})")
+        # self.module.log(msg=f"GitHub::checksum(filename={filename})")
 
         cache_file = self.gh_cache.cache_path(filename)
         cached_data = self.gh_cache.cached_data(cache_file)
@@ -378,43 +289,33 @@ class GitHub:
             if isinstance(checksum, str):
                 checksum = checksum.split(" ")[0]
 
-            return cached_data, checksum
+            return (cached_data, checksum)
 
-        return None
+        return ([], None)
 
     # ------------------------------------------------------------------------------------------
     # private API
-    # def _parse_owner_repo(self, repo_url: str) -> Tuple[str, str]:
-    #     """
-    #     Zerlegt eine GitHub-URL (z.B. "https://github.com/owner/repo")
-    #     und gibt (owner, repo) zurück. Löst ValueError, wenn die URL ungültig ist.
-    #     """
-    #     m = self.github_url_re.match(repo_url)
-    #     if not m:
-    #         raise ValueError(f"Ungültige GitHub-URL: {repo_url}")
-    #
-    #     return m.group(1), m.group(2)
-
     def _get_request(
         self,
         url: str,
         params: Optional[dict] = None,
         stream: bool = False,
-        paginate: bool = True
-    ) -> Tuple[int, List[dict], Optional[str]]:
+        paginate: bool = True,
+        expect_json: bool = True
+    ) -> Tuple[int, Union[List[dict], str, requests.Response], Optional[str]]:
         """
-        Robustere GET-Anfrage mit:
-        - automatischem Retry (bei 5xx oder Timeout)
-        - Rate Limit Erkennung
-        - Pagination-Unterstützung
+        Robuste GET-Anfrage mit:
+        - Retry bei 5xx und Timeout
+        - Pagination über Link-Header
+        - Rate Limit Handling
+        - JSON oder plain text/streaming Download
         """
-        self.module.log(msg=f"GitHub::_get_request(url={url}, params={params}, stream={stream}, paginate={paginate})")
+        # self.module.log(msg=f"GitHub::_get_request(url={url}, params={params}, stream={stream}, paginate={paginate}, expect_json={expect_json})")
 
         session = requests.Session()
-
         retry_strategy = Retry(
             total=3,
-            backoff_factor=1,  # Sekunde * 2^n Wartezeit
+            backoff_factor=1,
             status_forcelist=[429, 500, 502, 503, 504],
             allowed_methods=["GET"]
         )
@@ -422,96 +323,164 @@ class GitHub:
         session.mount("https://", adapter)
 
         headers = self.headers.copy()
-        result = []
+        result: List[dict] = []
         error = None
 
-        while url and paginate:
+        while url:
             try:
                 response = session.get(url, headers=headers, params=params, stream=stream, timeout=15)
 
-                # Rate Limit erreicht
+                # Rate limit erreicht
                 if response.status_code == 403 and "X-RateLimit-Remaining" in response.headers:
                     remaining = int(response.headers["X-RateLimit-Remaining"])
                     if remaining == 0:
                         reset_time = int(response.headers.get("X-RateLimit-Reset", 0))
                         wait_seconds = max(reset_time - int(time.time()), 1)
                         error = f"Rate limit exceeded. Retry in {wait_seconds} seconds."
-                        self.module.log(error)
-                        return (429, result, error)
+                        # self.module.log(error)
+                        return (429, [], error)
 
                 response.raise_for_status()
 
-                try:
-                    data = response.json()
-                    if not isinstance(data, list):
-                        data = [data]
-                    result.extend(data)
-                except Exception as e:
-                    error = f"Fehler beim Parsen des JSON: {e}"
-                    self.module.log(error)
-                    return (419, result, error)
+                # Wenn kein JSON erwartet wird (z. B. Datei-Download)
+                if not expect_json:
+                    if stream:
+                        return (200, response, None)
+                    else:
+                        return (200, response.text, None)
 
-                # Pagination via Link-Header
+                # JSON-Verarbeitung
+                json_data = response.json()
+                if not isinstance(json_data, list):
+                    json_data = [json_data]
+                result.extend(json_data)
+
+                # Pagination prüfen
+                if not paginate:
+                    break
+
                 link_header = response.headers.get("Link", "")
                 next_url = None
                 for link in link_header.split(","):
                     if 'rel="next"' in link:
-                        next_url = link[link.find("<") + 1 : link.find(">")]
+                        next_url = link[link.find("<") + 1: link.find(">")]
                         break
 
-                url = next_url
-                params = None  # Nur beim ersten Request verwenden
+                if next_url:
+                    url = next_url
+                    params = None  # Nur beim ersten Aufruf
+                else:
+                    break
 
             except requests.exceptions.RequestException as e:
                 error = f"Request failed: {e}"
-                self.module.log(error)
-                return (419, result, error)
+                # self.module.log(error)
+                return (419, [], error)
+            except ValueError as e:
+                error = f"Error parsing the JSON: {e}"
+                # self.module.log(error)
+                return (419, [], error)
 
         return (200, result, None)
 
-    # ------------------------------------------------------------------------------------------
-
-    def _get_request_old(self, url: str, params: Optional[dict] = None, stream: bool = False) -> requests.Response:
+    def _filter_by_semver(self, entries: list, version: str):
         """
-        Wrapper um requests.get, damit wir Logging zentralisieren und ggf. später
-        Timeouts/Proxy-Einstellungen zentral ergänzen können.
+        SemVer-basiertes Filtern: parst alle tag_name/name-Felder
+        und vergleicht sie als Version-Objekte.
         """
-        self.module.log(msg=f"GitHub::_get_request(url={url}, params={params}, stream={stream})")
+        # self.module.log(msg=f"GitHub::_filter_by_semver(entries, {version})")
 
-        error = None
-        result = []
-
+        from packaging.version import Version, InvalidVersion
         try:
-            response = requests.get(url, headers=self.headers, params=params, stream=stream, timeout=20)
-            response.raise_for_status()  # Löst eine Exception aus bei HTTP-Fehlern
+            target = Version(version)
+        except InvalidVersion:
+            _msg = f"Invalid version specification: {version!r}"
+            # self.module.log(_msg)
+            raise ValueError(_msg)
 
-            status_code = response.status_code
+        result = []
+        for e in entries:
+            for key in ('tag_name', 'name'):
+                raw = e.get(key)
+                if not raw:
+                    continue
+                # 'v' am Anfang ignorieren
+                candidate = raw.lstrip('v')
+                try:
+                    if Version(candidate) == target:
+                        result.append(e)
+                        break
+                except InvalidVersion:
+                    # z. B. "0.5-11-gb9a2814" lässt sich u.U. nicht parse-en
+                    continue
+        return result
 
-            # self.module.log(f"{response.status_code}")
-            # _headers = response.headers
-            # self.module.log(f"headers: {_headers}")
-            # self.module.log(f"Raw response (text): {response.text}")
-            # self.module.log(f"json   : {response.json()}")
+    def _release_assets(self, tag: str) -> Optional[List[Dict]]:
+        """
+        Liest alle Assets (Downloads) eines bestimmten Releases (per Tag) aus.
+        Cacht das Ergebnis in "release_artefacts_{tag}.json". Gibt eine Liste von Dicts zurück:
+          [ { "name": "<Dateiname>", "url": "<browser_download_url>", "size": <bytes> }, ... ]
+        Oder None, wenn das Release (Tag) nicht existiert (HTTP 404). Löst bei anderem Fehler eine Exception aus.
+        """
+        # self.module.log(msg=f"GitHub::_release_assets(tag={tag})")
 
-            try:
-                # Manuelle Dekodierung statt response.json()
-                releases = json.loads(response.content.decode('utf-8'))
+        cache_filename = f"release_artefacts_{tag}.json"
+        cache_path = self.gh_cache.cache_path(cache_filename)
+        cached = self.gh_cache.cached_data(cache_path)
 
-                self.module.log(f" - result type: {type(releases)}")
+        if cached is not None:
+            return (200, cached, None)
 
-                if not isinstance(releases, list):
-                    raise ValueError("Unerwartetes JSON-Format: Keine Liste von Releases")
+        api_url = f"{self.base_api_url}/repos/{self.github_owner}/{self.github_repository}/releases/tags/{tag}"
 
-                return (status_code, releases, error)
+        (status_code, releases, error) = self._get_request(api_url)
 
-            except (ValueError, TypeError, json.JSONDecodeError) as e:
-                error = f"Error processing the JSON data. {e}"
-                self.module.log(error)
-                return (419, result, error)
+        if status_code != 200:
+            # self.module.log(f"Error when retrieving the release assets: {status_code} - {error}")
 
-        except Exception as e:
-            self.module.log(e)
-            return (419, result, e)
-            # raise Exception(_error)
+            return (status_code, [], error)
+
+        if isinstance(releases, list):
+            data = releases[0]
+        else:
+            data = releases
+
+        assets = data.get("assets", [])
+
+        result = [
+            {
+                "name": asset.get("name"),
+                "url": asset.get("browser_download_url"),
+                "size": asset.get("size")
+            }
+            for asset in assets
+        ]
+        self.gh_cache.write_cache(cache_path, result)
+
+        return (status_code, result, None)
+
+    def _download_file(self, url: str, dest_path: Path, stream: bool = False) -> None:
+        """
+        Interne Hilfsmethode: Lädt eine Datei von URL und speichert sie als dest_path.
+        Löst Exception aus, wenn HTTP-Status != 200.
+        - Bei stream=True: Binär-Download via iter_content
+        - Bei stream=False: Text-Download; speichert Zeilen in JSON-kompatiblem Format
+        """
+        # self.module.log(msg=f"GitHub::_download_file(url={url}, dest={dest_path}, stream={stream})")
+
+        (status_code, content, error) = self._get_request(url, stream=stream, expect_json=False)
+
+        if status_code != 200:
+            raise Exception(f"Error downloading the file: {status_code}")
+
+        if stream:
+            with dest_path.open("wb") as f:
+                for chunk in content.iter_content(chunk_size=8192):
+                    if chunk:
+                        f.write(chunk)
+        else:
+            lines = [line for line in content.splitlines() if line.strip()]
+            # Hier speichern wir die Zeilenliste als JSON, damit parse_checksum_file darauf zugreifen kann.
+            self.gh_cache.write_cache(dest_path, lines)
 
     # ------------------------------------------------------------------------------------------

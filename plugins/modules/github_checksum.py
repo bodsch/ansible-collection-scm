@@ -172,7 +172,7 @@ class GithubChecksum(object):
         gh.architecture(system=self.system, architecture=self.architecture)
         gh.enable_cache(cache_minutes=self.cache_minutes)
 
-        release = gh.release_exists(repo_url=f"https://github.com/{self.project}/{self.repository}", tag=self.version)
+        release = gh.release_exists(tag=self.version)
 
         if len(release) == 0:
             return dict(
@@ -182,7 +182,7 @@ class GithubChecksum(object):
                 msg=f"An error has occurred. Please check the availability of {self.project}/{self.repository} and version {self.version} at Github!"
             )
 
-        gh_checksum_data = gh.get_checksum_asset(owner=self.project, repo=self.repository, tag=self.version)
+        gh_checksum_data = gh.get_checksum_asset(tag=self.version)
 
         cache_file_name = os.path.join(self.cache_directory, f"{self.cache_file_name}")
 
