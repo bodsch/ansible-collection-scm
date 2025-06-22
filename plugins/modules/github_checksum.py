@@ -8,7 +8,7 @@ from enum import Enum
 from pathlib import Path
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.bodsch.core.plugins.module_utils.directory import create_directory
+# from ansible_collections.bodsch.core.plugins.module_utils.directory import create_directory
 
 from ansible_collections.bodsch.scm.plugins.module_utils.github import GitHub
 
@@ -151,9 +151,9 @@ class GithubChecksum(object):
         self.cache_minutes = int(module.params.get("cache"))
 
         # https://github.com/prometheus/alertmanager/releases/download/v0.25.0/sha256sums.txt
-        self.github_url = f"https://github.com/{self.project}/{self.repository}/releases/download"
+        # self.github_url = f"https://github.com/{self.project}/{self.repository}/releases/download"
 
-        self.cache_directory = f"{Path.home()}/.ansible/cache/github/{self.project}/{self.repository}"
+        self.cache_directory = f"{Path.home()}/.cache/ansible/github/{self.project}/{self.repository}"
         self.cache_file_name = f"{self.version}_{self.checksum_file}"
 
         # urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
@@ -163,13 +163,14 @@ class GithubChecksum(object):
         """
         rc = 10
 
-        create_directory(self.cache_directory)
-        cache_file_name = os.path.join(self.cache_directory, f"{self.cache_file_name}")
+        # create_directory(self.cache_directory)
+        gh_authentication = dict(
+            token=self.github_password
+        )
 
-        gh = GitHub(self.module)
+        gh = GitHub(self.module, owner=self.project, repository=self.repository, auth=gh_authentication)
         gh.architecture(system=self.system, architecture=self.architecture)
-        gh.enable_cache(cache_dir=self.cache_directory)
-        gh.authentication(username=self.github_username, password=self.github_password, token=self.github_password)
+        gh.enable_cache(cache_minutes=self.cache_minutes)
 
         release = gh.release_exists(repo_url=f"https://github.com/{self.project}/{self.repository}", tag=self.version)
 
@@ -182,6 +183,8 @@ class GithubChecksum(object):
             )
 
         gh_checksum_data = gh.get_checksum_asset(owner=self.project, repo=self.repository, tag=self.version)
+
+        cache_file_name = os.path.join(self.cache_directory, f"{self.cache_file_name}")
 
         if gh_checksum_data:
             url = gh_checksum_data.get("url")
