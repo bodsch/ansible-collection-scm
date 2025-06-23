@@ -173,9 +173,9 @@ class GithubLatest(object):
 
         url_path = "releases"
 
-        if self.github_tags:
-            self.github_releases = False
-            url_path = "tags"
+        # if self.github_tags:
+        #     self.github_releases = False
+        #     url_path = "tags"
 
         self.github_url = f"{self.github_url}/{url_path}"
 
@@ -192,7 +192,6 @@ class GithubLatest(object):
 
         gh = GitHub(self.module, owner=self.project, repository=self.repository, auth=gh_authentication)
         gh.enable_cache(cache_file=self.cache_file_name, cache_minutes=self.cache_minutes)
-        # gh.authentication(username=self.github_username, password=self.github_password, token=self.github_password)
 
         status_code, gh_releases, error = gh.get_releases(self.github_url)
 
@@ -212,7 +211,11 @@ class GithubLatest(object):
                 stderr=error
             )
 
-        gh_latest_release = gh.latest_published(gh_releases)
+        # filter beta version
+        if self.without_beta:
+            self.filter_elements.append("beta")
+
+        gh_latest_release = gh.latest_published(gh_releases, filter_elements=self.filter_elements)
 
         if self.github_tags:
             latest_release = gh_latest_release.get("tag_name", None)

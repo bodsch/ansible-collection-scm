@@ -81,17 +81,11 @@ class GitHub:
 
     # ------------------------------------------------------------------------------------------
     # public API
-    def get_releases(self, repo_url: str, count: int = 10) -> Union[List[Dict], Dict]:
+    def get_releases(self, repo_url: str, count: int = 10) -> Tuple[int, List[Dict], Optional[str]]:
         """
         Fragt bis zu `count` Releases (max. 100) eines Repos ab.
-        Cacht das Ergebnis in "releases.json" im cache_dir (sofern aktiviert).
-        Gibt bei Erfolg eine Liste von Dicts zurück:
-          [
-            { "name": "...", "tag_name": "...", "published_at": "...", "url": "..." },
-            ...
-          ]
-        Falls 404: {"repo": repo_url, "tag": None, "published": None}
-        Sonst bei anderem Fehler: {"repo": repo_url, "error": "Fehlercode ..."}
+        Cacht das Ergebnis in "releases.json" (sofern aktiviert).
+        Gibt (status_code, Ergebnisliste, Fehler) zurück.
         """
         # self.module.log(msg=f"GitHub::get_releases(repo_url={repo_url}, count={count})")
 
@@ -103,39 +97,40 @@ class GitHub:
             return (200, cached, None)
 
         api_url = f"{self.base_api_url}/repos/{self.github_owner}/{self.github_repository}/releases"
-        params = {"per_page": min(count, 500)}
+        params = {
+            "per_page": min(count, 100)
+        }
 
-        (status_code, releases, error) = self._get_request(api_url, params=params)
+        status_code, releases, error = self._get_request(
+            url=api_url,
+            params=params,
+            stream=False,
+            paginate=True,     # ❗ bewusst keine Pagination hier
+            expect_json=True
+        )
 
         if status_code != 200:
-            # self.module.log(f"ERROR: {error}")
+            self.module.log(f"ERROR: {error}")
             return (status_code, [], error)
 
-        if status_code == 200:
-            result = [
-                {
-                    "name": r.get("name"),
-                    "tag_name": r.get("tag_name"),
-                    "published_at": r.get("published_at"),
-                    "url": r.get("html_url")
-                }
-                for r in releases
-            ]
-            self.gh_cache.write_cache(cache_path, result)
-            return (status_code, result, None)
+        result = [
+            {
+                "name": r.get("name", "N/A"),
+                "tag_name": r.get("tag_name", "N/A"),
+                "published_at": r.get("published_at", "N/A"),
+                "url": r.get("html_url", "N/A")
+            }
+            for r in releases  # [:count]
+        ]
 
-        elif status_code == 404:
-            return (status_code, [], error)
+        self.gh_cache.write_cache(cache_path, result)
+        return (status_code, result, None)
 
-        else:
-            return (status_code, [], error)
-
-    def get_all_releases(self, repo_url: str) -> List[Dict]:
+    def get_all_releases(self, repo_url: str) -> Tuple[int, List[Dict], Optional[str]]:
         """
         Fragt paginiert alle Releases eines Repos ab (GitHub liefert max. 100 pro Seite).
-
         Cacht das Ergebnis in "release_artefacts.json".
-        Gibt eine Liste von Dicts zurück, analog zu get_releases().
+        Gibt (status_code, Datenliste, Fehler) zurück.
         """
         # self.module.log(msg=f"GitHub::get_all_releases(repo_url={repo_url})")
 
@@ -143,56 +138,54 @@ class GitHub:
         cache_path = self.gh_cache.cache_path(cache_filename)
 
         cached = self.gh_cache.cached_data(cache_path)
-
         if cached is not None:
             return (200, cached, None)
 
-        all_releases: List[Dict] = []
-
         api_url = f"{self.base_api_url}/repos/{self.github_owner}/{self.github_repository}/releases"
+        params = {"per_page": 100}  # Maximale Page-Größe von GitHub
 
-        try:
-            (status_code, releases, error) = self._get_request(api_url)
+        status_code, releases, error = self._get_request(
+            url=api_url,
+            params=params,
+            stream=False,
+            paginate=True,
+            expect_json=True
+        )
 
-            if status_code != 200:
-                # self.module.log(f"ERROR: {error}")
-                return (status_code, [], error)
+        if status_code != 200:
+            self.module.log(f"ERROR: {error}")
+            return (status_code, [], error)
 
-            for release in releases:
-                # # self.module.log(f"  -> {release}")
-                try:
-                    # Manche Releases können keine Assets enthalten
-                    assets = release.get("assets", [])
-                    download_urls = [x.get("browser_download_url") for x in assets]
+        all_releases = []
+        for release in releases:
+            try:
+                assets = release.get("assets", [])
+                download_urls = [x.get("browser_download_url") for x in assets if x.get("browser_download_url")]
 
-                    filtered_release = {
-                        "name": release.get("name", "N/A"),
-                        "tag_name": release.get("tag_name", "N/A"),
-                        "published_at": release.get("published_at", "N/A"),
-                        "url": release.get("html_url", "N/A"),
-                        "download_urls": download_urls  # Liste von URLs
-                    }
+                filtered_release = {
+                    "name": release.get("name", "N/A"),
+                    "tag_name": release.get("tag_name", "N/A"),
+                    "published_at": release.get("published_at", "N/A"),
+                    "url": release.get("html_url", "N/A"),
+                    "download_urls": download_urls
+                }
+                all_releases.append(filtered_release)
 
-                    all_releases.append(filtered_release)
-                except Exception as e:
-                    self.module.log(f"Error when processing a release entry: {e}")
-                    continue  # Weiter mit dem nächsten Eintrag
-
-        except Exception as e:
-            self.module.log(f"ERROR : {e}")
-            pass
+            except Exception as e:
+                self.module.log(f"Fehler beim Verarbeiten eines Release-Eintrags: {e}")
+                continue
 
         self.gh_cache.write_cache(cache_path, all_releases)
-
         return (status_code, all_releases, None)
 
-    def latest_published(self, releases: list = []) -> dict:
+    def latest_published(self, releases: list = [], filter_elements: list = []) -> dict:
         """
         """
-        # self.module.log(msg=f"GitHub::latest_published(releases={releases})")
+        # self.module.log(msg=f"GitHub::latest_published(releases={releases}, filter_elements={filter_elements})")
 
         rf = ReleaseFinder(module=self.module, releases=releases)
-        latest = rf.find_latest()
+        rf.set_exclude_keywords(keywords=filter_elements)
+        latest = rf.find_latest(mode="version")
 
         return latest
 
@@ -246,7 +239,7 @@ class GitHub:
             )
 
             if name_matches:
-                # # self.module.log(msg=f"  → Checksum asset found: {asset['name']}")
+                # self.module.log(msg=f"  → Checksum asset found: {asset['name']}")
                 return asset
 
             name_matches = (
@@ -257,7 +250,7 @@ class GitHub:
             )
 
             if name_matches:
-                # # self.module.log(msg=f"  → Checksum asset found: {asset['name']}")
+                # self.module.log(msg=f"  → Checksum asset found: {asset['name']}")
                 return asset
 
         return None
@@ -337,7 +330,7 @@ class GitHub:
                         reset_time = int(response.headers.get("X-RateLimit-Reset", 0))
                         wait_seconds = max(reset_time - int(time.time()), 1)
                         error = f"Rate limit exceeded. Retry in {wait_seconds} seconds."
-                        # self.module.log(error)
+                        self.module.log(error)
                         return (429, [], error)
 
                 response.raise_for_status()
@@ -374,11 +367,11 @@ class GitHub:
 
             except requests.exceptions.RequestException as e:
                 error = f"Request failed: {e}"
-                # self.module.log(error)
+                self.module.log(error)
                 return (419, [], error)
             except ValueError as e:
                 error = f"Error parsing the JSON: {e}"
-                # self.module.log(error)
+                self.module.log(error)
                 return (419, [], error)
 
         return (200, result, None)
@@ -395,7 +388,7 @@ class GitHub:
             target = Version(version)
         except InvalidVersion:
             _msg = f"Invalid version specification: {version!r}"
-            # self.module.log(_msg)
+            self.module.log(_msg)
             raise ValueError(_msg)
 
         result = []
@@ -436,7 +429,7 @@ class GitHub:
         (status_code, releases, error) = self._get_request(api_url)
 
         if status_code != 200:
-            # self.module.log(f"Error when retrieving the release assets: {status_code} - {error}")
+            self.module.log(f"Error when retrieving the release assets: {status_code} - {error}")
 
             return (status_code, [], error)
 
@@ -484,3 +477,108 @@ class GitHub:
             self.gh_cache.write_cache(dest_path, lines)
 
     # ------------------------------------------------------------------------------------------
+
+    def get_releases_old(self, repo_url: str, count: int = 10) -> Union[List[Dict], Dict]:
+        """
+        Fragt bis zu `count` Releases (max. 100) eines Repos ab.
+        Cacht das Ergebnis in "releases.json" im cache_dir (sofern aktiviert).
+        Gibt bei Erfolg eine Liste von Dicts zurück:
+          [
+            { "name": "...", "tag_name": "...", "published_at": "...", "url": "..." },
+            ...
+          ]
+        Falls 404: {"repo": repo_url, "tag": None, "published": None}
+        Sonst bei anderem Fehler: {"repo": repo_url, "error": "Fehlercode ..."}
+        """
+        # self.module.log(msg=f"GitHub::get_releases(repo_url={repo_url}, count={count})")
+
+        cache_filename = self.cache_file or "releases.json"
+        cache_path = self.gh_cache.cache_path(cache_filename)
+
+        cached = self.gh_cache.cached_data(cache_path)
+        if cached is not None:
+            return (200, cached, None)
+
+        api_url = f"{self.base_api_url}/repos/{self.github_owner}/{self.github_repository}/releases"
+        params = {"per_page": min(count, 500)}
+
+        (status_code, releases, error) = self._get_request(api_url, params=params)
+
+        if status_code != 200:
+            self.module.log(f"ERROR: {error}")
+            return (status_code, [], error)
+
+        if status_code == 200:
+            result = [
+                {
+                    "name": r.get("name"),
+                    "tag_name": r.get("tag_name"),
+                    "published_at": r.get("published_at"),
+                    "url": r.get("html_url")
+                }
+                for r in releases
+            ]
+            self.gh_cache.write_cache(cache_path, result)
+            return (status_code, result, None)
+
+        elif status_code == 404:
+            return (status_code, [], error)
+
+        else:
+            return (status_code, [], error)
+
+    def get_all_releases_old(self, repo_url: str) -> List[Dict]:
+        """
+        Fragt paginiert alle Releases eines Repos ab (GitHub liefert max. 100 pro Seite).
+
+        Cacht das Ergebnis in "release_artefacts.json".
+        Gibt eine Liste von Dicts zurück, analog zu get_releases().
+        """
+        # self.module.log(msg=f"GitHub::get_all_releases(repo_url={repo_url})")
+
+        cache_filename = "release_artefacts.json"
+        cache_path = self.gh_cache.cache_path(cache_filename)
+
+        cached = self.gh_cache.cached_data(cache_path)
+
+        if cached is not None:
+            return (200, cached, None)
+
+        all_releases: List[Dict] = []
+
+        api_url = f"{self.base_api_url}/repos/{self.github_owner}/{self.github_repository}/releases"
+
+        try:
+            (status_code, releases, error) = self._get_request(api_url)
+
+            if status_code != 200:
+                self.module.log(f"ERROR: {error}")
+                return (status_code, [], error)
+
+            for release in releases:
+                # self.module.log(f"  -> {release}")
+                try:
+                    # Manche Releases können keine Assets enthalten
+                    assets = release.get("assets", [])
+                    download_urls = [x.get("browser_download_url") for x in assets]
+
+                    filtered_release = {
+                        "name": release.get("name", "N/A"),
+                        "tag_name": release.get("tag_name", "N/A"),
+                        "published_at": release.get("published_at", "N/A"),
+                        "url": release.get("html_url", "N/A"),
+                        "download_urls": download_urls  # Liste von URLs
+                    }
+
+                    all_releases.append(filtered_release)
+                except Exception as e:
+                    self.module.log(f"Error when processing a release entry: {e}")
+                    continue  # Weiter mit dem nächsten Eintrag
+
+        except Exception as e:
+            self.module.log(f"ERROR : {e}")
+            pass
+
+        self.gh_cache.write_cache(cache_path, all_releases)
+
+        return (status_code, all_releases, None)
