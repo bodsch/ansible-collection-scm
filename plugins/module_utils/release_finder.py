@@ -184,33 +184,3 @@ class ReleaseFinder:
                 return True
 
         return False
-
-    def find_latest_old(self, mode: str = "published") -> Optional[Dict[str, Any]]:
-        """
-        Finds the latest release based on mode:
-        - 'published': latest by date (default)
-        - 'version': highest semantic version
-        - 'security': highest semantic version that is a security release
-        """
-        # self.module.log(msg=f"ReleaseFinder::find_latest(mode={mode})")
-
-        candidates = filter(None, (self._get_candidate(r) for r in self.releases))
-
-        if mode == "security":
-            candidates = filter(lambda x: self._is_security_release(x[2]), candidates)
-
-        try:
-            if mode == "version" or mode == "security":
-                _, _, latest = max(candidates, key=lambda x: x[1])
-            else:
-                _, _, latest = max(candidates, key=lambda x: (x[0], x[1]))
-
-            _name = latest.get("name", None)
-            _tag_name = latest.get("tag_name", None)
-
-            if not _name:
-                latest["name"] = _tag_name
-
-            return latest
-        except ValueError:
-            return None
