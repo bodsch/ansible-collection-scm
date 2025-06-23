@@ -9,12 +9,24 @@ current_dir=$(pwd)
 
 TOX_TEST="${1}"
 
+echo ""
+echo "global"
+${current_dir}/hooks/manage_collections.py
+
 if [[ ! -z "${COLLECTION_ROLE// }" ]]
 then
   if [ -d "roles/${COLLECTION_ROLE}" ]
   then
     echo "- ${COLLECTION_ROLE} - ${COLLECTION_SCENARIO}"
     echo ""
+
+    for i in requirements.txt test-requirements.txt tox.ini
+    do
+      if [ -e "${i}" ]
+      then
+        cp "${i}" "roles/${COLLECTION_ROLE}/"
+      fi
+    done
 
     pushd "roles/${COLLECTION_ROLE}" > /dev/null
 
@@ -35,6 +47,14 @@ else
   do
     echo "- ${role} - ${COLLECTION_SCENARIO}"
     echo ""
+
+    for i in requirements.txt test-requirements.txt tox.ini
+    do
+      if [ -e "${i}" ]
+      then
+        cp "${i}" "roles/${COLLECTION_ROLE}/"
+      fi
+    done
 
     pushd roles/${role} > /dev/null
 

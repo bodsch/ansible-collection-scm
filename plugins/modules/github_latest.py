@@ -11,7 +11,7 @@ import re
 from pathlib import Path
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.bodsch.core.plugins.module_utils.directory import create_directory
+# from ansible_collections.bodsch.core.plugins.module_utils.directory import create_directory
 
 from ansible_collections.bodsch.scm.plugins.module_utils.github import GitHub
 
@@ -173,26 +173,49 @@ class GithubLatest(object):
 
         url_path = "releases"
 
-        if self.github_tags:
-            self.github_releases = False
-            url_path = "tags"
+        # if self.github_tags:
+        #     self.github_releases = False
+        #     url_path = "tags"
 
         self.github_url = f"{self.github_url}/{url_path}"
 
-        self.cache_directory = f"{Path.home()}/.ansible/cache/github/{self.project}"
-        self.cache_file_name = f"{self.repository}_releases.json"
+        self.cache_directory = f"{Path.home()}/.cache/ansible/github/{self.project}/{self.repository}"
+        self.cache_file_name = "releases.json"
 
     def run(self):
         """
         """
-        create_directory(self.cache_directory)
+        # create_directory(self.cache_directory)
+        gh_authentication = dict(
+            token=self.github_password
+        )
 
-        gh = GitHub(self.module)
-        gh.enable_cache(cache_dir=self.cache_directory, cache_file=self.cache_file_name)
-        gh.authentication(username=self.github_username, password=self.github_password, token=self.github_password)
+        gh = GitHub(self.module, owner=self.project, repository=self.repository, auth=gh_authentication)
+        gh.enable_cache(cache_file=self.cache_file_name, cache_minutes=self.cache_minutes)
 
-        gh_releases = gh.get_releases(self.github_url)
-        gh_latest_release = gh.latest_published(gh_releases)
+        status_code, gh_releases, error = gh.get_releases(self.github_url)
+
+        if status_code == 419:
+            return dict(
+                failed=True,
+                status=419,
+                msg="An internal error has occurred. Probably a GitHub request could not be parsed properly. Please contact the developer.",
+                stderr=error
+            )
+
+        if status_code != 200:
+            return dict(
+                failed=True,
+                status=status_code,
+                msg="An error has occurred with a request against GitHub.",
+                stderr=error
+            )
+
+        # filter beta version
+        if self.without_beta:
+            self.filter_elements.append("beta")
+
+        gh_latest_release = gh.latest_published(gh_releases, filter_elements=self.filter_elements)
 
         if self.github_tags:
             latest_release = gh_latest_release.get("tag_name", None)
@@ -274,7 +297,7 @@ def main():
     api = GithubLatest(module)
     result = api.run()
 
-    # module.log(msg=f"= result : {result}")
+    module.log(msg=f"= result : {result}")
 
     module.exit_json(**result)
 

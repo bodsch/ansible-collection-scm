@@ -14,10 +14,86 @@ class ReleaseFinder:
         """
         Initialises the ReleaseFinder with raw release data.
 
+        releases:  [
+            {'name': '12.0.2', 'tag_name': 'v12.0.2', 'published_at': '2025-06-17T21:41:45Z', 'url': ''},
+            {'name': '11.6.3', 'tag_name': 'v11.6.3', 'published_at': '2025-06-17T21:58:59Z', 'url': ''},
+            {'name': '11.5.6', 'tag_name': 'v11.5.6', 'published_at': '2025-06-17T22:00:40Z', 'url': ''},
+            {'name': '11.4.6', 'tag_name': 'v11.4.6', 'published_at': '2025-06-17T20:54:31Z', 'url': ''},
+            {'name': '11.3.8', 'tag_name': 'v11.3.8', 'published_at': '2025-06-17T19:56:35Z', 'url': ''},
+            {'name': '10.4.19+security-01', 'tag_name': 'v10.4.19+security-01', 'published_at': '2025-06-12T14:29:40Z', 'url': ''},
+            {'name': '12.0.1+security-01', 'tag_name': 'v12.0.1+security-01', 'published_at': '2025-06-13T04:15:18Z', 'url': ''},
+            {'name': '11.6.2+security-01', 'tag_name': 'v11.6.2+security-01', 'published_at': '2025-06-13T04:12:24Z', 'url': ''},
+            {'name': '11.5.5+security-01', 'tag_name': 'v11.5.5+security-01', 'published_at': '2025-06-13T04:11:29Z', 'url': ''},
+            {'name': '11.4.5+security-01', 'tag_name': 'v11.4.5+security-01', 'published_at': '2025-06-13T04:12:48Z', 'url': ''}
+        ]
+
         :param releases:  List of dictionaries with keys “tag_name”, “published_at”, “name”, etc.
         """
         self.module = module
         self.releases = releases
+        self.exclude_patterns: List[re.Pattern] = []
+
+    # ------------------------------------------------------------------------------------------
+    # public API
+    def find_latest(self, mode: str = "published") -> Optional[Dict[str, Any]]:
+        """
+        """
+        # self.module.log(msg=f"ReleaseFinder::find_latest(mode={mode})")
+
+        # candidates = list(filter(None, (
+        #     self._get_candidate(r)
+        #     for r in self.releases
+        #     if not self._is_excluded(r)
+        # )))
+        # # self.module.log(msg=f"Remaining candidates: {len(candidates)}")
+        # # self.module.log(msg=f"          candidates: {candidates}")
+
+        candidates = (
+            self._get_candidate(r)
+            for r in self.releases
+            if not self._is_excluded(r)  # << Ausschlussfilter vorab
+        )
+
+        candidates = filter(None, candidates)
+
+        if mode == "security":
+            candidates = filter(lambda x: self._is_security_release(x[2]), candidates)
+
+        try:
+            if mode in ("version", "security"):
+                _, _, latest = max(candidates, key=lambda x: x[1])
+            else:
+                _, _, latest = max(candidates, key=lambda x: (x[0], x[1]))
+
+            _name = latest.get("name", None)
+            _tag_name = latest.get("tag_name", None)
+            if not _name:
+                latest["name"] = _tag_name
+
+            return latest
+        except ValueError:
+            return None
+
+    def set_exclude_keywords(self, keywords: List[str]) -> None:
+        """
+        Sets a regex pattern to exclude releases based on keywords found in name or tag_name.
+
+        :param keywords: List of substrings like ['beta', 'rc', 'preview']
+        """
+        # self.module.log(msg=f"ReleaseFinder::set_exclude_keywords(keywords={keywords})")
+
+        if not keywords:
+            self.exclude_patterns = []
+            return
+
+        pattern = "|".join(map(re.escape, keywords))
+        regex = re.compile(rf".*({pattern}).*", re.IGNORECASE)
+        self.exclude_patterns = [regex]
+
+        # self.module.log(msg=f"Exclude pattern set: {regex.pattern}")
+
+    # ------------------------------------------------------------------------------------------
+    # private API
 
     def _parse_date_iso(self, release: Dict[str, Any]) -> Optional[datetime]:
         """
@@ -67,30 +143,44 @@ class ReleaseFinder:
         dt = self._parse_date_iso(release) or self._parse_date_from_name(release)
         if dt is None:
             return None
+
         sem = self._parse_semver(release)
         # self.module.log(msg=f"dt={dt}, sem={sem}, release={release}")
 
         return dt, sem, release
 
-    def find_latest(self) -> Optional[Dict[str, Any]]:
+    def _find_latest_by_version(self) -> Optional[Dict[str, Any]]:
         """
-        Finds the release with the latest date or the highest SemVer with the same date.
-
-        :return: The release dictionary of the latest entry or None if there is no valid release.
+        Finds the release with the highest semantic version.
         """
-        # self.module.log(msg=f"ReleaseFinder::find_latest()")
-
         candidates = filter(None, (self._get_candidate(r) for r in self.releases))
 
         try:
-            _, _, latest = max(candidates, key=lambda x: (x[0], x[1]))
-
-            _name = latest.get("name", None)
-            _tag_name = latest.get("tag_name", None)
-
-            if len(_name) == 0:
-                latest["name"] = _tag_name
-
+            _, version, latest = max(candidates, key=lambda x: x[1])
             return latest
         except ValueError:
             return None
+
+    def _is_security_release(self, release: Dict[str, Any]) -> bool:
+        """
+        Returns True if the release appears to be a security release.
+        """
+        tag = release.get("tag_name", "")
+        name = release.get("name", "")
+        return "+security" in tag or "+security" in name
+
+    def _is_excluded(self, release: Dict[str, Any]) -> bool:
+        """
+        Returns True if the release should be excluded based on configured regex patterns.
+        """
+        # self.module.log(msg=f"ReleaseFinder::_is_excluded(release={release})")
+
+        name = release.get("name", "") or ""
+        tag = release.get("tag_name", "") or ""
+
+        for pattern in self.exclude_patterns:
+            if pattern.search(name) or pattern.search(tag):
+                # self.module.log(msg=f"Excluded by pattern: {pattern.pattern} -> {name} / {tag}")
+                return True
+
+        return False

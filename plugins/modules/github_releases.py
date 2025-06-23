@@ -16,7 +16,7 @@ from pathlib import Path
 
 from ansible.module_utils.basic import AnsibleModule
 # from ansible_collections.bodsch.core.plugins.module_utils.cache.cache_valid import cache_valid
-from ansible_collections.bodsch.core.plugins.module_utils.directory import create_directory
+# from ansible_collections.bodsch.core.plugins.module_utils.directory import create_directory
 
 from ansible_collections.bodsch.scm.plugins.module_utils.github import GitHub
 
@@ -150,24 +150,48 @@ class GithubReleases(object):
 
         self.github_url = f"https://github.com/{self.project}/{self.repository}"
 
-        self.cache_directory = f"{Path.home()}/.ansible/cache/github/{self.project}"
-        self.cache_file_name = f"{self.repository}_releases.json"
+        self.cache_directory = f"{Path.home()}/.cache/ansible/github/{self.project}/{self.repository}"
+        # self.cache_file_name = f"{self.repository}_releases.json"
 
     def run(self):
         """
         """
-        create_directory(self.cache_directory)
+        # create_directory(self.cache_directory)
 
-        gh = GitHub(self.module)
+        gh_authentication = dict(
+            token=self.github_password
+        )
+
+        gh = GitHub(self.module, owner=self.project, repository=self.repository, auth=gh_authentication)
         gh.architecture(system=self.system, architecture=self.architecture)
-        gh.enable_cache(cache_dir=self.cache_directory)
+        gh.enable_cache(cache_minutes=self.cache_minutes)
 
-        gh.authentication(username=self.github_username, password=self.github_password, token=self.github_password)
+        # gh.authentication(username=self.github_username, password=self.github_password, token=self.github_password)
 
-        gh_result = gh.get_all_releases(repo_url=self.github_url)
+        status_code, gh_result, error = gh.get_all_releases(repo_url=self.github_url)
+
+        self.module.log(msg=f"status_code: {status_code}")
+
+        if status_code == 419:
+            return dict(
+                failed=True,
+                status=419,
+                msg="An internal error has occurred. Probably a GitHub request could not be parsed properly. Please contact the developer.",
+                stderr=error
+            )
+
+        if status_code != 200:
+            return dict(
+                failed=True,
+                status=status_code,
+                msg="An error has occurred with a request against GitHub.",
+                stderr=error
+            )
 
         if gh_result:
+
             if isinstance(gh_result, list):
+
                 download_urls = [x.get("download_urls") for x in gh_result if x.get("name").lstrip("v") == self.version.lstrip("v")]
 
                 try:
@@ -195,8 +219,11 @@ class GithubReleases(object):
                             )
 
                 except Exception as e:
-                    self.module.log(msg=f"E: {e}")
-                    pass
+                    self.module.log(msg=f"Error: {e}")
+                    return dict(
+                        status=500,
+                        msg=e
+                    )
 
         return dict(
             status=500,
@@ -253,7 +280,7 @@ def main():
     api = GithubReleases(module)
     result = api.run()
 
-    # module.log(msg=f"= result : {result}")
+    module.log(msg=f"= result : {result}")
 
     module.exit_json(**result)
 
