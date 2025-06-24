@@ -114,6 +114,7 @@ scenario:
     - create
     - prepare
     - converge
+    - idempotence
     # Running converge twice to test the auths module
     - side_effect
     - converge
