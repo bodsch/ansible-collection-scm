@@ -43,7 +43,7 @@ ISSUE_INDEXER_QUEUE_BATCH_NUMBER = {{ values.issue_indexer_queue_batch_number }}
 REPO_INDEXER_ENABLED = {{ values.repo_indexer_enabled | bodsch.core.config_bool(true_as='true', false_as='false') }}
     {% endif %}
     {% if values.repo_indexer_repo_types | default([]) | count > 0 %}
-REPO_INDEXER_REPO_TYPES = {{ orgejo_indexer.repo_indexer_repo_types | join(', ') }}
+REPO_INDEXER_REPO_TYPES = {{ values.repo_indexer_repo_types | join(', ') }}
 {#
 ;; repo indexer units, the items to index, could be `sources`, `forks`, `mirrors`, `templates` or any combination of them separated by a comma.
 ;; If empty then it defaults to `sources` only, as if you'd like to disable fully please see REPO_INDEXER_ENABLED.
