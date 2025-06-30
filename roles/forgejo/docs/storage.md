@@ -21,4 +21,5 @@ forgejo_storage:
   #     location: us-east-1
   #     use_ssl: false
   #     insecure_skip_verify: false
+  #     checksum_algorithm: ""
 ```
