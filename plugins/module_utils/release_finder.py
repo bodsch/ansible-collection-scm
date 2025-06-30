@@ -67,7 +67,7 @@ class ReleaseFinder:
 
             _name = latest.get("name", None)
             _tag_name = latest.get("tag_name", None)
-            if not _name:
+            if not _name or len(_name) == 0:
                 latest["name"] = _tag_name
 
             return latest
