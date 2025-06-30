@@ -95,6 +95,8 @@
   bodsch.scm.forgejo_config:
     config: "{{ forgejo_config_dir }}/forgejo.ini"
     new_config: "{{ forgejo_config_dir }}/forgejo.new"
+    owner: "{{ forgejo_system_user }}"
+    group: "{{ forgejo_system_group }}"
   register: forgejo_config
   notify:
     - restart forgejo
