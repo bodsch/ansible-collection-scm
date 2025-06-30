@@ -1010,6 +1010,7 @@ forgejo_defaults_storage:
   #     location: us-east-1
   #     use_ssl: false
   #     insecure_skip_verify: false
+  #     checksum_algorithm: ""
 
 forgejo_defaults_task:
   queue_type: ""                                  # channel

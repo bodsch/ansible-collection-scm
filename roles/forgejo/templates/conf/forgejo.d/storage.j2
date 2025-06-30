@@ -80,5 +80,9 @@ MINIO_USE_SSL = {{ m.use_ssl | bodsch.core.config_bool(true_as='true', false_as=
     {% if m.insecure_skip_verify | default('') | string | length > 0 %}
 MINIO_INSECURE_SKIP_VERIFY = {{ m.insecure_skip_verify | bodsch.core.config_bool(true_as='true', false_as='false') }}
     {% endif %}
+    {% if m.checksum_algorithm | default('') | string | length > 0 and
+          m.checksum_algorithm in ["default", "md5"] %}
+MINIO_CHECKSUM_ALGORITHM = {{ m.checksum_algorithm }}
+    {% endif %}
   {% endfor %}
 {% endif %}
