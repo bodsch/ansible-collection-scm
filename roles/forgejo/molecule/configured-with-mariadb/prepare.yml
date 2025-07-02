@@ -68,7 +68,7 @@
   gather_facts: true
 
   roles:
-    - role: bodsch.core.snakeoil
+    - role: bodsch.certs.snakeoil
     - role: nginx
 
 ...
