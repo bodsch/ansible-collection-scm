@@ -17,14 +17,18 @@ import site
 
 class AnsibleCollectionManager():
 
-    def __init__(self):
+    def __init__(self, directory: str = None, scenario: str = None):
         """
         """
-        self.args = {}
-        self.parse_args()
+        if directory or scenario:
+            self.run_directory = directory
+            self.tox_scenario = scenario
+        else:
+            self.args = {}
+            self.parse_args()
 
-        self.run_directory = self.args.directory
-        self.tox_scenario = self.args.scenario
+            self.run_directory = self.args.directory
+            self.tox_scenario = self.args.scenario
 
         # print(self.run_directory)
         # print(self.tox_scenario)
@@ -64,9 +68,12 @@ class AnsibleCollectionManager():
         required = []
 
         if Path(self.requirements_file).exists():
+
+            print("role requirements:")
             required += self.load_required_collections(self.requirements_file)
 
         if self.tox_scenario:
+            print("scenario requirements:")
             _file = os.path.join("molecule", self.tox_scenario, "requirements.yml")
             if os.path.exists(_file):
                 required += self.load_required_collections(_file)
@@ -75,6 +82,7 @@ class AnsibleCollectionManager():
             """
                 eine collection
             """
+            print("collection requirements:")
             required += self.load_collection_dependencies()
 
         installed = self.get_installed_collections()

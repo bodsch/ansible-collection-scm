@@ -5,8 +5,10 @@
 if [ -z "${COLLECTION_DIR}" ]
 then
   echo "missing collection directory"
-  exit 1
+  exit 0
 fi
+
+echo "remove ${COLLECTION_NAME} from ${COLLECTION_DIR}"
 
 if [ -d ${COLLECTION_DIR} ]
 then

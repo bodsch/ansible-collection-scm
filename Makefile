@@ -1,6 +1,6 @@
 #
 export COLLECTION_NAMESPACE ?= bodsch
-export COLLECTION_NAME      ?= scm
+export COLLECTION_NAME      ?= cloud
 export COLLECTION_ROLE      ?=
 export COLLECTION_SCENARIO  ?= default
 export TOX_ANSIBLE          ?= ansible_9.5

@@ -10,7 +10,6 @@ current_dir=$(pwd)
 TOX_TEST="${1}"
 
 echo ""
-echo "global"
 ${current_dir}/hooks/manage_collections.py
 
 if [[ ! -z "${COLLECTION_ROLE// }" ]]
@@ -30,10 +29,7 @@ then
 
     pushd "roles/${COLLECTION_ROLE}" > /dev/null
 
-    if [ -e collections.yml ]
-    then
-      ${current_dir}/hooks/manage_collections.py --scenario ${COLLECTION_SCENARIO}
-    fi
+    ${current_dir}/hooks/manage_collections.py --scenario ${COLLECTION_SCENARIO}
 
     tox "${TOX_OPTS}" -- molecule ${TOX_TEST} --scenario-name ${COLLECTION_SCENARIO}
 
@@ -58,10 +54,7 @@ else
 
     pushd roles/${role} > /dev/null
 
-    if [ -e collections.yml ]
-    then
-      ${current_dir}/hooks/manage_collections.py --scenario ${COLLECTION_SCENARIO}
-    fi
+    ${current_dir}/hooks/manage_collections.py --scenario ${COLLECTION_SCENARIO}
 
     if [ "${TOX_TEST}" = "lint" ]
     then
