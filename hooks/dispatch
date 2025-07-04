@@ -1,8 +1,11 @@
 #!/usr/bin/env bash
+
 # hooks/dispatch
 set -euo pipefail
 
-dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"   # absoluter Hook-Pfad
-cmd=${0##*/}                                         # „converge“, „verify“, …
+. hooks/molecule.rc
 
-exec "$dir/run_tox.sh" "$cmd" "$@"
+dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"   # absoluter Hook-Pfad
+cmd=${0##*/}                                          # „converge“, „verify“, …
+
+exec "$dir/run_tox.py" "$cmd" "$@"

@@ -1,156 +1,97 @@
-#!/bin/python
+#!/usr/bin/env python3
 
 import os
 import sys
+import logging
+import argparse
 import requests
-# import json
+from typing import List
+
+logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
+logger = logging.getLogger(__name__)
 
 
-class GitHub:
+class GitHubCleaner:
+    """
+    """
 
-    def __init__(self):
-        """ """
-        self.github_access_token = os.environ.get('GH_TOKEN', None)
-        self.github_repository = os.environ.get('GH_REPOSITORY', None)
-        self.github_username = os.environ.get('GH_USERNAME', None)
-        self.github_keep_workflows = os.environ.get('GH_KEEP_WORKFLOWS', 2)
+    def __init__(self, token: str, repo: str, user: str, keep: int):
+        self.session = requests.Session()
+        self.session.headers.update({"Authorization": f"token {token}"})
+        self.base = "https://api.github.com"
+        self.owner, self.repo = user, repo
+        self.keep = keep
 
-        self.github_base_url = "https://api.github.com"
+    def list_workflows(self) -> List[dict]:
+        url = f"{self.base}/repos/{self.owner}/{self.repo}/actions/workflows"
+        resp = self.session.get(url)
+        resp.raise_for_status()
+        return resp.json().get("workflows", [])
 
-        if not self.github_access_token:
-            print("missing environment variable 'GH_TOKEN'")
-            sys.exit(1)
+    def list_all_runs(self, wf_id: int) -> List[dict]:
+        runs = []
+        url = f"{self.base}/repos/{self.owner}/{self.repo}/actions/workflows/{wf_id}/runs"
+        params = {"per_page": 100}
+        while url:
+            r = self.session.get(url, params=params)
+            r.raise_for_status()
+            data = r.json()
+            runs.extend(data.get("workflow_runs", []))
+            url = r.links.get("next", {}).get("url")
+        return sorted(runs, key=lambda x: x["created_at"], reverse=True)
 
-        if not self.github_repository:
-            print("missing environment variable 'GH_REPOSITORY'")
-            sys.exit(1)
-
-        if not self.github_username:
-            print("missing environment variable 'GH_USERNAME'")
-            sys.exit(1)
-
-        self.headers = {
-            "Authorization": f"token {self.github_access_token}",
-        }
-
-    def header(self):
-        """ """
-        print("")
-        print(f"Delete old workflows for the repository {self.github_repository}")
-        print(f" {self.github_keep_workflows} log files are kept.")
-        print("")
-
-    def get_user_repos(self, username):
-        url = f"{self.github_base_url}/users/{self.github_username}/repos"
-
-        query_params = {
-            "sort": "updated",
-            "per_page": 5
-        }
-
-        response = requests.get(url, params=query_params)
-
-        if response.status_code == 200:
-            repositories_data = response.json()
-            return repositories_data
-        else:
-            return None
-
-    def create_repo(self, repo_name, repo_descr=None):
-        url = f"{self.github_base_url}/user/repos"
-
-        # create json data to send using the post request
-        data = {
-            "name": repo_name,
-            "description": repo_descr,
-        }
-
-        response = requests.post(url, headers=self.headers, json=data)
-
-        if response.status_code == 201:
-            repo_data = response.json()
-            return repo_data
-        else:
-            return None
-
-    def list_defined_workflows(self):
-        url = f"{self.github_base_url}/repos/{self.github_username}/{self.github_repository}/actions/workflows"
-
-        response = requests.get(url, headers=self.headers)
-
-        if response.status_code == 200:
-            repositories_data = response.json()
-            return repositories_data
-        else:
-            return None
-
-    def active_workflows(self, workflows):
-        """ """
-        return [x for x in workflows.get("workflows", []) if x.get("state", None) in ["active", "disabled_inactivity", "skipped"]]
-
-    def remove_old_workflows(self, workflows):
-        """ """
-        for wf in workflows:
-            wf_id = wf.get("id")
-            wf_name = wf.get("name")
-
-            print(f"- Workflow name: '{wf_name}'")
-
-            runned_wf = self.list_workflow(wf_id)
-
-            total_count = runned_wf.get("total_count")
-
-            print(f"  found {total_count} workflows")
-
-            if int(total_count) > int(self.github_keep_workflows):
-                workflow_runs = runned_wf.get("workflow_runs")
-
-                runned_wf = self.remove_elements(workflow_runs, int(self.github_keep_workflows))
-
-                msg_wf = ','.join(str(x) for x in runned_wf)
-
-                print("  delete the following workflows:")
-                self.remove_workflows(runned_wf)
-
-    def list_workflow(self, wf_id):
-
-        url = f"{self.github_base_url}/repos/{self.github_username}/{self.github_repository}/actions/workflows/{wf_id}/runs"
-
-        response = requests.get(url, headers=self.headers)
-
-        if response.status_code == 200:
-            repositories_data = response.json()
-            return repositories_data
-        else:
-            return None
-
-    def remove_elements(self, workflow, keep_elements):
-
-        runned_wf_ids = [x.get("id") for x in workflow]
-        runned_wf_ids = runned_wf_ids[keep_elements:]
-
-        return runned_wf_ids
-
-    def remove_workflows(self, workflow_ids=[]):
-        """ """
-        result = []
-        for wf_id in workflow_ids:
-            print(f"  - id {wf_id}")
-            url = f"{self.github_base_url}/repos/{self.github_username}/{self.github_repository}/actions/runs/{wf_id}"
-
-            response = requests.delete(url, headers=self.headers)
-
-            # print(f"  = {response}")
-
-        return result
+    def cleanup(self):
+        logger.info("Cleaning up workflows for %s/%s (keep=%d)",
+                    self.owner, self.repo, self.keep)
+        for wf in self.list_workflows():
+            wf_id, name = wf["id"], wf["name"]
+            runs = self.list_all_runs(wf_id)
+            to_delete = [run["id"] for run in runs[self.keep:]]
+            if to_delete:
+                logger.info(" → Deleting %d runs of '%s'",
+                            len(to_delete), name)
+                for rid in to_delete:
+                    url = f"{self.base}/repos/{self.owner}/{self.repo}/actions/runs/{rid}"
+                    dr = self.session.delete(url)
+                    dr.raise_for_status()
 
 
-gh = GitHub()
-gh.header()
-workflows = gh.list_defined_workflows()
+def main():
+    parser = argparse.ArgumentParser(
+        description="Cleanup old GitHub Actions runs")
+    parser.add_argument("--token",
+                        default=os.getenv("GH_TOKEN"),
+                        help="GitHub access token (oder GH_TOKEN)")
+    parser.add_argument("--repo",
+                        default=os.getenv("GH_REPOSITORY"),
+                        help="Repository-Name, z.B. 'org/repo' (oder GH_REPOSITORY)")
+    parser.add_argument("--user",
+                        default=os.getenv("GH_USERNAME"),
+                        help="GitHub-Benutzer (oder GH_USERNAME)")
+    parser.add_argument("--keep", type=int,
+                        default=int(os.getenv("GH_KEEP_WORKFLOWS", "2")),
+                        help="Anzahl der Runs, die erhalten bleiben (oder GH_KEEP_WORKFLOWS)")
 
-if workflows:
-    # print(workflows)
-    wf = gh.active_workflows(workflows)
-    # print(json.dumps(wf, sort_keys=True, indent=2))
-    gh.remove_old_workflows(wf)
+    args = parser.parse_args()
+
+    # Validierung aller nötigen Werte
+    missing = []
+    for name, val in [("token", args.token), ("repo", args.repo), ("user", args.user)]:
+        if not val:
+            missing.append(name.upper())
+    if missing:
+        logger.error(
+            "fehlende Parameter: %s (als Flag oder Env-Variable setzen)", ", ".join(missing))
+        sys.exit(1)
+
+    cleaner = GitHubCleaner(
+        token=args.token,
+        repo=args.repo,
+        user=args.user,
+        keep=args.keep
+    )
+    cleaner.cleanup()
+
+
+if __name__ == "__main__":
+    main()

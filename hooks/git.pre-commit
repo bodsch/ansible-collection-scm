@@ -1,0 +1,45 @@
+#!/bin/bash
+
+# Abbrechen bei Fehler
+set -e
+
+echo ">> pre-commit hook"
+
+# Hole gestagte Python-Dateien
+#   --cached: nur die Dateien im Staging-Bereich (Index)
+#   --name-only: nur Dateinamen ausgeben
+#   --diff-filter=ACM:
+#     A: Added (neu hinzugefügt)
+#     C: Copied (kopiert)
+#     M: Modified (geändert)
+
+# git ls-files '*.py' | grep -E '^(plugins/)'
+
+files=$(git ls-files '*.py' | grep -E '^(plugins/|library/|filter_plugins/)')
+# files=$(git diff --cached --name-only --diff-filter=ACM | grep '\.py$' || true)
+# Exclude bestimmte Verzeichnisse:
+# filtered_files=$(echo "$files" | grep -vE '^(\.git/|\.tox/|__pycache__/|hooks/|tools/|molecule/|test_.*\.py)')
+
+if [ -z "$files" ]; then
+    echo "Keine Python-Dateien zum Prüfen."
+    exit 0
+fi
+
+echo "Prüfe folgende Dateien:"
+echo "${files}"
+
+# Beide Tools ausführen und Exit-Codes merken
+flake8 --append-config=.config/pycodestyle.cfg $files
+flake8_exit=$?
+
+pycodestyle --config=.config/pycodestyle.cfg $files
+pycodestyle_exit=$?
+
+# Prüfen, ob einer der beiden fehlgeschlagen ist
+if [ $flake8_exit -ne 0 ] || [ $pycodestyle_exit -ne 0 ]; then
+    echo ">> pre-commit hook fehlgeschlagen (flake8 oder pycodestyle)"
+    exit 1
+fi
+
+echo ">> pre-commit hook erfolgreich"
+exit 0

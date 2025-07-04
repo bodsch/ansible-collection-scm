@@ -31,7 +31,13 @@ then
 
     ${current_dir}/hooks/manage_collections.py --scenario ${COLLECTION_SCENARIO}
 
+    echo $PWD
+    set -x
+
+    # tox '-e ansible_9.5' -- molecule destroy --scenario-name configured-with-ldap
     tox "${TOX_OPTS}" -- molecule ${TOX_TEST} --scenario-name ${COLLECTION_SCENARIO}
+
+    set +x
 
     echo ""
     popd > /dev/null
@@ -68,9 +74,12 @@ else
       then
         for test in $(find molecule -maxdepth 1 -mindepth 1 -type d -printf "%f\n")
         do
+          set -x
           export TOX_SCENARIO=${test}
 
           tox "${TOX_OPTS}" -- molecule ${TOX_TEST} ${TOX_ARGS}
+
+          set +x
         done
       fi
     fi

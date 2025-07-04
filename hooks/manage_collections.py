@@ -7,88 +7,53 @@ import os
 import yaml
 import json
 import subprocess
-import argparse
 
-from pathlib import Path
+import logging
+
+# from pathlib import Path
 from packaging.version import Version, InvalidVersion
 from packaging.specifiers import SpecifierSet, InvalidSpecifier
+from typing import List
 import site
+
+logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
+logger = logging.getLogger(__name__)
 
 
 class AnsibleCollectionManager():
 
-    def __init__(self, directory: str = None, scenario: str = None):
+    def __init__(self, directory: str = None):
         """
         """
-        if directory or scenario:
-            self.run_directory = directory
-            self.tox_scenario = scenario
-        else:
-            self.args = {}
-            self.parse_args()
-
-            self.run_directory = self.args.directory
-            self.tox_scenario = self.args.scenario
-
-        # print(self.run_directory)
-        # print(self.tox_scenario)
-
         self.requirements_file = "collections.yml"
 
-        if self.run_directory:
-            os.chdir(self.run_directory)
+        if directory:
+            os.chdir(directory)
 
-    def parse_args(self):
-        """
-            parse arguments
-        """
-        p = argparse.ArgumentParser(description='installs ansible collection dependencies')
-
-        p.add_argument(
-            "-d",
-            "--directory",
-            required=False,
-            help="Directory with collection.yml",
-            default=os.getcwd()
-        )
-
-        p.add_argument(
-            "-s",
-            "--scenario",
-            required=False,
-            help="tox scenario",
-            default=None
-        )
-
-        self.args = p.parse_args()
-
-    def run(self):
+    def run(self, required: List[dict] = None):
         """
         """
-        required = []
-
-        if Path(self.requirements_file).exists():
-
-            print("role requirements:")
-            required += self.load_required_collections(self.requirements_file)
-
-        if self.tox_scenario:
-            print("scenario requirements:")
-            _file = os.path.join("molecule", self.tox_scenario, "requirements.yml")
-            if os.path.exists(_file):
-                required += self.load_required_collections(_file)
-
-        if Path("galaxy.yml").exists():
-            """
-                eine collection
-            """
-            print("collection requirements:")
-            required += self.load_collection_dependencies()
+        # required = []
+        #
+        # if Path(self.requirements_file).exists():
+        #
+        #     print("role requirements:")
+        #     required += self.load_required_collections(self.requirements_file)
+        #
+        # if self.tox_scenario:
+        #     print("scenario requirements:")
+        #     _file = os.path.join("molecule", self.tox_scenario, "requirements.yml")
+        #     if os.path.exists(_file):
+        #         required += self.load_required_collections(_file)
+        #
+        # if Path("galaxy.yml").exists():
+        #     """
+        #         eine collection
+        #     """
+        #     print("collection requirements:")
+        #     required += self.load_collection_dependencies()
 
         installed = self.get_installed_collections()
-
-        # print(required)
-        # print(type(required))
 
         for item in required:
             name = item.get("name")
@@ -98,14 +63,17 @@ class AnsibleCollectionManager():
             if current_version:
                 if required_version:
                     if not self.is_version_compatible(current_version, required_version):
-                        print(f"🔄 '{name}' is installed in version {current_version}, {required_version} is required.")
+                        logging.info(
+                            f"🔄 '{name}' is installed in version {current_version}, {required_version} is required.")
                         self.install_collection(name)
                     else:
-                        print(f"✅ '{name}' is installed in compatible version {current_version}.")
+                        logging.info(
+                            f"✅ '{name}' is installed in compatible version {current_version}.")
                 else:
-                    print(f"✅ '{name}' is installed in version {current_version}.")
+                    logging.info(
+                        f"✅ '{name}' is installed in version {current_version}.")
             else:
-                print(f"❌ '{name}' is not installed.")
+                logging.info(f"❌ '{name}' is not installed.")
                 self.install_collection(name)
 
         print("")
@@ -114,6 +82,7 @@ class AnsibleCollectionManager():
         """
             Lädt die benötigten Collections aus der YAML-Datei.
         """
+        # logging.debug(f"AnsibleCollectionManager::load_required_collections({path})")
         result = []
 
         with open(path, "r") as f:
@@ -130,7 +99,8 @@ class AnsibleCollectionManager():
             data = yaml.safe_load(f)
             if data and isinstance(data, dict):
                 r = data.get("dependencies", [])
-                result = [{"name": k, "version": v} if v is not None and v != "*" else {"name": k} for k, v in r.items()]
+                result = [{"name": k, "version": v} if v is not None and v !=
+                          "*" else {"name": k} for k, v in r.items()]
 
         return result
 
@@ -141,10 +111,12 @@ class AnsibleCollectionManager():
         try:
             return Version(installed_version) in SpecifierSet(required_spec)
         except InvalidVersion:
-            print(f"⚠️ Ungültige installierte Version: {installed_version}")
+            logging.warning(
+                f"⚠️ Ungültige installierte Version: {installed_version}")
             return False
         except InvalidSpecifier:
-            print(f"❌ Ungültiger Versions-Spezifizierer: '{required_spec}' — bitte verwende z. B. '>=4.0'")
+            logging.error(
+                f"❌ Ungültiger Versions-Spezifizierer: '{required_spec}' — bitte verwende z. B. '>=4.0'")
             return False
 
     def get_ansible_collections_paths(self, ):
@@ -156,10 +128,12 @@ class AnsibleCollectionManager():
         env_paths = os.environ.get("ANSIBLE_COLLECTIONS_PATHS")
 
         if env_paths:
-            paths.extend([os.path.join(p, "ansible_collections") for p in env_paths.split(os.pathsep)])
+            paths.extend([os.path.join(p, "ansible_collections")
+                         for p in env_paths.split(os.pathsep)])
         else:
             # Standard: ~/.ansible/collections/ansible_collections
-            paths.append(os.path.join(os.path.expanduser("~"), ".ansible", "collections", "ansible_collections"))
+            paths.append(os.path.join(os.path.expanduser("~"),
+                         ".ansible", "collections", "ansible_collections"))
 
             # Dynamisch ermitteln: site-packages
             for sp in site.getsitepackages():
@@ -197,7 +171,7 @@ class AnsibleCollectionManager():
 
                                 if namespace and name and version:
                                     full_name = f"{namespace}.{name}"
-                                    # print(f"🔍 Found '{full_name}' version {version} at {coll_path}")
+                                    # logging.debug(f"🔍 Found '{full_name}' version {version} at {coll_path}")
                                     if full_name not in installed:
                                         installed[full_name] = version
                                     else:
@@ -208,7 +182,8 @@ class AnsibleCollectionManager():
                                             pass  # falls Versionsvergleich fehlschlägt: einfach ignorieren
 
                         except Exception as e:
-                            print(f"⚠️ Errors when reading {manifest}: {e}")
+                            logging.error(
+                                f"⚠️ Errors when reading {manifest}: {e}")
 
         return installed
 
@@ -216,16 +191,6 @@ class AnsibleCollectionManager():
         """
             Installiert eine Collection über ansible-galaxy (ohne Versionsparameter).
         """
-        print(f"📦 Install ansible-galaxy collection {name} ...")
-        subprocess.run(["ansible-galaxy", "collection", "install", "--force", name], check=True)
-
-
-def main(requirements_file="collections.yml"):
-    """
-    """
-    mnger = AnsibleCollectionManager()
-    mnger.run()
-
-
-if __name__ == "__main__":
-    main()
+        logging.info(f"📦 Install ansible-galaxy collection {name} ...")
+        subprocess.run(["ansible-galaxy", "collection",
+                       "install", "--force", name], check=True)
