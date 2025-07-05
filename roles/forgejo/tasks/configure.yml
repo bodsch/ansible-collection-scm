@@ -105,11 +105,14 @@
 - name: restart forgejo if needed
   ansible.builtin.meta: flush_handlers
 
-- name: wait for running forgejo
+- name: "wait for running forgejo {{ forgejo_server.http_addr | default('127.0.0.1') }}:{{ forgejo_server.http_port | default(3000) | int }}"
   ansible.builtin.wait_for:
     host: "{{ forgejo_server.http_addr | default('127.0.0.1') }}"
     port: "{{ forgejo_server.http_port | default(3000) | int }}"
     delay: 2
     connect_timeout: 120
+  when:
+    - forgejo_server.http_addr is defined
+    - forgejo_server.http_port is defined
 
 ...

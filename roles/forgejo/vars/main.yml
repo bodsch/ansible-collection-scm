@@ -831,8 +831,8 @@ forgejo_defaults_server:
   domain: ""                                      # localhost
   root_url: ""                                    # "%(protocol)s://%(domain)s:%(HTTP_PORT)s/"
   static_url_prefix: ""
-  http_addr: ""                                   # 0.0.0.0
-  http_port: ""                                   # 3000
+  http_addr: 127.0.0.1                            # 0.0.0.0
+  http_port: 3000                                 # 3000
   redirect_other_port: ""                         # false
   port_to_redirect: ""                            # 80
   redirector_use_proxy_protocol: ""               # "%(use_proxy_pROTOCOL)s"

@@ -3,7 +3,7 @@
 # hooks/dispatch
 set -euo pipefail
 
-. hooks/molecule.rc
+# . hooks/molecule.rc
 
 dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"   # absoluter Hook-Pfad
 cmd=${0##*/}                                          # „converge“, „verify“, …

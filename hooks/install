@@ -1,20 +1,55 @@
 #!/usr/bin/env bash
+# hooks/install
+
+set -euo pipefail
 
 . hooks/molecule.rc
 
-mkdir \
-  --parents \
-  "${COLLECTION_DIR}"
+dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"   # absoluter Hook-Pfad
+cmd=${0##*/}                                          # „converge“, „verify“, …
 
-echo "install ${COLLECTION_NAME} into ${COLLECTION_DIR}"
+install() {
 
-rsync \
-  --archive \
-  --recursive \
-  --exclude hooks \
-  --exclude __pycache__ \
-  --exclude molecule \
-  --exclude .github \
-  --delete \
-  ../ansible-collection-${COLLECTION_NAME}/* \
-  "${COLLECTION_DIR}/"
+  mkdir \
+    --parents \
+    "${COLLECTION_DIR}"
+
+  echo "install ${COLLECTION_NAME} into ${COLLECTION_DIR}"
+
+  rsync \
+    --archive \
+    --recursive \
+    --exclude hooks \
+    --exclude __pycache__ \
+    --exclude molecule \
+    --exclude .github \
+    --delete \
+    ../ansible-collection-${COLLECTION_NAME}/* \
+    "${COLLECTION_DIR}/"
+}
+
+uninstall() {
+
+  if [ -z "${COLLECTION_DIR}" ]
+  then
+    echo "missing collection directory"
+    exit 0
+  fi
+
+  echo "remove ${COLLECTION_NAME} from ${COLLECTION_DIR}"
+
+  if [ -d ${COLLECTION_DIR} ]
+  then
+    rm \
+      --recursive \
+      --force \
+      "${COLLECTION_DIR}"
+  fi
+}
+
+# echo "${dir}"
+# echo "${cmd}"
+
+$cmd
+
+exit 0
