@@ -124,20 +124,21 @@ def test_service(host, get_vars):
 
 
 def test_open_port(host, get_vars):
+    """
+    """
+    forgejo_server = get_vars.get("forgejo_server", {})
+
+    print(f"forgejo_server: {forgejo_server}")
     for i in host.socket.get_listening_sockets():
         print(i)
 
-    forgejo_server = get_vars.get("forgejo_server", {})
-
-    print(forgejo_server)
-
     if isinstance(forgejo_server, dict):
-        _address = forgejo_server.get("http_addr")
-        _port = forgejo_server.get("http_port")
+        addr = forgejo_server.get("http_addr", "127.0.0.1")
+        port = forgejo_server.get("http_port", "3000")
 
-        listen_address = f"{_address}:{_port}"
+        listen_address = f"{addr}:{port}"
     else:
-        listen_address = "0.0.0.0:3000"
+        listen_address = "127.0.0.1:3000"
 
     service = host.socket(f"tcp://{listen_address}")
     assert service.is_listening
