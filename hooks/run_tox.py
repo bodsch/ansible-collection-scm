@@ -14,6 +14,7 @@ from contextlib import contextmanager
 logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 logger = logging.getLogger(__name__)
 
+VERSION = "2.1.0"
 
 @contextmanager
 def chdir(path: Path):
@@ -106,7 +107,7 @@ class ToxRunner:
         'TOX_ANSIBLE',
         'COLLECTION_NAMESPACE',
         'COLLECTION_NAME',
-        'COLLECTION_ROLE',
+        # 'COLLECTION_ROLE',
         'COLLECTION_SCENARIO',
     ]
 
@@ -129,7 +130,17 @@ class ToxRunner:
         self.validate()
         self.collections()
 
-        self._run_for_role(role_name=self.role)
+        if not self.role:
+            """
+            """
+            if os.path.exists("roles"):
+                with chdir(Path.cwd() / "roles"):
+                    dirs = next(os.walk('.'))[1]
+
+                    for d in dirs:
+                        self._run_for_role(role_name=d)
+        else:
+            self._run_for_role(role_name=self.role)
 
         sys.exit(0)
 
@@ -148,10 +159,10 @@ class ToxRunner:
             logging.error(error)
             sys.exit(1)
 
-        if not self.role:
-            logging.error(
-                "please set the COLLECTION_ROLE Environment Variable!\n")
-            sys.exit(1)
+        # if not self.role:
+        #     logging.error(
+        #         "please set the COLLECTION_ROLE Environment Variable!\n")
+        #     sys.exit(1)
 
     def collections(self) -> None:
         """ """
@@ -271,8 +282,10 @@ class ToxRunner:
 
         try:
             subprocess.run(cmd, cwd=str(cwd), env=env, check=True)
+            print("")
         except subprocess.CalledProcessError as e:
             logging.error(f"tox failed in {cwd}: {e}")
+            print("")
             sys.exit(1)
 
 
@@ -280,12 +293,18 @@ if __name__ == "__main__":
     """
     """
     parser = argparse.ArgumentParser(
-        description="Run tox for Ansible roles with Molecule via direct Python imports."
+        description=f"Run tox for Ansible collection with Molecule (Version: {VERSION})"
+    )
+    parser.add_argument(
+        "--version",
+        action="version",
+        version=f"%(prog)s {VERSION}",
+        help="Show the program's version number and exit."
     )
     parser.add_argument(
         "tox_test",
         nargs="?",
-        help="Tox test command to run (e.g., lint, test)",
+        help="Tox test command to run (e.g., lint, test).",
     )
     args = parser.parse_args()
 
