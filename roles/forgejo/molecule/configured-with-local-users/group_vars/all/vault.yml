@@ -1,0 +1,7 @@
+---
+
+vault__forgejo:
+  root: "change-it-ASAP!"
+  foo: "wer-kann-das-erraten?"
+
+...
