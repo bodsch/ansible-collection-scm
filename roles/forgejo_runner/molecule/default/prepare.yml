@@ -61,5 +61,5 @@
 
   roles:
     - role: bodsch.scm.forgejo
-    - role: bodsch.core.snakeoil
+    - role: bodsch.certs.snakeoil
     - role: nginx

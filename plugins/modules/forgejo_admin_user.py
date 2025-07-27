@@ -1,15 +1,14 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# (c) 2023, Bodo Schulz <bodo@boone-schulz.de>
+# (c) 2023-2025, Bodo Schulz <bodo@boone-schulz.de>
 # Apache (see LICENSE or https://opensource.org/licenses/Apache-2.0)
 
 from __future__ import absolute_import, print_function
 import os
-import re
 
 from ansible.module_utils.basic import AnsibleModule
-
+from ansible_collections.bodsch.scm.plugins.module_utils.forgejo_user import ForgejoUser
 
 __metaclass__ = type
 
@@ -101,7 +100,7 @@ RETURN = r"""
 # ----------------------------------------------------------------------
 
 
-class ForgejoUser(object):
+class ForgejoAdminUser(ForgejoUser):
     """
     """
     module = None
@@ -116,10 +115,15 @@ class ForgejoUser(object):
         self.username = module.params.get("username")
         self.password = module.params.get("password")
         self.email = module.params.get("email")
+
         self.working_dir = module.params.get("working_dir")
         self.config = module.params.get("config")
 
-        self.forgejo_bin = module.get_bin_path('forgejo', True)
+        super().__init__(
+            module,
+            working_dir=self.working_dir,
+            forgejo_config=self.config
+        )
 
     def run(self):
         """
@@ -136,150 +140,30 @@ class ForgejoUser(object):
 
         # self.module.log(msg=f"  existing_users : '{existing_users}'")
 
-        if self.state == "list":
+        # if self.state == "present":
+        if not existing_users.get(self.username):
+            result = self.add_user(
+                username=self.username,
+                password=self.password,
+                email=self.email,
+                admin_user=True
+            )
+        else:
             result = dict(
                 changed=False,
-                failed=False,
-                msg=existing_users
+                msg=f"user {self.username} already created."
             )
-
-        if self.state == "check":
-            if not existing_users.get(self.username):
-                result = dict(
-                    changed=False,
-                    failed=False,
-                    msg=f"User {self.username} is not created.",
-                    rc=1
-                )
-            else:
-                result = dict(
-                    changed=False,
-                    failed=False,
-                    msg=f"User {self.username} is present.",
-                    rc=0
-                )
-
-        if self.state == "present":
-            if not existing_users.get(self.username):
-                result = self.add_user()
-            else:
-                result = dict(
-                    changed=False,
-                    msg=f"user {self.username} already created."
-                )
 
         if self.state == "absent":
             result["msg"] = "This part is currently not supported."
 
         return result
 
-    def list_users(self):
-        """
-        """
-        result = {}
-
-        args_list = [
-            self.forgejo_bin,
-            "admin",
-            "user",
-            "list",
-            "--work-path", self.working_dir,
-            "--config", self.config,
-        ]
-
-        # self.module.log(msg=f"  args_list : '{args_list}'")
-        rc, out, err = self._exec(args_list)
-
-        pattern = re.compile(
-            r'^\s*(?P<id>\d+)\s+'
-            r'(?P<username>\S+)\s+'
-            r'(?P<email>\S+)\s+'
-            r'(?P<is_active>true|false)\s+'
-            r'(?P<is_admin>true|false)\s+'
-            r'(?P<two_fa>true|false)\s*$'
-        )
-
-        result = {
-            m.group('username'): {
-                'email': m.group('email'),
-                'active': m.group('is_active') == 'true',
-                'admin': m.group('is_admin') == 'true'
-            }
-            for line in out.splitlines()[1:]  # Zeile 1 ist der Header
-            if (m := pattern.match(line))
-        }
-
-        return result
-
-    def add_user(self):
-        """
-            forgejo admin user create --admin --username root --password admin1234 --email root@example.com
-        """
-        args_list = [
-            self.forgejo_bin,
-            "admin",
-            "user",
-            "create",
-            "--work-path", self.working_dir,
-            "--config", self.config,
-        ]
-
-        if self.admin:
-            args_list.append("--admin")
-
-        args_list += [
-            "--username", self.username,
-            "--password", self.password,
-            "--email", self.email
-        ]
-
-        # self.module.log(msg=f"  args_list : '{args_list}'")
-
-        rc, out, err = self._exec(args_list)
-
-        if rc == 0:
-            return dict(
-                failed=False,
-                changed=True,
-                msg=f"user {self.username} successful created."
-            )
-        else:
-            return dict(
-                failed=True,
-                msg=err
-            )
-
-    def _exec(self, commands, check_rc=True):
-        """
-        """
-        rc, out, err = self.module.run_command(commands, check_rc=check_rc)
-        # self.module.log(msg=f"  rc : '{rc}'")
-
-        if rc != 0:
-            self.module.log(msg=f"  out: '{out}'")
-            self.module.log(msg=f"  err: '{err}'")
-
-        return rc, out, err
-
 
 def main():
     """
     """
     specs = dict(
-        state=dict(
-            default="present",
-            choices=[
-                "present",
-                "absent",
-                "list",
-                "check"
-            ]
-        ),
-        admin=dict(
-            required=False,
-            type=bool,
-            default=False
-        ),
         username=dict(
             required=False,
             type=str
@@ -310,40 +194,7 @@ def main():
         supports_check_mode=False,
     )
 
-    params = module.params
-
-    _state = params.get("state")
-
-    if _state in ["present", "absent", "check"]:
-
-        res_args = dict(
-            rc=1,
-            changed=False
-        )
-        _username = params.get("username", None)
-        _password = params.get("password", None)
-        _email = params.get("email", None)
-
-        if _state == "present":
-            _missing = []
-            if _username is None:
-                _missing.append("username")
-            if _password is None:
-                _missing.append("password")
-            if _email is None:
-                _missing.append("email")
-
-            if len(_missing) > 0:
-                _missing = ", ".join(_missing)
-                res_args['msg'] = f"missing required arguments: {_missing}"
-                module.exit_json(**res_args)
-
-        if _state in ["absent", "check"]:
-            if _username is None:
-                res_args['msg'] = "missing required arguments: username"
-                module.exit_json(**res_args)
-
-    kc = ForgejoUser(module)
+    kc = ForgejoAdminUser(module)
     result = kc.run()
 
     module.log(msg=f"= result : '{result}'")
