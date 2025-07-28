@@ -14,7 +14,7 @@ from contextlib import contextmanager
 logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 logger = logging.getLogger(__name__)
 
-VERSION = "2.2.0"
+VERSION = "2.2.1"
 
 
 @contextmanager
@@ -304,16 +304,17 @@ class ToxRunner:
         except subprocess.CalledProcessError as e:
             """
             """
-
             logging.error(f"tox failed in {cwd}")
             logging.error("Command:")
             logging.error(f"  {cmd_str}")
             print("")
             logging.error('   STDOUT:')
-            logging.error(f"  {e.stdout.strip()}")
+            if e.stdout:
+                logging.error(f"  {e.stdout.strip()}")
             print("")
             logging.error('   STDERR:')
-            logging.error(f"  {e.stderr.strip()}")
+            if e.stderr:
+                logging.error(f"  {e.stderr.strip()}")
             print("")
 
             sys.exit(1)
