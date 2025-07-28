@@ -87,10 +87,10 @@ forgejo_users:
     email: "foo@example.com"
     state: present
 
-  - username: "bar2"
-    password: ""
-    email: "bar@example.com"
-    state: present
+  # - username: "bar2"
+  #   password: ""
+  #   email: "bar@example.com"
+  #   state: present
 
   - username: "bar"
     password: "{{ vault__forgejo.foo }}"

@@ -12,6 +12,9 @@
     working_dir: "{{ forgejo_working_dir }}"
   when:
     - not ansible_check_mode
+    - (forgejo_admin_user.username is defined and forgejo_admin_user.username | string | length > 0)
+    - (forgejo_admin_user.password is defined and forgejo_admin_user.password | string | length > 0)
+    - (forgejo_admin_user.email is defined and forgejo_admin_user.email | string | length > 0)
 
 - name: create local users
   remote_user: "{{ forgejo_system_user }}"

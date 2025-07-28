@@ -135,18 +135,8 @@ class ForgejoUsers(ForgejoUser):
 
         existing_users = self.list_users()
 
-        self.module.log(msg=f"  existing_users : '{existing_users}'")
-        self.module.log(msg=f"  wanted users   : '{self.users}'")
-
         valid_users, invalid_users = self.validate_users()
-
-        # self.module.log(msg=f"  valid_users    : '{valid_users}'")
-        # self.module.log(msg=f"  invalid_users  : '{invalid_users}'")
-
         _, non_existing_users = self.check_existing_users(new_users=valid_users, existing=existing_users)
-
-        # self.module.log(msg=f"  existing_users    : '{existing_users}'")
-        # self.module.log(msg=f"  non_existing_users: '{non_existing_users}'")
 
         if len(invalid_users) > 0:
             result_state.append({
@@ -158,11 +148,17 @@ class ForgejoUsers(ForgejoUser):
             })
 
         if len(existing_users) > 0:
+
+            if isinstance(existing_users, list):
+                users = ", ".join([x.get("username") for x in existing_users])
+            if isinstance(existing_users, dict):
+                users = ", ".join(list(existing_users.keys()))
+
             result_state.append({
                 "existing users": {
                     "failed": False,
                     "changed": False,
-                    "usernames": ", ".join([x.get("username") for x in existing_users])
+                    "usernames": users
                 }
             })
 
