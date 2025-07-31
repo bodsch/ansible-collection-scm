@@ -168,6 +168,7 @@ jobs:
           - configured
           - configured-with-mariadb
           - configured-with-ldap
+          - configured-with-local-users
           - custom-config-directory
           - update
         collection_role:
