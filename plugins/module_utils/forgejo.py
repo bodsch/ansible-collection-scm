@@ -1,58 +1,70 @@
-#
-# import re
-# import time
+
+import re
 import requests
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
-
-# from pathlib import Path
 from typing import Optional, Tuple, Union, List, Dict
 
 
 class Forgejo:
     """
+    Forgejo API Client:
+    - Unterstützt Token Auth (empfohlen)
+    - Fällt zurück auf Basic Auth (username+password), wenn kein Token gesetzt ist
     """
-    def __init__(self, module: any, url: str):
+    def __init__(
+        self,
+        base_url: str,
+        username: Optional[str] = None,
+        password: Optional[str] = None,
+        token: Optional[str] = None
+    ):
         """
-        Initialisiert die Klasse
+        :param base_url: z.B. "https://codeberg.org/api/v1"
+        :param username: Admin-Benutzername (nur für Basic Auth)
+        :param password: Admin-Passwort (nur für Basic Auth)
+        :param token: Optionaler Admin-Token
         """
-        self.module = module
-        self.module.log(msg="Forgejo::__init__(module)")
+        self.base_url = base_url.rstrip("/")
 
-        self.url = url
+        self.auth = None
         self.headers: Dict[str, str] = {
             "Accept": "application/json"
         }
 
-    def users(self):
+        if token:
+            # Token Auth
+            self.headers["Authorization"] = f"token {token}"
+        elif username and password:
+            # Basic Auth
+            self.auth = (username, password)
+        else:
+            raise ValueError("Es muss entweder ein Token oder Username+Passwort angegeben werden!")
+
+    # --------------------------------------------------------------------------------
+    def users(self) -> List[dict]:
         """
-            GET 'https://codeberg.org/api/v1/admin/users' -H 'accept: application/json'
+        Ruft alle User aus /admin/users ab (mit Pagination)
         """
-        self.module.log(msg="Forgejo::users()")
+        endpoint = f"{self.base_url}/admin/users"
+        status, users, error = self._request(endpoint)
 
-        params = {}
-        _users = self._request(self.url, params)
+        if status == 200:
+            print(f"{len(users)} Users gefunden")
+            return users
+        else:
+            print(f"Fehler: {error}")
+            return []
 
-        self.module.log(msg=f"users: {_users}")
-
-        pass
-
-    # ------------------------------------------------------------------------------------------
-    # private API
+    # --------------------------------------------------------------------------------
     def _request(
         self,
         url: str,
         params: Optional[dict] = None,
-    ) -> Tuple[int, Union[List[dict], str, requests.Response], Optional[str]]:
+    ) -> Tuple[int, Union[List[dict], str], Optional[str]]:
         """
-        Robuste GET-Anfrage mit:
-        - Retry bei 5xx und Timeout
-        - Pagination über Link-Header
-        - Rate Limit Handling
-        - JSON oder plain text/streaming Download
+        GET-Anfrage mit Retry und Pagination
         """
-        self.module.log(msg=f"Forgejo::_request(url={url}, params={params})")
-
         session = requests.Session()
         retry_strategy = Retry(
             total=3,
@@ -63,31 +75,60 @@ class Forgejo:
         adapter = HTTPAdapter(max_retries=retry_strategy)
         session.mount("https://", adapter)
 
-        headers = self.headers.copy()
         result: List[dict] = []
         error = None
 
         try:
-            response = session.get(self.url, headers=headers, params=params, timeout=15)
+            while url:
+                response = session.get(
+                    url,
+                    headers=self.headers,
+                    params=params,
+                    auth=self.auth,  # wird nur gesetzt, wenn kein Token
+                    timeout=15
+                )
+                response.raise_for_status()
 
-            response.raise_for_status()
+                json_data = response.json()
+                if isinstance(json_data, list):
+                    result.extend(json_data)
+                else:
+                    result.append(json_data)
 
-            # Wenn kein JSON erwartet wird (z. B. Datei-Download)
-            # return (200, response.text, None)
+                # Pagination prüfen
+                link_header = response.headers.get("Link")
+                next_url = None
+                if link_header:
+                    match = re.search(r'<([^>]+)>;\s*rel="next"', link_header)
+                    if match:
+                        next_url = match.group(1)
 
-            # JSON-Verarbeitung
-            json_data = response.json()
-            if not isinstance(json_data, list):
-                json_data = [json_data]
-            result.extend(json_data)
+                url = next_url
+                params = None
 
         except requests.exceptions.RequestException as e:
             error = f"Request failed: {e}"
-            self.module.log(error)
             return (419, [], error)
         except ValueError as e:
             error = f"Error parsing the JSON: {e}"
-            self.module.log(error)
             return (419, [], error)
 
         return (200, result, None)
+
+
+
+"""
+if __name__ == "__main__":
+    BASE_URL = "https://codeberg.org/api/v1"
+
+    # Beispiel 1: Mit Token
+    # forgejo = Forgejo(BASE_URL, token="DEIN_ADMIN_TOKEN")
+
+    # Beispiel 2: Mit Basic Auth
+    forgejo = Forgejo(BASE_URL, username="DEIN_ADMIN_USER", password="DEIN_PASSWORT")
+
+    users = forgejo.users()
+
+    for user in users:
+        print(f"{user['id']:3}  {user['username']:20}  {user.get('email', '-')}")
+"""
