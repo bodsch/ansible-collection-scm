@@ -116,7 +116,6 @@ class Forgejo:
         return (200, result, None)
 
 
-
 """
 if __name__ == "__main__":
     BASE_URL = "https://codeberg.org/api/v1"
