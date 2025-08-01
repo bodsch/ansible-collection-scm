@@ -38,6 +38,12 @@ forgejo_admin_user:
   password: ""
   email: ""
 
+forgejo_users: []
+#   - username: ""
+#     password: ""
+#     email: ""
+#     state:  absent / present
+
 forgejo_actions: {}
 forgejo_admin: {}
 forgejo_api: {}

@@ -101,37 +101,6 @@ class ForgejoIni:
         if not self.data["__default__"]:
             del self.data["__default__"]
 
-    # def get_cleaned_string(self):
-    #     """
-    #     1. Erzeugt einen frischen Parser und befüllt ihn mit allen aktuellen
-    #        Sektionen/Optionen aus self.parser.
-    #     2. Entfernt anschließend volatile/ignorierte Schlüssel.
-    #     3. Fügt alle in ignore_keys gelisteten Sektionen hinzu, falls sie fehlen.
-    #     4. Schreibt Sektionen und Keys alphabetisch sortiert (ohne Leerzeilen).
-    #     5. Gibt das Ergebnis als String zurück.
-    #     """
-    #     # 1) Basis-PARSER mit allen Sektionen/Keys aus self.parser füllen
-    #     temp = self._create_parser()
-    #     temp.read_dict({sec: dict(self.parser.items(sec)) for sec in self.parser.sections()})
-    #
-    #     # 2) Ignorierte Keys entfernen
-    #     self._remove_ignored_keys(temp)
-    #
-    #     # 3) Sicherstellen, dass auch leere Sektionen aus ignore_keys existieren
-    #     for sec in self.ignore_keys:
-    #         if not temp.has_section(sec):
-    #             temp.add_section(sec)
-    #
-    #     # 4) Alphabetisch sortiert in einen String schreiben (ohne Leerzeilen)
-    #     output = StringIO()
-    #     for section in sorted(temp.sections()):
-    #         output.write(f"[{section}]\n")
-    #         for key, val in sorted(temp.items(section)):
-    #             output.write(f"{key} = {val}\n")
-    #         # KEINE zusätzliche Ausgabe einer Leerzeile hier
-    #
-    #     return output.getvalue()
-
     def checksum_section(self, section):
         """
         Berechnet SHA256 über alle "key = value\n"-Zeilen in der Sektion.
