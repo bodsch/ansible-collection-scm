@@ -11,7 +11,7 @@ import grp
 import pwd
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.bodsch.scm.plugins.module_utils.forgejo_ini import ForgejoIni
+from ansible_collections.bodsch.scm.plugins.module_utils.forgejo.ini import ForgejoIni
 
 DOCUMENTATION = """
 ---

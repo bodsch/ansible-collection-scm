@@ -5,9 +5,12 @@
 # Apache (see LICENSE or https://opensource.org/licenses/Apache-2.0)
 
 from __future__ import absolute_import, print_function
-import os
+
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.bodsch.scm.plugins.module_utils.forgejo_user import ForgejoUser
+from ansible_collections.bodsch.scm.plugins.module_utils.forgejo.api import ForgejoApi
+from ansible_collections.bodsch.scm.plugins.module_utils.forgejo.users import ForgejoUsers as ForgejoApiUsers
+from ansible_collections.bodsch.scm.plugins.module_utils.forgejo.utils import validate_users, check_existing_users
+
 from ansible_collections.bodsch.core.plugins.module_utils.module_results import results
 
 __metaclass__ = type
@@ -100,7 +103,7 @@ RETURN = r"""
 # ----------------------------------------------------------------------
 
 
-class ForgejoUsers(ForgejoUser):
+class ForgejoUsers:
     """
     """
     module = None
@@ -111,14 +114,19 @@ class ForgejoUsers(ForgejoUser):
         self.module = module
 
         self.users = module.params.get("users")
-        self.working_dir = module.params.get("working_dir")
-        self.config = module.params.get("config")
+        self.server = module.params.get("server")
+        self.api_user = module.params.get("api_user")
+        self.api_password = module.params.get("api_password")
 
-        super().__init__(
-            module,
-            working_dir=self.working_dir,
-            forgejo_config=self.config
+        api = ForgejoApi(
+            module=self.module,
+            base_url=f"{self.server}/api/v1",
+            username=self.api_user,
+            password=self.api_password
+            # token="DEIN_TOKEN"  # optional
         )
+
+        self.users_api = ForgejoApiUsers(api)
 
     def run(self):
         """
@@ -127,16 +135,18 @@ class ForgejoUsers(ForgejoUser):
             changed=False,
             failed=True
         )
-
         result_state = []
 
-        if os.path.isdir(self.working_dir):
-            os.chdir(self.working_dir)
+        status_code, existing_users = self.users_api.list_users()
 
-        existing_users = self.list_users()
+        valid_users, invalid_users = validate_users(users=self.users)
+        _existing_users, non_existing_users = check_existing_users(new_users=valid_users, existing=existing_users)
 
-        valid_users, invalid_users = self.validate_users()
-        _, non_existing_users = self.check_existing_users(new_users=valid_users, existing=existing_users)
+        # self.module.log(msg=f"existing_users: {existing_users}")
+        # self.module.log(msg=f"valid_users: {valid_users}")
+        # self.module.log(msg=f"invalid_users: {invalid_users}")
+        # self.module.log(msg=f"_existing_users: {_existing_users}")
+        # self.module.log(msg=f"non_existing_users: {non_existing_users}")
 
         if len(invalid_users) > 0:
             result_state.append({
@@ -147,20 +157,33 @@ class ForgejoUsers(ForgejoUser):
                 }
             })
 
-        if len(existing_users) > 0:
+        for user in _existing_users:
+            """
+            """
+            user_state = user.get("state", "present")
+            user_name = user.get("username")
 
-            if isinstance(existing_users, list):
-                users = ", ".join([x.get("username") for x in existing_users])
-            if isinstance(existing_users, dict):
-                users = ", ".join(list(existing_users.keys()))
+            res = {}
 
-            result_state.append({
-                "existing users": {
-                    "failed": False,
-                    "changed": False,
-                    "usernames": users
-                }
-            })
+            if user_state == "absent":
+                """
+                    Delete users
+                """
+                status_code, _result = self.users_api.delete_user(
+                    username=user_name
+                )
+
+                # self.module.log(msg=f"  - : {status_code} {_result}")
+
+                if status_code == 204:
+
+                    res[user_name] = {
+                        "failed": False,
+                        "changed": True,
+                        "msg": "The user has been successfully deleted."
+                    }
+
+                result_state.append(res)
 
         for user in non_existing_users:
             """
@@ -173,35 +196,23 @@ class ForgejoUsers(ForgejoUser):
             res = {}
 
             if user_state == "present":
-                res[user_name] = self.add_user(
+
+                status_code, _result = self.users_api.create_user(
                     username=user_name,
                     password=user_password,
                     email=user_email
                 )
 
-                pass
-            elif user_state == "absent":
-                """
-                    Deleting users is currently not supported.
-                """
-                res[user_name] = {
-                    "failed": False,
-                    "changed": False,
-                    "msg": "Deleting users is currently not supported."
-                }
+                # self.module.log(msg=f"  - : {status_code} {_result}")
+                if status_code == 201:
 
-            else:
-                """
-                    what!?
-                """
-                res[user_name] = {
-                    "failed": True,
-                    "changed": False,
-                    "msg": f"The state “{user_state}” is not supported! Only 'present' or 'absent' are permitted."
-                }
-                pass
+                    res[user_name] = {
+                        "failed": False,
+                        "changed": True,
+                        "msg": "The user has been successfully created."
+                    }
 
-            result_state.append(res)
+                result_state.append(res)
 
         _state, _changed, _failed, state, changed, failed = results(self.module, result_state)
 
@@ -222,15 +233,18 @@ def main():
             required=True,
             type=list
         ),
-        working_dir=dict(
+        server=dict(
             required=False,
-            default="/var/lib/forgejo",
+            default="http://localhost:3000",
             type=str
         ),
-        config=dict(
+        api_user=dict(
             required=False,
-            default="/etc/forgejo/forgejo.ini",
             type=str
+        ),
+        api_password=dict(
+            required=False,
+            type=str,
         )
     )
 
@@ -250,57 +264,3 @@ def main():
 # import module snippets
 if __name__ == '__main__':
     main()
-
-"""
-root@instance:/# forgejo --help
-NAME:
-   Forgejo - A painless self-hosted Git service
-
-USAGE:
-   forgejo [global options] command [command options] [arguments...]
-
-VERSION:
-   1.19.0 built with GNU Make 4.1, go1.20.2 : bindata, sqlite, sqlite_unlock_notify
-
-DESCRIPTION:
-   By default, forgejo will start serving using the webserver with no
-arguments - which can alternatively be run by running the subcommand web.
-
-COMMANDS:
-   web              Start Forgejo web server
-   serv             This command should only be called by SSH shell
-   hook             Delegate commands to corresponding Git hooks
-   dump             Dump Forgejo files and database
-   cert             Generate self-signed certificate
-   admin            Command line interface to perform common administrative operations
-   generate         Command line interface for running generators
-   migrate          Migrate the database
-   keys             This command queries the Forgejo database to get the authorized command for a given ssh key fingerprint
-   convert          Convert the database
-   doctor           Diagnose and optionally fix problems
-   manager          Manage the running forgejo process
-   embedded         Extract embedded resources
-   migrate-storage  Migrate the storage
-   docs             Output CLI documentation
-   dump-repo        Dump the repository from git/github/forgejo/gitlab
-   restore-repo     Restore the repository from disk
-   help, h          Shows a list of commands or help for one command
-
-GLOBAL OPTIONS:
-   --port value, -p value         Temporary port number to prevent conflict (default: "3000")
-   --install-port value           Temporary port number to run the install page on to prevent conflict (default: "3000")
-   --pid value, -P value          Custom pid file path (default: "/run/forgejo.pid")
-   --quiet, -q                    Only display Fatal logging errors until logging is set-up
-   --verbose                      Set initial logging to TRACE level until logging is properly set-up
-   --custom-path value, -C value  Custom path file path (default: "/usr/bin/custom")
-   --config value, -c value       Custom configuration file path (default: "/usr/bin/custom/conf/app.ini")
-   --version, -v                  print the version
-   --work-path value, -w value    Set the forgejo working path (default: "/usr/bin")
-   --help, -h                     show help
-
-DEFAULT CONFIGURATION:
-     CustomPath:  /usr/bin/custom
-     CustomConf:  /usr/bin/custom/conf/app.ini
-     AppPath:     /usr/bin/forgejo
-     AppWorkPath: /usr/bin
-"""
