@@ -3,33 +3,22 @@
 - name: prepare
   ansible.builtin.include_tasks: prepare.yml
 
-- name: create local users
-  bodsch.scm.forgejo_users:
-    users: "{{ forgejo_users | default([]) }}"
-    # server: "{{ forgejo_server.forgejo_server }}"
-    api_user: "{{ forgejo_admin_user.username }}"
-    api_password: "{{ forgejo_admin_user.password }}"
-  when:
-    - not ansible_check_mode
-    - forgejo_users | default([]) | count > 0
+- name: download
+  ansible.builtin.include_tasks: download.yml
 
+- name: external installation
+  ansible.builtin.import_tasks: external_installation.yml
 
-# - name: download
-#   ansible.builtin.include_tasks: download.yml
-#
-# - name: external installation
-#   ansible.builtin.import_tasks: external_installation.yml
-#
-# - name: install
-#   ansible.builtin.include_tasks: install.yml
-#
-# - name: configure
-#   ansible.builtin.include_tasks: configure.yml
-#
-# - name: authentications
-#   ansible.builtin.include_tasks: authentications.yml
-#
-# - name: service
-#   ansible.builtin.include_tasks: service.yml
+- name: install
+  ansible.builtin.include_tasks: install.yml
+
+- name: configure
+  ansible.builtin.include_tasks: configure.yml
+
+- name: authentications
+  ansible.builtin.include_tasks: authentications.yml
+
+- name: service
+  ansible.builtin.include_tasks: service.yml
 
 ...

@@ -22,112 +22,144 @@ module: forgejo_auth
 author: Bodo 'bodsch' Schulz <bodo@boone-schulz.de>
 version_added: 1.0.0
 
-short_description: Forgejo Authentication.
+short_description: Manage Forgejo LDAP authentication entries.
 description:
-    - Forgejo Authentication.
+  - This module allows you to manage LDAP authentication sources in Forgejo.
+  - It can add or update an LDAP authentication configuration using the Forgejo CLI.
+  - Configuration changes are tracked using checksums to determine whether updates are required.
 
 options:
   state:
     description:
-      - (C(present))
-      - (C(absent))
+      - Whether the LDAP authentication configuration should exist.
+      - C(present) ensures the authentication source is configured.
+      - C(absent) is currently a placeholder (not implemented).
     required: true
+    type: str
+    choices: [present, absent]
     default: present
 
   name:
-    description: TBD
+    description:
+      - The unique name of the LDAP authentication source in Forgejo.
     required: true
     type: str
 
   active:
-    description: TBD
+    description:
+      - Whether the authentication source is active in Forgejo.
     required: false
     default: true
     type: bool
 
   security_protocol:
     description:
-      - (C(Unencrypted))
-      - (C(LDAPS))
-      - (C(StartTLS))
+      - Security protocol used to connect to the LDAP server.
+      - Choices:
+        - C(Unencrypted)
+        - C(LDAPS)
+        - C(StartTLS)
     required: false
     default: Unencrypted
     type: str
+    choices: [Unencrypted, LDAPS, StartTLS]
 
   skip_tls_verify:
-    description: TBD
+    description:
+      - Skip TLS certificate verification when connecting via LDAPS or StartTLS.
     required: false
     default: true
     type: bool
 
   hostname:
-    description: TBD
+    description:
+      - Hostname or IP address of the LDAP server.
     required: true
     type: str
 
   port:
-    description: TBD
+    description:
+      - Port of the LDAP server.
+      - Typically 389 for LDAP or 636 for LDAPS.
     required: false
     type: str
 
   user_search_base:
-    description: TBD
+    description:
+      - LDAP search base used to look up users.
+      - Example: C(DC=company,DC=internal)
     required: true
     type: str
 
   filters:
-    description: TBD
+    description:
+      - Optional LDAP filters for users, admins, or restricted accounts.
+      - Keys:
+        - C(user)
+        - C(admin)
+        - C(restricted)
     required: false
     type: dict
 
   allow_deactivate_all:
-    description: TBD
+    description:
+      - Whether to allow deactivation of all accounts if synchronization finds no users.
     required: false
     default: false
     type: bool
 
   attributes:
-    description: TBD
+    description:
+      - Mapping of LDAP attributes to Forgejo fields.
+      - Keys:
+        - C(username), C(firstname), C(surname), C(email), C(public_ssh_key), C(avatar)
     required: true
     type: dict
 
   skip_local_2fa:
-    description: TBD
+    description:
+      - Skip local 2FA for LDAP users.
     required: false
     default: false
     type: bool
 
   bind_dn:
-    description: TBD
+    description:
+      - DN of the LDAP user used to bind and search the directory.
     required: true
     type: str
 
   bind_password:
-    description: TBD
+    description:
+      - Password for the bind DN.
     required: true
     type: str
     no_log: true
 
   attributes_in_bind:
-    description: TBD
+    description:
+      - Whether to fetch attributes during the bind process.
     required: false
     default: false
-    type: str
+    type: bool
 
   synchronize_users:
-    description: TBD
+    description:
+      - Whether to synchronize LDAP users to Forgejo.
     required: false
     default: false
     type: bool
 
   working_dir:
-    description: TBD
-    required: true
+    description:
+      - Forgejo working directory.
+    required: false
     default: /var/lib/forgejo
     type: str
 
   config:
-    description: TBD
+    description:
+      - Path to the Forgejo configuration file.
     required: false
     default: /etc/forgejo/forgejo.ini
     type: str
@@ -139,6 +171,8 @@ EXAMPLES = r"""
   become_user: "{{ forgejo_system_user }}"
   become: true
   bodsch.scm.forgejo_auth:
+    working_dir: /var/lib/forgejo
+    config: /etc/forgejo/forgejo.ini
     name: "{{ forgejo_auths.ldap.name | default(omit) }}"
     state: "{{ forgejo_auths.ldap.state | default(omit) }}"
     active: "{{ forgejo_auths.ldap.active | default(omit) }}"
@@ -167,6 +201,20 @@ EXAMPLES = r"""
 """
 
 RETURN = r"""
+changed:
+  description: Whether the LDAP authentication configuration was changed.
+  returned: always
+  type: bool
+
+failed:
+  description: Whether the module failed.
+  returned: always
+  type: bool
+
+msg:
+  description: Human-readable message about the action taken.
+  returned: always
+  type: str
 """
 
 # ----------------------------------------------------------------------
@@ -232,17 +280,6 @@ class ForgejoAuth(object):
             new_file = False
             msg = "The authentication has not been changed."
 
-            # self.module.log(f'{json.dumps(self.module.params, indent=2, sort_keys=False)}' + "\n")
-            #
-            # self.module.log(f" changed       : {changed}")
-            # self.module.log(f" new_checksum  : {new_checksum}")
-            # self.module.log(f" old_checksum  : {old_checksum}")
-
-            # auth_exists, auth_id = self.auth_exists(self.name)
-            #
-            # self.module.log(f" auth_exists   : {auth_exists}")
-            # self.module.log(f" auth_id       : {auth_id}")
-
             if changed:
                 auth_exists, auth_id = self.auth_exists(self.name)
 
@@ -261,10 +298,6 @@ class ForgejoAuth(object):
 
             if new_file:
                 msg = "The authentication was successfully created."
-                # result = dict(
-                #     changed=False,
-                #     msg=f"authentication {self.name} already created."
-                # )
 
         else:
             pass

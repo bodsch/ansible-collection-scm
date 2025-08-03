@@ -15,86 +15,92 @@ __metaclass__ = type
 DOCUMENTATION = r"""
 ---
 module: forgejo_user
-author: Bodo 'bodsch' Schulz <bodo@boone-schulz.de>
-version_added: 1.0.0
+author: Bodo 'bodsch' Schulz (@bodsch)
+version_added: "1.0.0"
 
-short_description: Forgejo User handling.
+short_description: Manage Forgejo admin users.
 description:
-    - Forgejo User handling.
+  - This module allows to create an admin user in a Forgejo installation
+    if it does not already exist.
+  - Deletion of users is currently not supported.
+  - The module must be executed as the Forgejo service user to access the database.
 
 options:
-  state:
-    description:
-      - (C(present))
-      - (C(absent))
-      - (C(list))
-      - (C(check))
-    required: true
-    default: present
-
-  admin:
-    description: TBD
-    required: false
-    type: bool
-    default: false
-
   username:
-    description: TBD
+    description:
+      - The Forgejo username to create if it does not exist.
     required: false
     type: str
 
   password:
-    description: TBD
+    description:
+      - Password for the Forgejo user.
     required: false
     type: str
     no_log: true
 
   email:
-    description: TBD
+    description:
+      - Email address of the Forgejo user.
     required: false
     type: str
 
   working_dir:
-    description: TBD
-    required: true
+    description:
+      - Path to the Forgejo working directory.
+      - This is typically the home directory of the Forgejo service user.
+    required: false
     type: str
+    default: "/var/lib/forgejo"
 
   config:
-    description: TBD
+    description:
+      - Path to the Forgejo configuration file.
     required: false
-    default: /etc/forgejo/forgejo.ini
     type: str
+    default: "/etc/forgejo/forgejo.ini"
+
+notes:
+  - Only user creation is currently supported.
+  - If the user already exists, the module will report no change.
 """
 
 EXAMPLES = r"""
-- name: list forgejo users
-  remote_user: "{{ forgejo_system_user }}"
-  become_user: "{{ forgejo_system_user }}"
-  become: true
-  bodsch.scm.forgejo_user:
-    state: list
-
-- name: check forgejo admin user '{{ forgejo_admin_user.username }}'
-  remote_user: "{{ forgejo_system_user }}"
-  become_user: "{{ forgejo_system_user }}"
-  become: true
-  bodsch.scm.forgejo_user:
-    state: check
-    username: "{{ forgejo_admin_user.username }}"
-  register: forgejo_admin_user_present
-
 - name: create admin user
   remote_user: "{{ forgejo_system_user }}"
   become_user: "{{ forgejo_system_user }}"
   become: true
-  bodsch.scm.forgejo_user:
-    admin: true
+  bodsch.scm.forgejo_admin_user:
     username: "{{ forgejo_admin_user.username }}"
     password: "{{ forgejo_admin_user.password }}"
     email: "{{ forgejo_admin_user.email }}"
+    config: "{{ forgejo_config_dir }}/forgejo.ini"
+    working_dir: "{{ forgejo_working_dir }}"
+  when:
+    - not ansible_check_mode
+    - (forgejo_admin_user.username is defined and forgejo_admin_user.username | string | length > 0)
+    - (forgejo_admin_user.password is defined and forgejo_admin_user.password | string | length > 0)
+    - (forgejo_admin_user.email is defined and forgejo_admin_user.email | string | length > 0)
 """
 
 RETURN = r"""
+changed:
+  description: Indicates whether a Forgejo user was created.
+  returned: always
+  type: bool
+  sample: true
+
+failed:
+  description: Indicates if the module encountered a failure.
+  returned: always
+  type: bool
+  sample: false
+
+msg:
+  description: Human-readable message with details about the operation.
+  returned: always
+  type: str
+  sample: "user admin already created."
 """
 
 # ----------------------------------------------------------------------

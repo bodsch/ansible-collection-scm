@@ -13,24 +13,58 @@ import pwd
 from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.bodsch.scm.plugins.module_utils.forgejo.ini import ForgejoIni
 
-DOCUMENTATION = """
+DOCUMENTATION = r"""
 ---
 module: forgejo_config
-author: Bodo 'bodsch' Schulz <bodo@boone-schulz.de>
-version_added: 1.4.0
+author: Bodo 'bodsch' Schulz (@bodsch)
+version_added: "1.4.0"
 
-short_description: extended handling of config updates to avoid restarts.
+short_description: Extended handling of Forgejo configuration updates to avoid unnecessary restarts.
 description:
-  - Avoids restarts if a forgejo.ini has been written.
-  - After the first start of a forgojo instance, a new variable INTERNAL_TOKEN is inserted in the `security` section.
-  - The same happens under oauth2 with JWT_SECRET.
-  - These variables are overwritten when the file is created with `ansible.builtin.template`.
-  - As a result, the Forgejo was restarted with every run, which is not necessary.
+  - This module compares the existing Forgejo configuration file (forgejo.ini)
+    with a new configuration file and applies only necessary changes.
+  - It avoids restarting the Forgejo service when only internal tokens
+    (like INTERNAL_TOKEN or JWT_SECRET) are changed by Forgejo itself.
+  - If differences are detected in relevant configuration sections,
+    the configuration file is updated and ownership is ensured.
 
+options:
+  config:
+    description:
+      - Path to the current Forgejo configuration file (forgejo.ini).
+    required: false
+    type: str
+    default: "/etc/forgejo/forgejo.ini"
+
+  new_config:
+    description:
+      - Path to the new configuration file to compare against the current one.
+    required: false
+    type: str
+    default: "/etc/forgejo/forgejo.new"
+
+  owner:
+    description:
+      - File owner of the Forgejo configuration file.
+    required: false
+    type: str
+    default: "forgejo"
+
+  group:
+    description:
+      - File group of the Forgejo configuration file.
+    required: false
+    type: str
+    default: "forgejo"
+
+notes:
+  - Only updates the configuration file if relevant changes are detected.
+  - Ignores automatic Forgejo-generated values such as INTERNAL_TOKEN
+    in C(security) and JWT_SECRET in C(oauth2).
 """
 
 EXAMPLES = """
-- name: update forgejo config
+- name: Update Forgejo configuration without unnecessary restarts
   bodsch.scm.forgejo_config:
     config: "{{ forgejo_config_dir }}/forgejo.ini"
     new_config: "{{ forgejo_config_dir }}/forgejo.new"
@@ -43,6 +77,21 @@ EXAMPLES = """
 """
 
 RETURN = r"""
+changed:
+  description: Indicates if the configuration file was modified.
+  returned: always
+  type: bool
+
+failed:
+  description: Indicates if the module encountered a failure.
+  returned: always
+  type: bool
+
+msg:
+  description: Short message describing the result.
+  returned: always
+  type: str
+  sample: "forgejo.ini was changed."
 """
 
 # ---------------------------------------------------------------------------------------
@@ -102,7 +151,7 @@ class ForgejoConfigCompare(object):
         differences = {}
 
         for section in sorted(all_sections):
-            # self.module.log(f"  section: '{section}'")
+
             cs_base = ""
             cs_new = ""
             # a) Items (Key→Value) aus Base/ New holen, oder {} falls fehlt
@@ -113,9 +162,6 @@ class ForgejoConfigCompare(object):
                 cs_base = org.checksum_section(section)
             if len(items_new) > 0:
                 cs_new = new.checksum_section(section)
-
-            # self.module.log(f"    org data: '{items_base}' type: {type(items_base)} size: {len(items_base)}")
-            # self.module.log(f"    new data: '{items_new}' type: {type(items_new)} size: {len(items_new)}")
 
             # c) Status bestimmen:
             #    - "org"      : Sektion nur in Base vorhanden
@@ -152,28 +198,7 @@ class ForgejoConfigCompare(object):
             # Alles identisch – kein Merge nötig
             return result
 
-        # org_clean = org.get_cleaned_string()
-        # new_clean = new.get_cleaned_string()
-
-        # side_by_side = SideBySide(
-        #     module=self.module,
-        #     left=org.get_cleaned_string(),
-        #     right=new.get_cleaned_string()
-        # )
-        # self.module.log(f"{side_by_side.diff(width=140)}")
-
-        # 6) Wenn hier, dann mindestens eine Sektion tatsächlich geändert/neu/gelöscht
-        #    Wir können jetzt sections_with_changes ausgeben oder im Log schreiben, z.B.:
-        # self.module.log("Die folgenden Sektionen haben Unterschiede:")
-        # for sec in sections_with_changes:
-        #     info = differences[sec]
-        #     self.module.log(f"  section '{sec}'")
-        #     self.module.log(f"  {info}")
-
         merged_path = os.path.join(os.path.dirname(self.config), "forgejo.merged")
-
-        # # 7) Backup-Logik wie gehabt
-        # self.create_backup()
 
         ForgejoIni.merge(
             module=self.module,
