@@ -1,5 +1,7 @@
 ---
 
+forgejo_version: 12.0.0
+
 forgejo_database:
   db_type: sqlite3
   charset: utf8
@@ -74,7 +76,13 @@ forgejo_security:
 forgejo_admin_user:
   username: "root"
   password: "{{ vault__forgejo.root }}"
-  email: "root@example.com"
+  email: "root@molecule.lan"
+
+forgejo_users:
+  - username: "bodsch"
+    password: "{{ vault__forgejo.bodsch }}"
+    email: "bodsch@molecule.lan"
+    state: present
 
 forgejo_users:
   - username: "foo"
