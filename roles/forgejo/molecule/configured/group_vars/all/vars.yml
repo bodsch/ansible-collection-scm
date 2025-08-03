@@ -14,7 +14,7 @@ forgejo_server:
   protocol: http
   http_addr: "0.0.0.0"
   http_port: 3000
-  root_url: http://forgejo.molecule.lan:3000
+  forgejo_server: http://forgejo.molecule.lan:3000
   disable_ssh: true
   # ssh_domain: forgejo.molecule.lan
   # landing_page: login
@@ -76,4 +76,13 @@ forgejo_admin_user:
   password: "{{ vault__forgejo.root }}"
   email: "root@example.com"
 
+forgejo_users:
+  - username: "foo"
+    password: "{{ vault__forgejo.foo }}"
+    email: "foo@example.com"
+    # state: absent
+  - username: "bar"
+    password: "{{ vault__forgejo.foo }}"
+    email: "bar@example.com"
+    # state: absent
 ...

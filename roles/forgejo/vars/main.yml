@@ -16,6 +16,7 @@ forgejo_remote_tmp_directory: "{{ forgejo_cache_directory }}/{{ forgejo_version 
 
 forgejo_requirements:
   - iproute2
+  - python3-requests
   - git
 
 forgejo_defaults_actions:

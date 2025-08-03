@@ -4,7 +4,7 @@ import re
 from typing import Optional, List, Tuple
 
 
-class ForgejoUser:
+class ForgejoCliUser:
     """
     """
     module = None

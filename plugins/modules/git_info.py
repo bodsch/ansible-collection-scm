@@ -18,61 +18,90 @@ version_added: 1.3.0
 
 short_description: Organise various information from a git repository.
 description:
-    - Organise various information from a git repository.
+  - This module retrieves various details from a Git repository such as the current branch, commit IDs, last commit date, and latest tag.
+  - It can be useful for deployment scripts or validation tasks where Git metadata is needed.
 
 options:
   work_dir:
-    description: Directory from which the git information is to be retrieved.
+    description:
+      - Directory from which the Git information is to be retrieved.
+      - This directory must contain a valid Git repository or be a subdirectory of one.
     required: true
     type: path
 """
 
 EXAMPLES = r"""
-- name: obtain git information from download path
+- name: Obtain git information from download path
   become: true
   bodsch.scm.git_info:
-    work_dir: "{{ mailcow_tmp_directory }}"
-  register: mailcow_repository_information
+    work_dir: "{{ repository_tmp_directory }}"
+  register: _repository_information
 
-- name: obtain git information from install path
+- name: Obtain git information from install path
   become: true
   bodsch.scm.git_info:
-    work_dir: "{{ mailcow_install_path }}/active"
-  register: mailcow_installed_information
+    work_dir: "{{ repository_install_path }}/active"
+  register: _installed_information
+
+- name: Show extracted git info
+  debug:
+    var: _installed_information.git
 """
 
 RETURN = r"""
-
-branch:
-    description:
-        - the branch name.
-    type: string
-commit_date:
-    description:
-        - The commit date in the respective branch.
-    type: string
-commit_id:
-    description:
-        - The full commit ID.
-    type: string
-commit_short_id:
-    description:
-        - The short version of the commit ID.
-    type: string
-last_commit_id:
-    description:
-        - The last commit ID in the repository.
-    type: string
-latest_tag:
-    description:
-        - The last git tag in the repository.
-    type: string
-version:
-    description:
-        - A version is defined here depending on the branch.
-        - If it is a master / main branch, the last git tag is returned here.
-        - Otherwise the short commit id is used.
-    type: string
+git:
+  description:
+    - Dictionary containing Git repository information.
+  returned: success
+  type: dict
+  contains:
+    version:
+      description:
+        - A calculated version based on the branch.
+        - If the branch is master or main, the latest tag is used.
+        - Otherwise, the short commit ID is used.
+      type: string
+      sample: "v1.2.3"
+    branch:
+      description:
+        - The current branch name or 'detached' if in detached HEAD state.
+      type: string
+      sample: "main"
+    latest_tag:
+      description:
+        - The latest git tag in the repository.
+      type: string
+      sample: "v1.2.3"
+    commit_id:
+      description:
+        - Full commit SHA of the current branch.
+      type: string
+      sample: "9fceb02c5a0d3e6a..."
+    last_commit_id:
+      description:
+        - SHA of the last commit in the repository (from iter_commits).
+      type: string
+      sample: "1a2b3c4d5e6f7g8h..."
+    commit_short_id:
+      description:
+        - Short version of the current commit ID.
+      type: string
+      sample: "9fceb02"
+    commit_date:
+      description:
+        - Commit date of the current HEAD in the format YYYY-MM-DD HH:MM:SS.
+      type: string
+      sample: "2025-08-03 12:34:56"
+failed:
+  description:
+    - Indicates if the module execution failed.
+  returned: always
+  type: bool
+msg:
+  description:
+    - Error message in case of failure.
+  returned: on failure
+  type: string
 """
 
 # ----------------------------------------------------------------------

@@ -14,41 +14,58 @@ __metaclass__ = type
 DOCUMENTATION = r"""
 ---
 module: forgejo_migrate
-author: Bodo 'bodsch' Schulz <bodo@boone-schulz.de>
-version_added: 1.0.0
+author: Bodo 'bodsch' Schulz (@bodsch)
+version_added: "1.0.0"
 
-short_description: Migrate Forgejo Database.
+short_description: Migrate a Forgejo database.
 description:
-    - Migrate Forgejo Database.
+  - This module runs the C(forgejo migrate) command to perform a database migration.
+  - It must be executed as the Forgejo service user to have access to the working directory and configuration.
+  - A successful run will indicate a changed state, as the migration modifies the database schema.
 
 options:
   command:
     description:
-      - (C(migrate))
-    required: true
+      - The command to execute. Currently only C(migrate) is supported.
+    required: false
+    type: str
+    choices: [ migrate ]
     default: migrate
 
   parameters:
-    description: TBD
+    description:
+      - Additional command-line parameters for the migrate command.
+      - Currently unused.
     required: false
     type: list
+    elements: str
+    default: []
 
   working_dir:
-    description: TBD
-    required: true
+    description:
+      - Path to the Forgejo working directory (C(--work-path) argument).
+      - Typically the home directory of the Forgejo service user.
+    required: false
     type: str
+    default: "/var/lib/forgejo"
 
   environment:
-    description: TBD
+    description:
+      - Runtime environment for the migration (currently informational only).
     required: false
-    default: prod
     type: str
+    default: "prod"
 
   config:
-    description: TBD
+    description:
+      - Path to the Forgejo configuration file (C(--config) argument).
     required: false
-    default: /etc/forgejo/forgejo.ini
     type: str
+    default: "/etc/forgejo/forgejo.ini"
+
+notes:
+  - This module always reports C(changed=true) when the migration runs successfully.
+  - On error, the module returns C(failed=true) with the Forgejo CLI error message.
 """
 
 EXAMPLES = r"""
@@ -58,9 +75,27 @@ EXAMPLES = r"""
   become: true
   bodsch.scm.forgejo_migrate:
     config: "{{ forgejo_config_dir }}/forgejo.ini"
+    working_dir: "{{ forgejo_working_dir }}"
 """
 
 RETURN = r"""
+changed:
+  description: Indicates whether the database migration was performed.
+  returned: always
+  type: bool
+  sample: true
+
+failed:
+  description: Indicates if the module encountered an error.
+  returned: always
+  type: bool
+  sample: false
+
+msg:
+  description: Human-readable message about the migration result.
+  returned: always
+  type: str
+  sample: "Database successful migrated."
 """
 
 # ----------------------------------------------------------------------

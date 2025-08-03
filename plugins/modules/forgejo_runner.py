@@ -16,35 +16,44 @@ __metaclass__ = type
 DOCUMENTATION = r"""
 ---
 module: forgejo_runner
-author: Bodo 'bodsch' Schulz <bodo@boone-schulz.de>
-version_added: 1.0.0
+author: Bodo 'bodsch' Schulz (@bodsch)
+version_added: "1.0.0"
 
-short_description: Append Forgejo Runner to Forgejo Server.
+short_description: Register a Forgejo Runner on a Forgejo Server.
 description:
-    - Append Forgejo Runner to Forgejo Server.
+  - This module registers a Forgejo runner by creating a runner file using the C(forgejo-runner create-runner-file) command.
+  - It identifies the runner by the current hostname and checks the provided runner list to find the matching entry.
+  - If the runner is unknown, the module fails with a descriptive error.
 
 options:
   command:
     description:
-      - (C(create_runner))
-    required: true
+      - The command to execute. Currently only C(create_runner) is supported.
+    required: false
+    type: str
+    choices: [ create_runner ]
     default: create_runner
 
-  parameters:
-    description: TBD
-    required: false
-    type: list
-
   working_dir:
-    description: TBD
+    description:
+      - Directory where the runner registration will be performed.
+      - Must exist on the remote host.
     required: true
     type: str
 
   runners:
-    description: TBD
+    description:
+      - List of known Forgejo runners including their C(name), C(secret), and C(instance).
+      - The runner name must match the hostname of the target machine to register successfully.
     required: true
     type: list
+    elements: dict
+
+notes:
+  - The module checks if the host's runner is in the runners list.
+  - On success, it creates a runner file in the specified working directory.
 """
+
 
 EXAMPLES = r"""
 - name: append runner to {{ forgejo_runner_controller.hostname }}
@@ -54,15 +63,51 @@ EXAMPLES = r"""
     command: create_runner
     working_dir: "{{ forgejo_runner_working_dir }}"
     runners: "{{ forgejo_runner_register | default([]) }}"
+
+- name: Register this host as a Forgejo runner
+  become_user: forgejo-runner
+  become: true
+  bodsch.scm.forgejo_runner:
+    command: create_runner
+    working_dir: "/var/lib/forgejo-runner"
+    runners:
+      - name: "runner01"
+        secret: "abcdef123456"
+        instance: "https://forgejo.example.com"
+
+- name: Use dynamic runners list from inventory
+  become_user: "{{ forgejo_runner_system_user }}"
+  become: true
+  bodsch.scm.forgejo_runner:
+    working_dir: "{{ forgejo_runner_working_dir }}"
+    runners: "{{ forgejo_runner_register | default([]) }}"
 """
 
 RETURN = r"""
+changed:
+  description: Indicates if the runner registration caused changes.
+  returned: always
+  type: bool
+  sample: true
+
+failed:
+  description: Indicates if the module failed to register the runner.
+  returned: always
+  type: bool
+  sample: false
+
+msg:
+  description: Human-readable message about the result.
+  returned: always
+  type: str
+  sample: "Runner runner01 succesfully registerd."
 """
+
 
 # ----------------------------------------------------------------------
 
 
-class ForgeJoRunner(object):
+class ForgejoRunner(object):
     """
     """
     module = None
@@ -75,10 +120,7 @@ class ForgeJoRunner(object):
         # self._console = module.get_bin_path('console', False)
 
         self.command = module.params.get("command")
-        self.parameters = module.params.get("parameters")
         self.working_dir = module.params.get("working_dir")
-        self.forgejo_secret = module.params.get("forgejo_secret")
-        self.config = module.params.get("config")
         self.runners = module.params.get("runners")
 
         self.forgejo_runner_bin = module.get_bin_path('forgejo-runner', True)
@@ -110,31 +152,28 @@ class ForgeJoRunner(object):
         self.module.log(msg=f"runner name : {runner_name}")
 
         know_runners = [x.get("name") for x in self.runners if x.get("name")]
-        thats_me = [x for x in self.runners if x.get("name") == runner_name]
+        thats_me = next((x for x in self.runners if x.get("name") == runner_name), None)
 
-        if len(thats_me) == 0:
-
+        if not thats_me:
             known_runners = ",".join(know_runners)
 
             return dict(
                 failed=True,
-                msg=f"I can't find the runner with the name '{runner_name}'.\nI know the following runner: '{known_runners}'"
+                msg=f"I can't find the runner with the name '{runner_name}'.\n"
+                    f"I know the following runners: '{known_runners}'"
             )
 
-        self.module.log(msg=f"me : {thats_me[0]}")
+        # self.module.log(msg=f"me : {thats_me[0]}")
 
-        runner_secret = thats_me[0].get("secret", None)
-        instance = thats_me[0].get("instance", None)
+        runner_secret = thats_me.get("secret", None)
+        instance = thats_me.get("instance", None)
 
         args_list = [
             self.forgejo_runner_bin,
             "create-runner-file",
-            "--secret",
-            runner_secret,
-            "--instance",
-            instance,
-            "--name",
-            runner_name,
+            "--secret", runner_secret,
+            "--instance", instance,
+            "--name", runner_name,
         ]
 
         rc, out, err = self._exec(args_list)
@@ -142,11 +181,13 @@ class ForgeJoRunner(object):
         if rc == 0:
             return dict(
                 failed=False,
+                changed=True,
                 msg=f"Runner {runner_name} succesfully registerd."
             )
         else:
             return dict(
                 failed=True,
+                changed=False,
                 msg=err.strip()
             )
 
@@ -173,14 +214,10 @@ def main():
                 "create_runner",
             ]
         ),
-        parameters=dict(
-            required=False,
-            type=list,
-            default=[]
-        ),
         runners=dict(
             required=True,
             type=list,
+            elements=dict
         ),
         working_dir=dict(
             required=True,
@@ -193,7 +230,7 @@ def main():
         supports_check_mode=False,
     )
 
-    kc = ForgeJoRunner(module)
+    kc = ForgejoRunner(module)
     result = kc.run()
 
     module.log(msg=f"= result : '{result}'")

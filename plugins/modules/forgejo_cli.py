@@ -18,35 +18,47 @@ module: forgejo_cli
 author: Bodo 'bodsch' Schulz <bodo@boone-schulz.de>
 version_added: 1.0.0
 
-short_description: Forgejo CLI
+short_description: Register Forgejo runners using the Forgejo CLI.
 description:
-    - Forgejo CLI
+  - This module allows registering Forgejo runners on a Forgejo server
+    by invoking the Forgejo CLI.
+  - It supports assigning runner secrets, scopes and labels.
 
 options:
   command:
     description:
-      - (C(register))
-    required: true
+      - The operation to perform.
+      - Currently only runner registration is supported.
+    choices: ["register"]
     default: register
+    type: str
 
   parameters:
-    description: TBD
+    description:
+      - Optional additional parameters (currently unused).
     required: false
     type: list
+    default: []
 
   working_dir:
-    description: TBD
+    description:
+      - Working directory for Forgejo CLI commands.
+      - This is usually the Forgejo data directory.
     required: true
     type: str
 
   config:
-    description: TBD
+    description:
+      - Path to the Forgejo configuration file.
     required: false
-    default: /etc/forgejo/forgejo.ini
     type: str
+    default: /etc/forgejo/forgejo.ini
 
   runners:
-    description: TBD
+    description:
+      - List of runners to register.
+      - Each runner is a dictionary with at least C(name) and C(secret).
+      - Optional keys: C(scope), C(labels) (list of labels).
     required: true
     type: list
 """
@@ -62,9 +74,51 @@ EXAMPLES = r"""
     config: "{{ forgejo_config_dir }}/forgejo.ini"
     working_dir: "{{ forgejo_working_dir }}"
     runners: "{{ forgejo_runner_register | default([]) }}"
+
+- name: Register runners on Forgejo
+  become: true
+  remote_user: "{{ forgejo_runner_controller.username }}"
+  become_user: "{{ forgejo_runner_controller.username }}"
+  delegate_to: "{{ forgejo_runner_controller.hostname }}"
+  bodsch.scm.forgejo_cli:
+    command: register
+    working_dir: "{{ forgejo_working_dir }}"
+    config: "{{ forgejo_config_dir }}/forgejo.ini"
+    runners:
+      - name: runner1
+        secret: "SECRET_TOKEN_1"
+        scope: "instance"
+        labels:
+          - linux
+          - x86
+      - name: runner2
+        secret: "SECRET_TOKEN_2"
 """
 
 RETURN = r"""
+changed:
+  description: Indicates if any runner was successfully registered.
+  returned: always
+  type: bool
+
+failed:
+  description: True if any runner registration failed.
+  returned: always
+  type: bool
+
+state:
+  description: A list of results for each runner processed.
+  returned: always
+  type: list
+  elements: dict
+  sample:
+    - runner1:
+        failed: false
+        msg: "Runner runner1 succesfully created."
+    - runner2:
+        failed: true
+        msg: "Missing secret."
+
 """
 
 # ----------------------------------------------------------------------
