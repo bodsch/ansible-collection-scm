@@ -8,7 +8,7 @@ from __future__ import absolute_import, print_function
 import os
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.bodsch.scm.plugins.module_utils.forgejo_user import ForgejoUser
+from ansible_collections.bodsch.scm.plugins.module_utils.forgejo.cli_user import ForgejoCliUser
 
 __metaclass__ = type
 
@@ -106,7 +106,7 @@ msg:
 # ----------------------------------------------------------------------
 
 
-class ForgejoAdminUser(ForgejoUser):
+class ForgejoAdminUser(ForgejoCliUser):
     """
     """
     module = None

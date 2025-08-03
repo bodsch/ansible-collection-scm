@@ -6,17 +6,11 @@
 # SPDX-License-Identifier: Apache-2.0
 
 from __future__ import absolute_import, print_function
-# import urllib3
-# import requests
-# import json
-# import os
 import re
 from enum import Enum
 from pathlib import Path
 
 from ansible.module_utils.basic import AnsibleModule
-# from ansible_collections.bodsch.core.plugins.module_utils.cache.cache_valid import cache_valid
-# from ansible_collections.bodsch.core.plugins.module_utils.directory import create_directory
 
 from ansible_collections.bodsch.scm.plugins.module_utils.github import GitHub
 
