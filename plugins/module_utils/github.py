@@ -87,7 +87,7 @@ class GitHub:
         Cacht das Ergebnis in "releases.json" (sofern aktiviert).
         Gibt (status_code, Ergebnisliste, Fehler) zurück.
         """
-        # self.module.log(msg=f"GitHub::get_releases(repo_url={repo_url}, count={count})")
+        self.module.log(msg=f"GitHub::get_releases(repo_url={repo_url}, count={count})")
 
         cache_filename = self.cache_file or "releases.json"
         cache_path = self.gh_cache.cache_path(cache_filename)
@@ -96,22 +96,24 @@ class GitHub:
         if cached is not None:
             return (200, cached, None)
 
-        api_url = f"{self.base_api_url}/repos/{self.github_owner}/{self.github_repository}/releases"
+        # api_url = f"{self.base_api_url}/repos/{self.github_owner}/{self.github_repository}/releases"
         params = {
             "per_page": min(count, 100)
         }
 
         status_code, releases, error = self._get_request(
-            url=api_url,
+            url=repo_url,
             params=params,
             stream=False,
-            paginate=True,     # ❗ bewusst keine Pagination hier
+            paginate=False,     # ❗ bewusst keine Pagination hier
             expect_json=True
         )
 
         if status_code != 200:
             self.module.log(f"ERROR: {error}")
             return (status_code, [], error)
+
+        self.module.log(msg=f" - {releases}")
 
         result = [
             {
@@ -181,11 +183,13 @@ class GitHub:
     def latest_published(self, releases: list = [], filter_elements: list = []) -> dict:
         """
         """
-        # self.module.log(msg=f"GitHub::latest_published(releases={releases}, filter_elements={filter_elements})")
+        self.module.log(msg=f"GitHub::latest_published(releases={releases}, filter_elements={filter_elements})")
 
         rf = ReleaseFinder(module=self.module, releases=releases)
         rf.set_exclude_keywords(keywords=filter_elements)
         latest = rf.find_latest(mode="version")
+
+        self.module.log(msg=f"= {latest}")
 
         return latest
 
@@ -303,7 +307,7 @@ class GitHub:
         - Rate Limit Handling
         - JSON oder plain text/streaming Download
         """
-        # self.module.log(msg=f"GitHub::_get_request(url={url}, params={params}, stream={stream}, paginate={paginate}, expect_json={expect_json})")
+        self.module.log(msg=f"GitHub::_get_request(url={url}, params={params}, stream={stream}, paginate={paginate}, expect_json={expect_json})")
 
         session = requests.Session()
         retry_strategy = Retry(
@@ -322,6 +326,8 @@ class GitHub:
         while url:
             try:
                 response = session.get(url, headers=headers, params=params, stream=stream, timeout=15)
+
+                self.module.log(msg=f"- response: {response.status_code}")
 
                 # Rate limit erreicht
                 if response.status_code == 403 and "X-RateLimit-Remaining" in response.headers:
