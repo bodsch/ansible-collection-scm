@@ -38,7 +38,7 @@ class ReleaseFinder:
     def find_latest(self, mode: str = "published") -> Optional[Dict[str, Any]]:
         """
         """
-        # self.module.log(msg=f"ReleaseFinder::find_latest(mode={mode})")
+        self.module.log(msg=f"ReleaseFinder::find_latest(mode={mode})")
 
         # candidates = list(filter(None, (
         #     self._get_candidate(r)
@@ -138,14 +138,16 @@ class ReleaseFinder:
         Builds a tuple (Date, SemVer, ReleaseDict) for sorting.
         Returns None if no date was found.
         """
-        # self.module.log(msg=f"ReleaseFinder::_get_candidate({release}")
+        self.module.log(msg=f"ReleaseFinder::_get_candidate({release}")
 
         dt = self._parse_date_iso(release) or self._parse_date_from_name(release)
+
         if dt is None:
             return None
 
         sem = self._parse_semver(release)
-        # self.module.log(msg=f"dt={dt}, sem={sem}, release={release}")
+
+        self.module.log(msg=f"dt={dt}, sem={sem}, release={release}")
 
         return dt, sem, release
 

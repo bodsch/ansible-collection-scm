@@ -168,32 +168,36 @@ class GithubLatest(object):
         self.github_tags = module.params.get("github_tags")
         self.filter_elements = module.params.get("filter_elements")
 
-        # self.github_url = f"https://api.github.com/repos/{self.project}/{self.repository}"
-        self.github_url = f"https://github.com/{self.project}/{self.repository}"
-
-        url_path = "releases"
-
-        # if self.github_tags:
-        #     self.github_releases = False
-        #     url_path = "tags"
-
-        self.github_url = f"{self.github_url}/{url_path}"
-
         self.cache_directory = f"{Path.home()}/.cache/ansible/github/{self.project}/{self.repository}"
         self.cache_file_name = "releases.json"
 
     def run(self):
         """
         """
-        # create_directory(self.cache_directory)
         gh_authentication = dict(
             token=self.github_password
         )
 
-        gh = GitHub(self.module, owner=self.project, repository=self.repository, auth=gh_authentication)
-        gh.enable_cache(cache_file=self.cache_file_name, cache_minutes=self.cache_minutes)
+        gh = GitHub(
+            self.module,
+            owner=self.project,
+            repository=self.repository,
+            auth=gh_authentication
+        )
 
-        status_code, gh_releases, error = gh.get_releases(self.github_url)
+        if self.github_releases and not self.github_tags:
+            gh.enable_cache(
+                cache_file="releases.json",
+                cache_minutes=self.cache_minutes
+            )
+            status_code, gh_releases, error = gh.get_releases(count=50)
+
+        if self.github_tags:
+            gh.enable_cache(
+                cache_file="tags.json",
+                cache_minutes=self.cache_minutes
+            )
+            status_code, gh_releases, error = gh.get_tags(count=50)
 
         if status_code == 419:
             return dict(
@@ -215,10 +219,13 @@ class GithubLatest(object):
         if self.without_beta:
             self.filter_elements.append("beta")
 
-        gh_latest_release = gh.latest_published(gh_releases, filter_elements=self.filter_elements)
+        if self.github_releases and not self.github_tags:
+            gh_latest_release = gh.latest_published(gh_releases, filter_elements=self.filter_elements)
+        if self.github_tags:
+            gh_latest_release = gh.latest_tag(gh_releases)
 
         if self.github_tags:
-            latest_release = gh_latest_release.get("tag_name", None)
+            latest_release = gh_latest_release.get("name", None)
         else:
             latest_release = gh_latest_release.get("name", None)
 
