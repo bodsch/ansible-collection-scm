@@ -81,13 +81,13 @@ class GitHub:
 
     # ------------------------------------------------------------------------------------------
     # public API
-    def get_releases(self, repo_url: str, count: int = 10) -> Tuple[int, List[Dict], Optional[str]]:
+    def get_releases(self, count: int = 10) -> Tuple[int, List[Dict], Optional[str]]:
         """
         Fragt bis zu `count` Releases (max. 100) eines Repos ab.
         Cacht das Ergebnis in "releases.json" (sofern aktiviert).
         Gibt (status_code, Ergebnisliste, Fehler) zurück.
         """
-        self.module.log(msg=f"GitHub::get_releases(repo_url={repo_url}, count={count})")
+        # self.module.log(msg=f"GitHub::get_releases(count={count})")
 
         cache_filename = self.cache_file or "releases.json"
         cache_path = self.gh_cache.cache_path(cache_filename)
@@ -96,13 +96,58 @@ class GitHub:
         if cached is not None:
             return (200, cached, None)
 
-        # api_url = f"{self.base_api_url}/repos/{self.github_owner}/{self.github_repository}/releases"
+        api_url = f"{self.base_api_url}/repos/{self.github_owner}/{self.github_repository}/releases"
         params = {
             "per_page": min(count, 100)
         }
 
         status_code, releases, error = self._get_request(
-            url=repo_url,
+            url=api_url,
+            params=params,
+            stream=False,
+            paginate=True,     # ❗ bewusst keine Pagination hier
+            expect_json=True
+        )
+
+        if status_code != 200:
+            self.module.log(f"ERROR: {error}")
+            return (status_code, [], error)
+
+        result = [
+            {
+                "name": r.get("name", "N/A"),
+                "tag_name": r.get("tag_name", "N/A"),
+                "published_at": r.get("published_at", "N/A"),
+                "url": r.get("html_url", "N/A")
+            }
+            for r in releases  # [:count]
+        ]
+
+        self.gh_cache.write_cache(cache_path, result)
+        return (status_code, result, None)
+
+    def get_tags(self, count: int = 10) -> Tuple[int, List[Dict], Optional[str]]:
+        """
+        Fragt bis zu `count` Releases (max. 100) eines Repos ab.
+        Cacht das Ergebnis in "releases.json" (sofern aktiviert).
+        Gibt (status_code, Ergebnisliste, Fehler) zurück.
+        """
+        # self.module.log(msg=f"GitHub::get_tags(count={count})")
+
+        cache_filename = self.cache_file or "tags.json"
+        cache_path = self.gh_cache.cache_path(cache_filename)
+
+        cached = self.gh_cache.cached_data(cache_path)
+        if cached is not None:
+            return (200, cached, None)
+
+        api_url = f"{self.base_api_url}/repos/{self.github_owner}/{self.github_repository}/tags"
+        params = {
+            "per_page": min(count, 100)
+        }
+
+        status_code, releases, error = self._get_request(
+            url=api_url,
             params=params,
             stream=False,
             paginate=False,     # ❗ bewusst keine Pagination hier
@@ -113,14 +158,9 @@ class GitHub:
             self.module.log(f"ERROR: {error}")
             return (status_code, [], error)
 
-        self.module.log(msg=f" - {releases}")
-
         result = [
             {
                 "name": r.get("name", "N/A"),
-                "tag_name": r.get("tag_name", "N/A"),
-                "published_at": r.get("published_at", "N/A"),
-                "url": r.get("html_url", "N/A")
             }
             for r in releases  # [:count]
         ]
@@ -183,13 +223,25 @@ class GitHub:
     def latest_published(self, releases: list = [], filter_elements: list = []) -> dict:
         """
         """
-        self.module.log(msg=f"GitHub::latest_published(releases={releases}, filter_elements={filter_elements})")
+        # self.module.log(msg=f"GitHub::latest_published(releases={releases}, filter_elements={filter_elements})")
 
         rf = ReleaseFinder(module=self.module, releases=releases)
         rf.set_exclude_keywords(keywords=filter_elements)
         latest = rf.find_latest(mode="version")
 
-        self.module.log(msg=f"= {latest}")
+        return latest
+
+    def latest_tag(self, tags: list = [], filter_elements: list = []) -> dict:
+        """
+        """
+        # self.module.log(msg=f"GitHub::latest_tag(tags={tags}, filter_elements={filter_elements})")
+
+        from packaging import version
+
+        latest = max(
+            tags,
+            key=lambda d: version.parse(d['name'])
+        )
 
         return latest
 
