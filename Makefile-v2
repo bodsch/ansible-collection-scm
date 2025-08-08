@@ -1,0 +1,36 @@
+#
+export COLLECTION_ROLE      ?=
+export COLLECTION_SCENARIO  ?= default
+export TOX_ANSIBLE          ?= ansible_9.5
+# --------------------------------------------------------
+
+# Alle Targets, die schlicht ein Skript in hooks/ aufrufen
+HOOKS := install uninstall doc prepare converge destroy verify test lint gh-clean
+
+.PHONY: $(HOOKS)
+.DEFAULT_GOAL := converge
+
+pre:
+	rm -rf hooks tempHooks
+	# nur Branch main, nur Metadata (Blob-Filter), ohne Arbeiten an Dateien
+	git clone \
+	  --branch main \
+	  --depth 1 \
+	  --filter=blob:none \
+	  --sparse \
+	  http://git.boone-schulz.de/ansible/ansible-hooks.git tempHooks
+	# jetzt nur den Unterordner collections/hooks auschecken
+	cd tempHooks && git sparse-checkout set collections/hooks
+	# in unser hooks-Verzeichnis verschieben
+	mv tempHooks/collections/hooks hooks
+	# temporäres Repo löschen
+	rm -rf tempHooks
+
+post:
+	[ -d hooks ] && rm -rf hooks
+
+# $@ expandiert zu dem Namen des gerade angeforderten Targets
+$(HOOKS):
+	@$(MAKE) pre
+	@hooks/$@
+	@$(MAKE) post
