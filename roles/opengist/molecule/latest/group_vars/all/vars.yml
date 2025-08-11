@@ -1,0 +1,9 @@
+---
+
+opengist_version: latest
+
+opengist_service:
+  log:
+    level: debug
+
+...

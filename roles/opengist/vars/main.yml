@@ -1,0 +1,72 @@
+---
+
+opengist_main_version: "{{ opengist_version[0:3] }}"
+
+opengist_install_path: /usr/local/opt/opengist/{{ opengist_version }}
+
+opengist_delegate_to: localhost
+
+opengist_local_tmp_directory: "{{
+  lookup('env', 'CUSTOM_LOCAL_TMP_DIRECTORY') |
+  default(lookup('env', 'HOME') ~ '/.cache/ansible/opengist', true) }}/{{ opengist_version }}"
+
+opengist_requirements:
+  - iproute2
+  - gzip
+
+opengist_defaults_service:
+  log:
+    level: info
+    format: ""
+  path:
+    procfs: /proc         # procfs mountpoint.
+    sysfs: /sys           # sysfs mountpoint.
+    root: /               # rootfs mountpoint.
+  web:
+    # [EXPERIMENTAL]
+    # Path to configuration file that can enable TLS or authentication.
+    config:
+      file: ""
+    # Address on which to expose metrics and web interface.
+    listen_address: "0.0.0.0:9100"
+    # Path under which to expose metrics.
+    telemetry_path: "/metrics"
+    # Exclude metrics about the exporter itself (promhttp_*, process_*, go_*).
+    disable_exporter_metrics: false
+    # Maximum number of parallel scrape requests. Use 0 to disable.
+    max_requests: 40
+
+opengist_defaults_tls_server: {}
+
+opengist_defaults_http_server: {}
+
+opengist_defaults_basic_auth_users: {}
+
+opengist_defaults_rules: {}
+
+opengist_defaults_collectors:
+  enabled: []
+  disabled: []
+
+opengist_defaults_directory: /etc/default
+
+opengist_defaults_release:
+  # https://github.com/thomiceli/opengist/releases/download/v1.10.0/opengist-1.10.0.linux-amd64.tar.gz
+  # https://github.com/thomiceli/opengist/releases/download/v1.10.0/opengist1.10.0-linux-amd64.tar.gz
+  download_url: https://github.com/thomiceli/opengist/releases
+  file: opengist{{ opengist_version }}-{{ ansible_system | lower }}-{{ system_architecture }}.tar.gz
+  binary: opengist
+
+# ---------------------------------------------
+
+go_arch_map:
+  x86_64: 'amd64'
+  aarch64: 'arm64'
+  armv7l: 'armv7'
+
+system_architecture: "{{ go_arch_map[ansible_architecture] | default(ansible_architecture) }}"
+
+systemd_lib_directory: /lib/systemd/system
+
+
+...

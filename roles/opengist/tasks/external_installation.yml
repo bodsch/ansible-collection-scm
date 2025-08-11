@@ -1,0 +1,41 @@
+---
+
+- name: detect external installation
+  ansible.builtin.stat:
+    path: /usr/local/bin/opengist
+    get_checksum: false
+  register: stat_opengist_path
+  ignore_errors: true
+
+- name: old installation
+  when:
+    - stat_opengist_path is defined
+    - stat_opengist_path.stat is defined
+    - stat_opengist_path.stat.isdir is defined
+    - not stat_opengist_path.stat.isdir
+  block:
+    - name: stop old service
+      ansible.builtin.service:
+        name: opengist
+        state: stopped
+        enabled: false
+      notify:
+        - daemon-reload
+
+    - name: remove installed systemd unit
+      ansible.builtin.file:
+        state: absent
+        path: /etc/systemd/system/opengist.service
+      when:
+        - ansible_service_mgr | lower == "systemd"
+
+    - name: remove installed opengist
+      ansible.builtin.file:
+        state: absent
+        path: /usr/local/bin/opengist
+
+- name: flush handlers
+  ansible.builtin.meta: flush_handlers
+
+
+...

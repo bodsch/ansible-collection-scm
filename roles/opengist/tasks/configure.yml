@@ -1,0 +1,22 @@
+---
+
+- name: create opengist configuration directory
+  ansible.builtin.file:
+    path: "{{ opengist_config_dir }}"
+    state: directory
+    owner: root
+    group: "{{ opengist_system_group }}"
+    mode: 0775
+
+- name: create opengist configuration
+  ansible.builtin.template:
+    src: "opengist/config.yml.j2"
+    dest: "{{ opengist_config_dir }}/config.yml"
+    force: true
+    owner: root
+    group: "{{ opengist_system_group }}"
+    mode: 0640
+  notify:
+    - restart opengist
+
+...

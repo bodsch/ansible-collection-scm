@@ -1,0 +1,25 @@
+#jinja2: trim_blocks: True, lstrip_blocks: True
+# {{ ansible_managed }}
+
+[Unit]
+Description       = self-hosted Pastebin powered by Git
+Documentation     = https://github.com/thomiceli/opengist
+After             = network-online.target
+
+[Service]
+Type              = simple
+Environment       = "GOMAXPROCS={{ ansible_processor_vcpus | default(ansible_processor_count) }}"
+EnvironmentFile   = {{ opengist_defaults_directory }}/opengist
+
+User              = {{ opengist_system_user }}
+Group             = {{ opengist_system_group }}
+
+ExecReload        = /bin/kill -HUP $MAINPID
+ExecStart         = /usr/bin/{{ opengist_release.binary }} $OPTIONS
+
+LimitNOFILE       = 65000
+SyslogIdentifier  = opengist
+Restart           = on-failure
+
+[Install]
+WantedBy          = multi-user.target

@@ -1,0 +1,11 @@
+---
+
+- name: converge
+  hosts: instance
+  gather_facts: true
+  any_errors_fatal: false
+  become: false
+  check_mode: true
+
+  roles:
+    - role: bodsch.scm.opengist

@@ -1,0 +1,21 @@
+---
+
+- name: prepare
+  ansible.builtin.import_tasks: prepare.yml
+
+- name: download archive
+  ansible.builtin.import_tasks: download.yml
+
+- name: external installation
+  ansible.builtin.import_tasks: external_installation.yml
+
+- name: install
+  ansible.builtin.import_tasks: install.yml
+
+- name: configure
+  ansible.builtin.import_tasks: configure.yml
+
+- name: service
+  ansible.builtin.import_tasks: service.yml
+
+...

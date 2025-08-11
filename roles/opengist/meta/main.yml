@@ -1,0 +1,35 @@
+---
+
+galaxy_info:
+  role_name: opengist
+  namespace: bodsch
+
+  author: Bodo Schulz
+  description: ansible role to setup opengist
+
+  license: Apache
+  min_ansible_version: "2.9"
+
+  platforms:
+    - name: ArchLinux
+    - name: Debian
+      versions:
+        # 10
+        - buster
+        # 11
+        - bullseye
+    - name: Ubuntu
+      versions:
+        # 20.04
+        - focal
+
+  galaxy_tags:
+    - collector
+    - monitoring
+    - metrics
+    - system
+    - prometheus
+
+dependencies: []
+
+...

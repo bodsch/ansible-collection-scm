@@ -1,0 +1,157 @@
+---
+
+- name: user and group handling
+  when:
+    - opengist_system_user != "root"
+  block:
+    - name: create opengist group
+      ansible.builtin.group:
+        name: "{{ opengist_system_group }}"
+        state: present
+        system: true
+
+    - name: create opengist user
+      ansible.builtin.user:
+        name: "{{ opengist_system_user }}"
+        groups: "{{ opengist_system_group }}"
+        append: true
+        shell: /usr/sbin/nologin
+        system: true
+        createhome: false
+        home: /nonexistent
+
+- name: create install directory
+  ansible.builtin.file:
+    path: "{{ opengist_install_path }}"
+    state: directory
+    owner: "{{ opengist_system_user }}"
+    group: "{{ opengist_system_group }}"
+    mode: 0755
+
+- name: detect extracted binary file for opengist on '{{ opengist_delegate_to }}'
+  become: false
+  delegate_to: "{{ opengist_delegate_to }}"
+  run_once: "{{ 'false' if opengist_direct_download else 'true' }}"
+  ansible.builtin.stat:
+    path: "{{ opengist_local_tmp_directory }}/{{ opengist_release.binary }}"
+  register: stat_file_binary
+
+- name: fail when extracted binary are missing
+  ansible.builtin.fail:
+    msg: "missing extracted binary on ansible controller"
+  when:
+    - not running_in_check_mode
+    - not stat_file_binary.stat.exists
+
+- name: detect installed opengist binary
+  ansible.builtin.stat:
+    path: "{{ opengist_install_path }}/{{ opengist_release.binary }}"
+  register: stat_opengist_binary
+
+- name: detect activated opengist binary
+  ansible.builtin.stat:
+    path: "/usr/bin/{{ opengist_release.binary }}"
+  register: stat_opengist_activated
+
+- name: install and activate opengist
+  when:
+    - not running_in_check_mode
+    - stat_file_binary.stat.exists
+    - (stat_opengist_binary.stat is defined and not stat_opengist_binary.stat.exists | default('false')) or
+      not stat_opengist_activated.stat | bodsch.prometheus.linked_version(opengist_install_path, opengist_version)
+  block:
+    - name: propagate files
+      block:
+        - name: propagate opengist binary
+          ansible.builtin.copy:
+            src: "{{ opengist_local_tmp_directory }}/{{ opengist_release.binary }}"
+            dest: "{{ opengist_install_path }}/{{ opengist_release.binary }}"
+            mode: 0755
+            owner: "{{ opengist_system_user }}"
+            group: "{{ opengist_system_group }}"
+            remote_src: "{{ 'true' if opengist_direct_download else 'false' }}"
+
+        - name: make files executable
+          ansible.builtin.file:
+            path: "{{ opengist_install_path }}/{{ opengist_release.binary }}"
+            mode: 0755
+            owner: "{{ opengist_system_user }}"
+            group: "{{ opengist_system_group }}"
+
+        - name: create link to binary
+          ansible.builtin.file:
+            src: "{{ opengist_install_path }}/{{ opengist_release.binary }}"
+            dest: "/usr/bin/{{ opengist_release.binary }}"
+            state: link
+            force: true
+            follow: false
+          notify:
+            - restart opengist
+
+      rescue:
+        - name: delete install directory
+          ansible.builtin.file:
+            path: "{{ opengist_install_path }}"
+            state: absent
+
+        - name: exit with fail
+          ansible.builtin.fail:
+            msg: A serious error occurred during the installation of the binary.
+
+- name: systemd
+  when:
+    - ansible_service_mgr | lower == "systemd"
+    - not running_in_check_mode
+  block:
+    - name: create opengist run configuration
+      ansible.builtin.template:
+        src: "default/opengist.j2"
+        dest: "{{ opengist_defaults_directory }}/opengist"
+        force: true
+        owner: root
+        group: "{{ opengist_system_group }}"
+        mode: 0640
+      notify:
+        - restart opengist
+
+    - name: create systemd service unit
+      ansible.builtin.template:
+        src: "init/systemd/opengist.service.j2"
+        dest: "{{ systemd_lib_directory }}/opengist.service"
+        owner: root
+        group: root
+        mode: 0644
+      notify:
+        - daemon-reload
+        - restart opengist
+
+- name: openrc
+  when:
+    - ansible_service_mgr | lower == "openrc"
+    - not running_in_check_mode
+  block:
+    - name: create openrc service configuration
+      ansible.builtin.template:
+        src: "init/openrc/conf.d/opengist.j2"
+        dest: "/etc/conf.d/opengist"
+        owner: root
+        group: root
+        mode: 0644
+
+    - name: create openrc init configuration
+      ansible.builtin.template:
+        src: "init/openrc/init.d/opengist.j2"
+        dest: "/etc/init.d/opengist"
+        owner: root
+        group: root
+        mode: 0750
+
+- name: create custom fact file
+  when:
+    - not running_in_check_mode
+  bodsch.core.facts:
+    name: opengist
+    facts:
+      version: "{{ opengist_version }}"
+
+...
