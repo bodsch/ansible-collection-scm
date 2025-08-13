@@ -64,6 +64,7 @@ jobs:
         collection_role:
           - forgejo
           - forgejo_runner
+          - opengist
 
     steps:
       - name: check out the codebase.

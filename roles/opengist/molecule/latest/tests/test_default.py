@@ -171,14 +171,17 @@ def test_open_port(host, get_vars):
         print(i)
 
     opengist_config = get_vars.get("opengist_config", {})
+    listen_address = None
 
-    print(opengist_config)
+    # print(opengist_config)
 
     if isinstance(opengist_config, dict):
         opengist__http = opengist_config.get("http", {})
         listen_host = opengist__http.get("host")
         listen_port = opengist__http.get("port")
-        listen_address = f"{listen_host}:{listen_port}"
+
+        if listen_host and listen_port:
+            listen_address = f"{listen_host}:{listen_port}"
 
     if not listen_address:
         listen_address = "0.0.0.0:6157"
