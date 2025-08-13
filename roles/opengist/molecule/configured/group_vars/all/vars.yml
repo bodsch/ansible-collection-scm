@@ -1,0 +1,47 @@
+---
+
+opengist_config:
+  log_level: warn
+  log_output:
+    - stdout
+    - file
+  external_url: "https://opengist.matrix.lan"
+  opengist_home: /tmp
+
+  db_uri: opengist.db
+  index:
+    type: bleve
+
+  git:
+    default_branch: main
+
+  http:
+    host: "0.0.0.0"
+    port: 6157
+    git_enabled: true
+
+  unix_socket_pemissions: "0666"
+
+  metrics:
+    enabled: true
+
+  ssh:
+    host: "0.0.0.0"
+    port: 2222
+    git_enabled: true
+    external_domain: ""
+    keygen_executable: "ssh-keygen"
+
+  custom:
+    name: "opengist - your choice"
+    logo: ""
+    favicon: ""
+    static_links:
+      - name: Gitea
+        path: https://gitea.com
+      - name: forgejo
+        path: https://forgejo.com
+      - name: Legal notices
+        path: legal.html
+
+...

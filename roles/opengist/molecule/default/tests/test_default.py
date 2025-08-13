@@ -151,13 +151,13 @@ def test_files(host, get_vars):
 def test_user(host, get_vars):
     """
     """
-    user = get_vars.get("opengist_system_user", "node_exp")
-    group = get_vars.get("opengist_system_group", "node_exp")
+    user = get_vars.get("opengist_user", "{}").get("owner", "opengist")
+    group = get_vars.get("opengist_user", "{}").get("group", "opengist")
 
     assert host.group(group).exists
     assert host.user(user).exists
     assert group in host.user(user).groups
-    assert host.user(user).home == "/nonexistent"
+    assert host.user(user).home == "/opt/opengist"
 
 
 def test_service(host, get_vars):
@@ -170,16 +170,18 @@ def test_open_port(host, get_vars):
     for i in host.socket.get_listening_sockets():
         print(i)
 
-    opengist_service = get_vars.get("opengist_service", {})
+    opengist_config = get_vars.get("opengist_config", {})
 
-    print(opengist_service)
+    print(opengist_config)
 
-    if isinstance(opengist_service, dict):
-        opengist__web = opengist_service.get("web", {})
-        listen_address = opengist__web.get("listen_address")
+    if isinstance(opengist_config, dict):
+        opengist__http = opengist_config.get("http", {})
+        listen_host = opengist__http.get("host")
+        listen_port = opengist__http.get("port")
+        listen_address = f"{listen_host}:{listen_port}"
 
     if not listen_address:
-        listen_address = "0.0.0.0:9100"
+        listen_address = "0.0.0.0:6157"
 
     print(listen_address)
 

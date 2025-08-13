@@ -2,15 +2,20 @@
 
 opengist_version: 1.10.0
 
-opengist_system_user: opengist
-opengist_system_group: opengist
+opengist_user:
+  owner: opengist
+  group: opengist
+  groups: []
+  home: /opt/opengist
+
 opengist_config_dir: /etc/opengist
-opengist_textfile_dir: /var/lib/opengist
+
+# opengist_system_user: opengist
+# opengist_system_group: opengist
+# opengist_textfile_dir: /var/lib/opengist
 
 opengist_direct_download: false
 opengist_release: {}
-
-opengist_enable_experimental: false
 
 opengist_service:
   log:
@@ -19,22 +24,6 @@ opengist_service:
     listen_address: "0.0.0.0:9100"
     telemetry_path: "/metrics"
 
-# experimental
-opengist_tls_server: {}
-# experimental
-opengist_http_server: {}
-# experimental
-opengist_basic_auth_users: {}
-
-opengist_rules: {}
-
-opengist_collectors:
-  enabled:
-    - textfile:
-        directory: "/var/lib/opengist"
-  #  - filesystem:
-  #      ignored-mount-points: "^/(sys|proc|dev)($|/)"
-  #      ignored-fs-types: "^(sys|proc|auto)fs$"
-  disabled: []
+opengist_config: {}
 
 ...

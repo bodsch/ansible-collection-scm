@@ -35,12 +35,4 @@
   when:
     - opengist_requirements | default([]) | count > 0
 
-- name: merge opengist configuration between defaults and custom
-  ansible.builtin.set_fact:
-    opengist_service: "{{ opengist_defaults_service | combine(opengist_service, recursive=True) }}"
-    opengist_tls_server: "{{ opengist_defaults_tls_server | combine(opengist_tls_server, recursive=True) }}"
-    opengist_http_server: "{{ opengist_defaults_http_server | combine(opengist_http_server, recursive=True) }}"
-    opengist_basic_auth_users: "{{ opengist_defaults_basic_auth_users | combine(opengist_basic_auth_users, recursive=True) }}"
-    opengist_collectors: "{{ opengist_defaults_collectors | combine(opengist_collectors, recursive=True) }}"
-
 ...

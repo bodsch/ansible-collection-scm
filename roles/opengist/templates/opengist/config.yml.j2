@@ -1,7 +1,194 @@
 #jinja2: trim_blocks: True, lstrip_blocks: True
+{% set values = opengist_config | bodsch.core.remove_empty_values %}
 ---
 # {{ ansible_managed }}
 
+{% if values.log_level is defined and
+      values.log_level in ['debug', 'info', 'warn', 'error', 'fatal'] %}
+log-level: {{ values.log_level }}
+{% endif %}
+{% if values.log_output is defined and
+      values.log_output | bodsch.core.compare_list(['stdout','file']) %}
+log-output: {{ values.log_output | join(',') }}
+{% endif %}
+{% if values.external_url | default("") | string | length > 0 %}
+external-url: {{ values.external_url }}
+{% endif %}
+{% if values.opengist_home | default("") | string | length > 0 %}
+opengist-home: {{ values.opengist_home }}
+{% endif %}
+{% if values.secrect_key | default("") | string | length > 0 %}
+secret-key: {{ values.secrect_key }}
+{% endif %}
+{% if values.db_uri | default("") | string | length > 0 %}
+db-uri: {{ values.db_uri }}
+{% endif %}
+{% if values.index.type is defined and
+      (values.index.type in ['bleve','meilisearch'] or
+      values.index.type | string | length == 0) %}
+
+index: {{ values.index.type }}
+{% endif %}
+{% if values.index.meili is defined %}
+
+  {% if values.index.meili.host | default("") | string | length > 0 %}
+index.meili.host: {{ values.index.meili.host }}
+  {% endif %}
+  {% if values.index.meili.api_key | default("") | string | length > 0 %}
+index.meili.api-key: {{ values.index.meili.api_key }}
+  {% endif %}
+{% endif %}
+{% if values.git is defined %}
+
+  {% if values.git.default_branch | default("") | string | length > 0 %}
+git.default-branch: {{ values.git.default_branch }}
+  {% endif %}
+{% endif %}
+{% if values.sqlite is defined %}
+
+  {% if values.sqlite.default_branch is defined and values.sqlite.default_branch | default("WAL") | string | length > 0 %}
+sqlite.journal-mode: {{ values.sqlite.default_branch }}
+  {% endif %}
+{% endif %}
+{% if values.http is defined %}
+
+http.git-enabled: {{ values.http.git_enabled | default('false') | bool | lower }}
+  {% if values.http.git_enabled | default('false') | bool %}
+    {% if values.http.host is defined and values.http.host | default("") | string | length > 0 %}
+http.host: {{ values.http.host }}
+    {% endif %}
+    {% if values.http.port is defined and values.http.port | default("") | string | length > 0 %}
+http.port: {{ values.http.port }}
+    {% endif %}
+  {% endif %}
+{% endif %}
+{% if values.unix_socket_pemissions is defined and values.unix_socket_pemissions | default("WAL") | string | length > 0 %}
+
+unix-socket-permissions: {{ values.unix_socket_pemissions }}
+{% endif %}
+{% if values.metrics is defined %}
+
+  {% if values.metrics.enabled is defined and values.metrics.enabled | default("") | string | length > 0 %}
+metrics.enabled: {{ values.metrics.enabled | lower }}
+  {% endif %}
+{% endif %}
+{% if values.ssh is defined %}
+
+ssh.git-enabled: {{ values.ssh.git_enabled | default('false') | bool | lower }}
+  {% if values.ssh.git_enabled | default('false') | bool %}
+    {% if values.ssh.host is defined and values.ssh.host | default("") | string | length > 0 %}
+ssh.host: {{ values.ssh.host }}
+    {% endif %}
+    {% if values.ssh.port is defined and values.ssh.port | default("") | string | length > 0 %}
+ssh.port: {{ values.ssh.port }}
+    {% endif %}
+    {% if values.ssh.external_domain is defined and values.ssh.external_domain | default("") | string | length > 0 %}
+ssh.external-domain: {{ values.ssh.external_domain }}
+    {% endif %}
+    {% if values.ssh.keygen_executable is defined and values.ssh.keygen_executable | default("") | string | length > 0 %}
+ssh.keygen-executable: {{ values.ssh.keygen_executable }}
+    {% endif %}
+  {% endif %}
+{% endif %}
+{% if values.github is defined %}
+
+  {% if values.github.client_key is defined and values.github.client_key | default("") | string | length > 0 %}
+github.client-key: {{ values.github.client_key }}
+  {% endif %}
+  {% if values.github.secret is defined and values.github.secret | default("") | string | length > 0 %}
+github.secret: {{ values.github.secret }}
+  {% endif %}
+{% endif %}
+{% if values.gitlab is defined %}
+
+  {% if values.gitlab.client_key is defined and values.gitlab.client_key | default("") | string | length > 0 %}
+gitlab.client-key: {{ values.gitlab.client_key }}
+  {% endif %}
+  {% if values.gitlab.secret is defined and values.gitlab.secret | default("") | string | length > 0 %}
+gitlab.secret: {{ values.gitlab.secret }}
+  {% endif %}
+  {% if values.gitlab.url is defined and values.gitlab.url | default("") | string | length > 0 %}
+gitlab.url: {{ values.gitlab.url }}
+  {% endif %}
+  {% if values.gitlab.name is defined and values.gitlab.name | default("") | string | length > 0 %}
+gitlab.name: {{ values.gitlab.name }}
+  {% endif %}
+{% endif %}
+{% if values.gitea is defined %}
+
+  {% if values.gitea.client_key is defined and values.gitea.client_key | default("") | string | length > 0 %}
+gitea.client-key: {{ values.gitea.client_key }}
+  {% endif %}
+  {% if values.gitea.secret is defined and values.gitea.secret | default("") | string | length > 0 %}
+gitea.secret: {{ values.gitea.secret }}
+  {% endif %}
+  {% if values.gitea.url is defined and values.gitea.url | default("") | string | length > 0 %}
+gitea.url: {{ values.gitea.url }}
+  {% endif %}
+  {% if values.gitea.name is defined and values.gitea.name | default("") | string | length > 0 %}
+gitea.name: {{ values.gitea.name }}
+  {% endif %}
+{% endif %}
+{% if values.oidc is defined %}
+
+  {% if values.oidc.provider_name is defined and values.oidc.provider_name | default("") | string | length > 0 %}
+oidc.provider-name: {{ values.oidc.provider_name }}
+  {% endif %}
+  {% if values.oidc.client_key is defined and values.oidc.client_key | default("") | string | length > 0 %}
+oidc.client-key: {{ values.oidc.client_key }}
+  {% endif %}
+  {% if values.oidc.secret is defined and values.oidc.secret | default("") | string | length > 0 %}
+oidc.secret: {{ values.oidc.secret }}
+  {% endif %}
+  {% if values.oidc.discovery_url is defined and values.oidc.discovery_url | default("") | string | length > 0 %}
+oidc.discovery-url: {{ values.oidc.discovery_url }}
+  {% endif %}
+  {% if values.oidc.group_claim_name is defined and values.oidc.group_claim_name | default("") | string | length > 0 %}
+oidc.group-claim-name: {{ values.oidc.group_claim_name }}
+  {% endif %}
+  {% if values.oidc.admin_group is defined and values.oidc.admin_group | default("") | string | length > 0 %}
+oidc.admin-group: {{ values.oidc.admin_group }}
+  {% endif %}
+{% endif %}
+{% if values.ldap is defined %}
+
+  {% if values.ldap.url is defined and values.ldap.url | default("") | string | length > 0 %}
+ldap.url: {{ values.ldap.url }}
+  {% endif %}
+  {% if values.ldap.bind_dn is defined and values.ldap.bind_dn | default("") | string | length > 0 %}
+ldap.bind-dn: {{ values.ldap.bind_dn }}
+  {% endif %}
+  {% if values.ldap.bind_credentials is defined and values.ldap.bind_credentials | default("") | string | length > 0 %}
+ldap.bind-credentials: {{ values.ldap.bind_credentials }}
+  {% endif %}
+  {% if values.ldap.search_base is defined and values.ldap.search_base | default("") | string | length > 0 %}
+ldap.search-base: {{ values.ldap.search_base }}
+  {% endif %}
+  {% if values.ldap.search_filter is defined and values.ldap.search_filter | default("") | string | length > 0 %}
+ldap.search-filter: {{ values.ldap.search_filter }}
+  {% endif %}
+{% endif %}
+{% if values.custom is defined %}
+
+  {% if values.custom.name is defined and values.custom.name | default("") | string | length > 0 %}
+custom.name: {{ values.custom.name }}
+  {% endif %}
+  {% if values.custom.logo is defined and values.custom.logo | default("") | string | length > 0 %}
+custom.logo: {{ values.custom.logo }}
+  {% endif %}
+  {% if values.custom.favicon is defined and values.custom.favicon | default("") | string | length > 0 %}
+custom.favicon: {{ values.custom.favicon }}
+  {% endif %}
+
+  {% if values.custom.static_links is defined and values.custom.static_links | default([]) | count > 0 %}
+custom.static-links:
+    {% for links in values.custom.static_links %}
+  - name: {{ links.name | default("") }}
+    path: {{ links.path | default("") }}
+    {% endfor %}
+  {% endif %}
+{% endif %}
+{#
 # Learn more about Opengist configuration here:
 # https://github.com/thomiceli/opengist/blob/master/docs/configuration/configure.md
 # https://github.com/thomiceli/opengist/blob/master/docs/configuration/cheat-sheet.md
@@ -147,3 +334,4 @@ custom.static-links:
 #    path: https://gitea.com
 #  - name: Legal notices
 #    path: legal.html
+#}

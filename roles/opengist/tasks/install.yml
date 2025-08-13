@@ -2,30 +2,69 @@
 
 - name: user and group handling
   when:
-    - opengist_system_user != "root"
+    - opengist_user.owner != "root"
   block:
     - name: create opengist group
       ansible.builtin.group:
-        name: "{{ opengist_system_group }}"
+        name: "{{ opengist_user.group }}"
         state: present
         system: true
 
     - name: create opengist user
       ansible.builtin.user:
-        name: "{{ opengist_system_user }}"
-        groups: "{{ opengist_system_group }}"
-        append: true
-        shell: /usr/sbin/nologin
+        comment: "Home Assistant"
+        name: "{{ opengist_user.owner }}"
+        groups: "{{ opengist_user.group }}"
+        append: false
+        home: "{{ opengist_user.home }}"
+        shell: /sbin/nologin
         system: true
-        createhome: false
-        home: /nonexistent
+        createhome: true
+
+    - name: create directory
+      ansible.builtin.file:
+        state: directory
+        path: "{{ opengist_user.home }}"
+        owner: "{{ opengist_user.owner }}"
+        group: "{{ opengist_user.group }}"
+        mode: "02775"
+
+- name: add user {{ opengist_user.owner }} to groups
+  ansible.builtin.user:
+    name: "{{ opengist_user.owner }}"
+    groups: "{{ item }}"
+    append: true
+  loop:
+    "{{ opengist_user.groups | sort | unique }}"
+  when:
+    - opengist_user.groups | default([]) | count > 0
+
+# - name: user and group handling
+#   when:
+#     - opengist_user.user != "root"
+#   block:
+#     - name: create opengist group
+#       ansible.builtin.group:
+#         name: "{{ opengist_user.group }}"
+#         state: present
+#         system: true
+#
+#     - name: create opengist user
+#       ansible.builtin.user:
+#         name: "{{ opengist_user.owner }}"
+#         groups: "{{ opengist_user.group }}"
+#         append: true
+#         shell: /usr/sbin/nologin
+#         system: true
+#         createhome: false
+#         home: "{{ opengist_user.home }}"
 
 - name: create install directory
   ansible.builtin.file:
     path: "{{ opengist_install_path }}"
     state: directory
-    owner: "{{ opengist_system_user }}"
-    group: "{{ opengist_system_group }}"
+    owner: "{{ opengist_user.owner }}"
+    group: "{{ opengist_user.group }}"
     mode: 0755
 
 - name: detect extracted binary file for opengist on '{{ opengist_delegate_to }}'
@@ -58,7 +97,7 @@
     - not running_in_check_mode
     - stat_file_binary.stat.exists
     - (stat_opengist_binary.stat is defined and not stat_opengist_binary.stat.exists | default('false')) or
-      not stat_opengist_activated.stat | bodsch.prometheus.linked_version(opengist_install_path, opengist_version)
+      not stat_opengist_activated.stat | bodsch.core.linked_version(opengist_install_path, opengist_version)
   block:
     - name: propagate files
       block:
@@ -66,17 +105,17 @@
           ansible.builtin.copy:
             src: "{{ opengist_local_tmp_directory }}/{{ opengist_release.binary }}"
             dest: "{{ opengist_install_path }}/{{ opengist_release.binary }}"
-            mode: 0755
-            owner: "{{ opengist_system_user }}"
-            group: "{{ opengist_system_group }}"
+            mode: "0755"
+            owner: "{{ opengist_user.owner }}"
+            group: "{{ opengist_user.group }}"
             remote_src: "{{ 'true' if opengist_direct_download else 'false' }}"
 
         - name: make files executable
           ansible.builtin.file:
             path: "{{ opengist_install_path }}/{{ opengist_release.binary }}"
-            mode: 0755
-            owner: "{{ opengist_system_user }}"
-            group: "{{ opengist_system_group }}"
+            mode: "0755"
+            owner: "{{ opengist_user.owner }}"
+            group: "{{ opengist_user.group }}"
 
         - name: create link to binary
           ansible.builtin.file:
@@ -109,7 +148,7 @@
         dest: "{{ opengist_defaults_directory }}/opengist"
         force: true
         owner: root
-        group: "{{ opengist_system_group }}"
+        group: "{{ opengist_user.group }}"
         mode: 0640
       notify:
         - restart opengist

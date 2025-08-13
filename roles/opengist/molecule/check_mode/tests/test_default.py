@@ -104,14 +104,7 @@ def local_facts(host):
     """
       return local facts
     """
-    local_fact = host.ansible("setup").get("ansible_facts").get("ansible_local")
-
-    print(f"local_fact     : {local_fact}")
-
-    if local_fact:
-        return local_fact.get("opengist", {})
-    else:
-        return dict()
+    return host.ansible("setup").get("ansible_facts").get("ansible_local").get("opengist")
 
 
 @pytest.mark.parametrize("dirs", [
@@ -119,7 +112,7 @@ def local_facts(host):
 ])
 def test_directories(host, dirs):
     d = host.file(dirs)
-    assert not d.is_directory
+    assert d.is_directory
 
 
 def test_files(host, get_vars):
@@ -152,43 +145,45 @@ def test_files(host, get_vars):
 
     for _file in files:
         f = host.file(_file)
-        assert not f.is_file
+        assert f.is_file
 
 
 def test_user(host, get_vars):
     """
     """
-    user = get_vars.get("opengist_system_user", "node_exp")
-    group = get_vars.get("opengist_system_group", "node_exp")
+    user = get_vars.get("opengist_user", "{}").get("owner", "opengist")
+    group = get_vars.get("opengist_user", "{}").get("group", "opengist")
 
-    assert not host.group(group).exists
-    assert not host.user(user).exists
-    # assert group in host.user(user).groups
-    # assert host.user(user).home == "/nonexistent"
+    assert host.group(group).exists
+    assert host.user(user).exists
+    assert group in host.user(user).groups
+    assert host.user(user).home == "/opt/opengist"
 
 
 def test_service(host, get_vars):
     service = host.service("opengist")
-    assert not service.is_enabled
-    assert not service.is_running
+    assert service.is_enabled
+    assert service.is_running
 
 
 def test_open_port(host, get_vars):
     for i in host.socket.get_listening_sockets():
         print(i)
 
-    opengist_service = get_vars.get("opengist_service", {})
+    opengist_config = get_vars.get("opengist_config", {})
 
-    print(opengist_service)
+    print(opengist_config)
 
-    if isinstance(opengist_service, dict):
-        opengist__web = opengist_service.get("web", {})
-        listen_address = opengist__web.get("listen_address")
+    if isinstance(opengist_config, dict):
+        opengist__http = opengist_config.get("http", {})
+        listen_host = opengist__http.get("host")
+        listen_port = opengist__http.get("port")
+        listen_address = f"{listen_host}:{listen_port}"
 
     if not listen_address:
-        listen_address = "0.0.0.0:9100"
+        listen_address = "0.0.0.0:6157"
 
     print(listen_address)
 
     service = host.socket(f"tcp://{listen_address}")
-    assert not service.is_listening
+    assert service.is_listening
