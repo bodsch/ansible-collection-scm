@@ -47,10 +47,12 @@ If you want to use something stable, please use a [Tagged Version](https://githu
 | Role                                                           | Build State | Description |
 |:-------------------------------------------------------------- | :---- | :---- |
 | [bodsch.scm.forgejo](./roles/forgejo/README.md)                | [![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/bodsch/ansible-collection-scm/forgejo.yml?branch=main)][workflow-forgejo] | Ansible role to install and configure [forgejo](https://forgejo.org/). |
-| [bodsch.scm.forgejo_runner](./roles/forgejo_runner/README.md)  | [![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/bodsch/ansible-collection-scm/forgejo-runner.yml?branch=main)][workflow-forgejo_runner]| Ansible role to install and configure [forgejo-runner](https://code.forgejo.org/forgejo/runner) |
+| [bodsch.scm.forgejo_runner](./roles/forgejo_runner/README.md)  | [![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/bodsch/ansible-collection-scm/forgejo-runner.yml?branch=main)][workflow-forgejo_runner] | Ansible role to install and configure [forgejo-runner](https://code.forgejo.org/forgejo/runner) |
+| [bodsch.scm.opengist](./roles/opengist/README.md)              | [![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/bodsch/ansible-collection-scm/opengist?branch=main)][workflow-opengist] | Ansible role to install and configure [opengist](https://github.com/thomiceli/opengist) |
 
 [workflow-forgejo]: https://github.com/bodsch/ansible-collection-scm/actions/workflows/forgejo.yml
 [workflow-forgejo_runner]: https://github.com/bodsch/ansible-collection-scm/actions/workflows/forgejo-runner.yml
+[workflow-opengist]: https://github.com/bodsch/ansible-collection-scm/actions/workflows/opengist.yml
 
 
 ## Included content
