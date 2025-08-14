@@ -61,15 +61,16 @@ If you want to use something stable, please use a [Tagged Version](https://githu
 
 | Name                      | Description |
 |:--------------------------|:----|
-| [bodsch.scm.github_checksum](./plugins/modules/github_checksum.py) | read a defined checksumfile and return the checksum for an artefact | 
-| [bodsch.scm.github_latest](./plugins/modules/github_latest.py)     | detect the latest release or tag from GitHub | 
-| [bodsch.scm.github_releases](./plugins/modules/github_releases.py) | Fetches the releases version of a GitHub project and returns the download urls | 
-| [bodsch.scm.forgejo](./plugins/modules/forgejo.py)                 | not used | 
-| [bodsch.scm.forgejo_auth](./plugins/modules/forgejo_auth.py)       | forgejo admin auth - Modify external auth providers | 
-| [bodsch.scm.forgejo_cli](./plugins/modules/forgejo_cli.py)         | wrapper to create runner token | 
-| [bodsch.scm.forgejo_migrate](./plugins/modules/forgejo_migrate.py) | not used | 
-| [bodsch.scm.forgejo_runner](./plugins/modules/forgejo_runner.py)   | append runner to forgejo | 
-| [bodsch.scm.forgejo_user](./plugins/modules/forgejo_user.py)       | create forgejo admin user | 
+| [bodsch.scm.github_checksum](./plugins/modules/github_checksum.py) | Fetches a checksum of a GitHub project and returns it. | 
+| [bodsch.scm.github_latest](./plugins/modules/github_latest.py)     | Fetches the latest version of a GitHub project and returns it. | 
+| [bodsch.scm.github_releases](./plugins/modules/github_releases.py) | Fetches the releases version of a GitHub project and returns the download urls. |
+| [bodsch.scm.forgejo_admin_user](./plugins/modules/forgejo_admin_user.py) | Manage Forgejo admin users. | 
+| [bodsch.scm.forgejo_auth](./plugins/modules/forgejo_auth.py)       | Manage Forgejo LDAP authentication entries. | 
+| [bodsch.scm.forgejo_cli](./plugins/modules/forgejo_cli.py)         | Register Forgejo runners using the Forgejo CLI. | 
+| [bodsch.scm.forgejo_migrate](./plugins/modules/forgejo_migrate.py) | Migrate a Forgejo database. | 
+| [bodsch.scm.forgejo_runner](./plugins/modules/forgejo_runner.py)   | Register a Forgejo Runner on a Forgejo Server. | 
+| [bodsch.scm.forgejo_users](./plugins/modules/forgejo_users.py)     | Manage Forgejo users | 
+
 
 ## Installing this collection
 
