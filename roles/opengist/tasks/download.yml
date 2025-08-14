@@ -1,0 +1,138 @@
+---
+
+- name: get latest release
+  delegate_to: localhost
+  become: false
+  run_once: true
+  when:
+    - opengist_version == "latest"
+  block:
+    - name: get latest release
+      delegate_to: localhost
+      become: false
+      run_once: true
+      bodsch.scm.github_latest:
+        project: thomiceli
+        repository: opengist
+        user: "{{ lookup('env', 'GH_USER') | default(omit) }}"
+        password: "{{ lookup('env', 'GH_TOKEN') | default(omit) }}"
+      register: _latest_release
+
+    - name: re-define opengist_version
+      ansible.builtin.set_fact:
+        opengist_version: "{{ _latest_release.latest_release }}"
+
+- name: define download information
+  ansible.builtin.set_fact:
+    opengist_release: "{{ opengist_defaults_release | combine(opengist_release, recursive=True) }}"
+
+- name: define delegate instance for download handling
+  ansible.builtin.set_fact:
+    opengist_delegate_to: "{{ ansible_host }}"
+    opengist_local_tmp_directory: "{{
+        lookup('env', 'CUSTOM_LOCAL_TMP_DIRECTORY') |
+        default('/var/cache/ansible/opengist', true) }}/{{ opengist_version }}"
+  when:
+    - opengist_direct_download
+
+- name: create download directory
+  become: false
+  delegate_to: "{{ opengist_delegate_to }}"
+  run_once: "{{ 'false' if opengist_direct_download else 'true' }}"
+  ansible.builtin.file:
+    path: "{{ opengist_local_tmp_directory }}"
+    state: directory
+    mode: "0750"
+  check_mode: false
+
+- name: detect the downloaded opengist archive
+  become: false
+  delegate_to: "{{ opengist_delegate_to }}"
+  run_once: "{{ 'false' if opengist_direct_download else 'true' }}"
+  ansible.builtin.stat:
+    path: "{{ opengist_local_tmp_directory }}/{{ opengist_release.file }}"
+  register: stat_opengist_archive
+
+- name: download
+  when:
+    - stat_opengist_archive.stat is defined
+    - not stat_opengist_archive.stat.exists | default('false')
+    - not running_in_check_mode
+  block:
+    - name: checksum
+      become: false
+      delegate_to: localhost
+      run_once: true
+      block:
+        - name: get checksum list
+          bodsch.scm.github_checksum:
+            project: thomiceli
+            repository: opengist
+            checksum_file: sha256sums.txt
+            user: "{{ lookup('env', 'GH_USER') | default(omit) }}"
+            password: "{{ lookup('env', 'GH_TOKEN') | default(omit) }}"
+            architecture: "{{ ansible_architecture }}"
+            system: "{{ ansible_facts.system }}"
+            version: "v{{ opengist_version }}"
+          register: _latest_checksum
+
+        - name: define checksum for {{ system_architecture }} architecture
+          ansible.builtin.set_fact:
+            __opengist_checksum: "sha256:{{ _latest_checksum.checksum }}"
+          when:
+            - _latest_checksum.rc == 0
+            - _latest_checksum.checksum is defined
+            - _latest_checksum.checksum | string | length > 0
+
+    - name: download opengist binary archive
+      become: false
+      delegate_to: "{{ opengist_delegate_to }}"
+      run_once: "{{ 'false' if opengist_direct_download else 'true' }}"
+      ansible.builtin.get_url:
+        url: "{{ opengist_release.download_url }}/download/v{{ opengist_version }}/{{ opengist_release.file }}"
+        dest: "{{ opengist_local_tmp_directory }}/{{ opengist_release.file }}"
+        checksum: "{{ __opengist_checksum | default(omit) }}"
+        mode: "0640"
+      register: _download_archive
+      until: _download_archive is succeeded
+      retries: 5
+      delay: 2
+      check_mode: false
+
+  rescue:
+    - name: delete download directory
+      become: false
+      delegate_to: "{{ opengist_delegate_to }}"
+      run_once: "{{ 'false' if opengist_direct_download else 'true' }}"
+      ansible.builtin.file:
+        path: "{{ opengist_local_tmp_directory }}"
+        state: absent
+
+    - name: exit with fail
+      ansible.builtin.fail:
+        msg: A serious error occurred when downloading the archive.
+
+- name: detect extracted binary
+  become: false
+  delegate_to: "{{ opengist_delegate_to }}"
+  run_once: "{{ 'false' if opengist_direct_download else 'true' }}"
+  ansible.builtin.stat:
+    path: "{{ opengist_local_tmp_directory }}/{{ opengist_release.binary }}"
+  register: stat_opengist_binary
+
+- name: extract opengist archive
+  become: false
+  delegate_to: "{{ opengist_delegate_to }}"
+  run_once: "{{ 'false' if opengist_direct_download else 'true' }}"
+  ansible.builtin.unarchive:
+    src: "{{ opengist_local_tmp_directory }}/{{ opengist_release.file }}"
+    dest: "{{ opengist_local_tmp_directory }}/"
+    copy: false
+    extra_opts:
+      - --strip-components=1
+  when:
+    - not running_in_check_mode
+    - stat_opengist_binary.stat is defined
+    - not stat_opengist_binary.stat.exists | default('false')
+
+...

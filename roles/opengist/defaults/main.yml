@@ -1,0 +1,29 @@
+---
+
+opengist_version: 1.10.0
+
+opengist_user:
+  owner: opengist
+  group: opengist
+  groups: []
+  home: /opt/opengist
+
+opengist_config_dir: /etc/opengist
+
+# opengist_system_user: opengist
+# opengist_system_group: opengist
+# opengist_textfile_dir: /var/lib/opengist
+
+opengist_direct_download: false
+opengist_release: {}
+
+opengist_service:
+  log:
+    level: warn
+  web:
+    listen_address: "0.0.0.0:9100"
+    telemetry_path: "/metrics"
+
+opengist_config: {}
+
+...

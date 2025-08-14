@@ -178,6 +178,10 @@ class ForgejoRunner(object):
 
         rc, out, err = self._exec(args_list)
 
+        self.module.log(msg=f"  rc : '{rc}'")
+        self.module.log(msg=f"  out: '{out}'")
+        self.module.log(msg=f"  err: '{err}'")
+
         if rc == 0:
             return dict(
                 failed=False,
@@ -217,7 +221,6 @@ def main():
         runners=dict(
             required=True,
             type=list,
-            elements=dict
         ),
         working_dir=dict(
             required=True,

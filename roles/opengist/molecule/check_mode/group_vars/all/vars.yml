@@ -1,0 +1,28 @@
+---
+
+opengist_service:
+  log:
+    level: debug
+
+opengist_collectors:
+  enabled:
+    - textfile:
+        directory: "/var/lib/opengist"
+    - filesystem:
+        mount-points-exclude: "^/(sys|proc|dev)($|/)"
+        fs-types-exclude: "^(sys|proc|auto)fs$"
+    - processes
+    - cpu
+    - xfs
+    - meminfo
+    - netstat
+  disabled:
+    - systemd
+    - zfs
+    - tapestats
+    - mdadm
+
+opengist_basic_auth_users:
+  randomuser: examplepassword
+
+...

@@ -1,6 +1,6 @@
 ---
 
-name: forgejo
+name: opengist
 
 on:
   workflow_dispatch:
@@ -23,8 +23,8 @@ on:
     paths:
       - "!Makefile"
       - "!README.md"
-      - 'roles/forgejo/**'
-      - '.github/workflows/forgejo.yml'
+      - 'roles/opengist/**'
+      - '.github/workflows/opengist.yml'
       - '.config/ansible-lint.yml'
       - '.yamllint'
   pull_request:
@@ -36,8 +36,8 @@ on:
     paths:
       - "!Makefile"
       - "!README.md"
-      - 'roles/forgejo/**'
-      - '.github/workflows/forgejo.yml'
+      - 'roles/opengist/**'
+      - '.github/workflows/opengist.yml'
       - '.config/ansible-lint.yml'
       - '.yamllint'
 
@@ -63,7 +63,7 @@ jobs:
         scenario:
           - default
         collection_role:
-          - forgejo
+          - opengist
 
     steps:
       - name: check out the codebase.
@@ -120,7 +120,7 @@ jobs:
         scenario:
           - default
         collection_role:
-          - forgejo
+          - opengist
 
     steps:
       - name: check out the codebase.
@@ -176,13 +176,10 @@ jobs:
           - '3.12'
         scenario:
           - configured
-          - configured-with-mariadb
-          - configured-with-ldap
-          - configured-with-local-users
-          - custom-config-directory
-          - update
+          - check_mode
+          - latest
         collection_role:
-          - forgejo
+          - opengist
 
     steps:
       - name: check out the codebase.
