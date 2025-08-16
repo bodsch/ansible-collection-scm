@@ -33,7 +33,7 @@
     - restart forgejo-runner
 
 - name: create runner token on {{ forgejo_runner_controller.hostname }}
-  remote_user: "{{ forgejo_runner_controller.username }}"
+  remote_user: "{{ forgejo_runner_controller.remoteuser }}"
   become_user: "{{ forgejo_runner_controller.username }}"
   become: true
   delegate_to: "{{ forgejo_runner_controller.hostname }}"
