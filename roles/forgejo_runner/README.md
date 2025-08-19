@@ -7,15 +7,6 @@ Forgejo is a self-hosted lightweight software forge.
 Easy to install and low maintenance, it just does the job.
 
 
-[![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/bodsch/ansible-forgejo-runner/main.yml?branch=main)][ci]
-[![GitHub issues](https://img.shields.io/github/issues/bodsch/ansible-forgejo-runner)][issues]
-[![GitHub release (latest by date)](https://img.shields.io/github/v/release/bodsch/ansible-forgejo-runner)][releases]
-
-[ci]: https://github.com/bodsch/ansible-forgejo-runner/actions
-[issues]: https://github.com/bodsch/ansible-forgejo-runner/issues?q=is%3Aopen+is%3Aissue
-[releases]: https://github.com/bodsch/ansible-forgejo-runner/releases
-
-
 ## Requirements & Dependencies
 
 

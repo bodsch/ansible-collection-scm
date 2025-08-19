@@ -8,3 +8,4 @@ roles/**/.github
 roles/**/tox.ini
 roles/**/test-requirements.txt
 hooks
+hooks
