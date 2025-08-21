@@ -5,6 +5,7 @@ forgejo_working_dir: /var/lib/forgejo
 
 forgejo_runner_controller:
   hostname: "forgejo"
+  remoteuser: "forgejo"
   username: "forgejo"
 
 forgejo_runner_register:
