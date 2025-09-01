@@ -55,6 +55,7 @@ forgejo_runner_direct_download: false
 
 forgejo_runner_controller:
   hostname: "localhost"
+  remoteuser: "forgejo"
   username: "forgejo"
   # groupname: "forgejo"
 
@@ -112,6 +113,17 @@ Defines the forgejo host to which the Runner is to be connected.
 ```yaml
 forgejo_runner_controller:
   hostname: "forgejo.molecule.lan"
+  remoteuser: "forgejo"
+  username: "forgejo"
+```
+
+If your deployment user is different from the one running the forgejo process, simply change the remoteuser.
+Here is an example:
+
+```yaml
+forgejo_runner_controller:
+  hostname: "forgejo.molecule.lan"
+  remoteuser: "ansible"
   username: "forgejo"
 ```
 
