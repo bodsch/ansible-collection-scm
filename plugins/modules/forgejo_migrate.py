@@ -70,7 +70,7 @@ notes:
 
 EXAMPLES = r"""
 - name: migrate forgejo database
-  remote_user: "{{ forgejo_system_user }}"
+  remote_user: "{{ forgejo_remote_user }}"
   become_user: "{{ forgejo_system_user }}"
   become: true
   bodsch.scm.forgejo_migrate:
