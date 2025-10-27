@@ -461,7 +461,8 @@ forgejo_defaults_lfs:
     batch_operation_concurrency: ""               # 8
 
 forgejo_defaults_log:
-  root_path: ""
+  root_path: ""                                   # /var/lib/forgejo/log
+  file_name: ""                                   # forgejo.log
   mode:                                           # [console, file]
     - console
   level: info                                     # info   | Either "Trace", "Debug", "Info", "Warn", "Error" or "None", default is "Info"
@@ -469,6 +470,9 @@ forgejo_defaults_log:
   router: ""                                      # console
   enable_access_log: ""                           # false
   access: ""                                      # file
+  log_rotate: ""                                  # true
+  daily_rotate: ""                                # true
+  max_days: ""                                    # 7
   # TODO
   access_log_template: !unsafe ""
     # {{.Ctx.RemoteAddr}} - {{.Identity}}
@@ -914,6 +918,7 @@ forgejo_defaults_service:
   register_email_confirm: ""                      # false
   register_manual_confirm: ""                     # false
   email_domain_whitelist: []
+  email_domain_allowlist: []
   email_domain_blocklist: []
   disable_registration: ""                        # false
   allow_only_internal_registration: ""            # false

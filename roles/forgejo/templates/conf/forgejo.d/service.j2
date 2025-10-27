@@ -15,7 +15,22 @@ REGISTER_EMAIL_CONFIRM = {{ values.register_email_confirm | bodsch.core.config_b
 REGISTER_MANUAL_CONFIRM = {{ values.register_manual_confirm | bodsch.core.config_bool(true_as='true', false_as='false') }}
   {% endif %}
   {% if values.email_domain_whitelist | default([]) | count > 0 %}
+  {# ------------------------------------------------------------------------- #}
+    {% if forgejo_version is version_compare('7.0.7', '<=') %}
 EMAIL_DOMAIN_WHITELIST = {{ values.email_domain_whitelist | join(', ') }}
+    {% else %}
+# Deprecated config option `[service]` `EMAIL_DOMAIN_WHITELIST` present.
+# Use `[service]` `EMAIL_DOMAIN_ALLOWLIST` instead.
+# This fallback will be/has been removed in 1.21
+    {% endif %}
+    {# ------------------------------------------------------------------------- #}
+  {% endif %}
+  {% if values.email_domain_allowlist | default([]) | count > 0 %}
+  {# ------------------------------------------------------------------------- #}
+    {% if forgejo_version is version_compare('11.0.0', '>=') %}
+EMAIL_DOMAIN_ALLOWLIST = {{ values.email_domain_allowlist | join(', ') }}
+    {% endif %}
+    {# ------------------------------------------------------------------------- #}
   {% endif %}
   {% if values.email_domain_blocklist | default([]) | count > 0 %}
 EMAIL_DOMAIN_BLOCKLIST = {{ values.email_domain_blocklist | join(', ') }}

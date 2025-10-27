@@ -6,7 +6,9 @@
   {% if values.root_path | default('') | string | length > 0 %}
 ROOT_PATH = {{ values.root_path }}
   {% endif %}
-; {{ values.mode | default([]) }}
+  {% if values.file_name | default('') | string | length > 0 %}
+FILE_NAME = {{ values.file_name }}
+  {% endif %}
   {% if values.mode | bodsch.core.type == "string" %}
     {% set _mode = [values.mode] %}
   {% elif values.mode | bodsch.core.type == "list" %}
@@ -20,6 +22,17 @@ MODE = {{ log_mode | join(', ') }}
   {% if values.level | default('') | string | length > 0 and
         values.level | lower in ["trace", "debug", "info", "warn", "error", "critical", "none"] %}
 LEVEL = {{ values.level }}
+  {% endif %}
+  {% if values.log_rotate | default('') | string | length > 0 %}
+LOG_ROTATE = {{ values.log_rotate | bodsch.core.config_bool(true_as='true', false_as='false') }}
+    {% if values.log_rotate %}
+      {% if values.daily_rotate | default('') | string | length > 0 %}
+DAILY_ROTATE = {{ values.daily_rotate | bodsch.core.config_bool(true_as='true', false_as='false') }}
+      {% endif %}
+      {% if values.max_days | default('') | string | length > 0 %}
+MAX_DAYS = {{ values.max_days }}
+      {% endif %}
+    {% endif %}
   {% endif %}
   {% if values.access_log_template | default('') | string | length > 0 %}
   {#

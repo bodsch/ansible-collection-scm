@@ -36,7 +36,8 @@ SSL_MODE = {{ values.ssl_mode }}
 CHARSET = {{ values.charset }}
         {% endif %}
       {% endif %}
-      {% if forgejo_version is version_compare('1.20', '>=') %}
+      {% if forgejo_version is version_compare('1.20', '>=') and
+            forgejo_version is version_compare('11.0.0', '<=') %}
         {% if values.slow_query_treshold | default('') | string | length > 0 %}
 SLOW_QUERY_TRESHOLD = {{ values.slow_query_treshold }}
         {% endif %}
