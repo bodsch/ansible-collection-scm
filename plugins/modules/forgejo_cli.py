@@ -9,7 +9,6 @@ from __future__ import absolute_import, print_function
 from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.bodsch.core.plugins.module_utils.module_results import results
 
-
 __metaclass__ = type
 
 DOCUMENTATION = r"""
@@ -125,13 +124,12 @@ state:
 
 
 class ForgejoCli(object):
-    """
-    """
+    """ """
+
     module = None
 
     def __init__(self, module):
-        """
-        """
+        """ """
         self.module = module
 
         # self._console = module.get_bin_path('console', False)
@@ -143,11 +141,10 @@ class ForgejoCli(object):
         self.config = module.params.get("config")
         self.runners = module.params.get("runners")
 
-        self.forgejo_bin = module.get_bin_path('forgejo', True)
+        self.forgejo_bin = module.get_bin_path("forgejo", True)
 
     def run(self):
-        """
-        """
+        """ """
 
         if self.command == "register":
             result = self.register()
@@ -156,10 +153,10 @@ class ForgejoCli(object):
 
     def register(self):
         """
-            https://forgejo.org/docs/latest/admin/actions/#registration
-            forgejo forgejo-cli actions register --secret <secret>
+        https://forgejo.org/docs/latest/admin/actions/#registration
+        forgejo forgejo-cli actions register --secret <secret>
 
-            forgejo action --help --config /etc/forgejo/forgejo.ini
+        forgejo action --help --config /etc/forgejo/forgejo.ini
         """
 
         result_state = []
@@ -185,15 +182,12 @@ class ForgejoCli(object):
                 runner_labels = runner.get("labels", [])
 
                 if not runner_secret:
-                    res[runner_name] = dict(
-                        failed=True,
-                        msg="Missing secret."
-                    )
+                    res[runner_name] = dict(failed=True, msg="Missing secret.")
                 else:
                     data = dict(
                         runner_secret=runner_secret,
                         runner_scope=runner_scope,
-                        runner_labels=runner_labels
+                        runner_labels=runner_labels,
                     )
 
                     rc, out, err = self.register_runner(runner_name, data=data)
@@ -201,20 +195,18 @@ class ForgejoCli(object):
                     if rc == 0:
                         res = dict(
                             failed=False,
-                            msg=f"Runner {runner_name} succesfully created."
+                            msg=f"Runner {runner_name} succesfully created.",
                         )
 
                 result_state.append(res)
 
         self.module.log(msg=f"= {result_state}")
 
-        _state, _changed, _failed, state, changed, failed = results(self.module, result_state)
-
-        result = dict(
-            changed=_changed,
-            failed=failed,
-            state=result_state
+        _state, _changed, _failed, state, changed, failed = results(
+            self.module, result_state
         )
+
+        result = dict(changed=_changed, failed=failed, state=result_state)
 
         return result
 
@@ -226,13 +218,17 @@ class ForgejoCli(object):
 
         args_list = [
             self.forgejo_bin,
-            "--work-path", self.working_dir,
-            "--config", self.config,
+            "--work-path",
+            self.working_dir,
+            "--config",
+            self.config,
             "forgejo-cli",
             "actions",
             "register",
-            "--name", runner_name,
-            "--secret", secret,
+            "--name",
+            runner_name,
+            "--secret",
+            secret,
         ]
 
         if scope:
@@ -253,8 +249,7 @@ class ForgejoCli(object):
         return rc, out, err
 
     def _exec(self, commands, check_rc=True):
-        """
-        """
+        """ """
         rc, out, err = self.module.run_command(commands, check_rc=check_rc)
 
         self.module.log(msg=f"  rc : '{rc}'")
@@ -267,29 +262,17 @@ class ForgejoCli(object):
 
 
 def main():
-    """
-    """
+    """ """
     specs = dict(
         command=dict(
             default="register",
             choices=[
                 "register",
-            ]
+            ],
         ),
-        parameters=dict(
-            required=False,
-            type=list,
-            default=[]
-        ),
-        working_dir=dict(
-            required=True,
-            type=str
-        ),
-        config=dict(
-            required=False,
-            default="/etc/forgejo/forgejo.ini",
-            type=str
-        ),
+        parameters=dict(required=False, type=list, default=[]),
+        working_dir=dict(required=True, type=str),
+        config=dict(required=False, default="/etc/forgejo/forgejo.ini", type=str),
         runners=dict(
             required=True,
             type=list,
@@ -310,7 +293,7 @@ def main():
 
 
 # import module snippets
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
 
 """

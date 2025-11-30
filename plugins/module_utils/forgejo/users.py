@@ -1,6 +1,6 @@
+from typing import List
 
 from ansible_collections.bodsch.scm.plugins.module_utils.forgejo.api import ForgejoApi
-from typing import List
 
 # ---------------------------------------
 # Users API (Beispielmodul)
@@ -8,8 +8,7 @@ from typing import List
 
 
 class ForgejoApiUsers:
-    """
-    """
+    """ """
 
     def __init__(self, api: ForgejoApi):
         self.api = api
@@ -17,12 +16,18 @@ class ForgejoApiUsers:
     def list_users(self) -> List[dict]:
         return self.api._get("/admin/users")
 
-    def create_user(self, username: str, email: str, password: str, must_change_password: bool = False) -> dict:
+    def create_user(
+        self,
+        username: str,
+        email: str,
+        password: str,
+        must_change_password: bool = False,
+    ) -> dict:
         payload = {
             "username": username,
             "email": email,
             "password": password,
-            "must_change_password": must_change_password
+            "must_change_password": must_change_password,
         }
         return self.api._post("/admin/users", json=payload)
 

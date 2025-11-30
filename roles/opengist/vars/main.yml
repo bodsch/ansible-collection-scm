@@ -113,7 +113,7 @@ opengist_defaults_release:
   # https://github.com/thomiceli/opengist/releases/download/v1.10.0/opengist-1.10.0.linux-amd64.tar.gz
   # https://github.com/thomiceli/opengist/releases/download/v1.10.0/opengist1.10.0-linux-amd64.tar.gz
   download_url: https://github.com/thomiceli/opengist/releases
-  file: opengist{{ opengist_version }}-{{ ansible_system | lower }}-{{ system_architecture }}.tar.gz
+  file: opengist{{ opengist_version }}-{{ ansible_facts.system | lower }}-{{ system_architecture }}.tar.gz
   binary: opengist
 
 # ---------------------------------------------
@@ -123,7 +123,7 @@ go_arch_map:
   aarch64: 'arm64'
   armv7l: 'armv7'
 
-system_architecture: "{{ go_arch_map[ansible_architecture] | default(ansible_architecture) }}"
+system_architecture: "{{ go_arch_map[ansible_facts.architecture] | default(ansible_facts.architecture) }}"
 
 systemd_lib_directory: /lib/systemd/system
 

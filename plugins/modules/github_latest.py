@@ -11,9 +11,10 @@ import re
 from pathlib import Path
 
 from ansible.module_utils.basic import AnsibleModule
+from ansible_collections.bodsch.scm.plugins.module_utils.github import GitHub
+
 # from ansible_collections.bodsch.core.plugins.module_utils.directory import create_directory
 
-from ansible_collections.bodsch.scm.plugins.module_utils.github import GitHub
 
 __metaclass__ = type
 
@@ -148,11 +149,12 @@ class GithubLatest(object):
     """
     Main Class
     """
+
     module = None
 
     def __init__(self, module):
         """
-          Initialize all needed Variables
+        Initialize all needed Variables
         """
         self.module = module
 
@@ -168,35 +170,30 @@ class GithubLatest(object):
         self.github_tags = module.params.get("github_tags")
         self.filter_elements = module.params.get("filter_elements")
 
-        self.cache_directory = f"{Path.home()}/.cache/ansible/github/{self.project}/{self.repository}"
+        self.cache_directory = (
+            f"{Path.home()}/.cache/ansible/github/{self.project}/{self.repository}"
+        )
         self.cache_file_name = "releases.json"
 
     def run(self):
-        """
-        """
-        gh_authentication = dict(
-            token=self.github_password
-        )
+        """ """
+        gh_authentication = dict(token=self.github_password)
 
         gh = GitHub(
             self.module,
             owner=self.project,
             repository=self.repository,
-            auth=gh_authentication
+            auth=gh_authentication,
         )
 
         if self.github_releases and not self.github_tags:
             gh.enable_cache(
-                cache_file="releases.json",
-                cache_minutes=self.cache_minutes
+                cache_file="releases.json", cache_minutes=self.cache_minutes
             )
             status_code, gh_releases, error = gh.get_releases(count=50)
 
         if self.github_tags:
-            gh.enable_cache(
-                cache_file="tags.json",
-                cache_minutes=self.cache_minutes
-            )
+            gh.enable_cache(cache_file="tags.json", cache_minutes=self.cache_minutes)
             status_code, gh_releases, error = gh.get_tags(count=50)
 
         if status_code == 419:
@@ -204,7 +201,7 @@ class GithubLatest(object):
                 failed=True,
                 status=419,
                 msg="An internal error has occurred. Probably a GitHub request could not be parsed properly. Please contact the developer.",
-                stderr=error
+                stderr=error,
             )
 
         if status_code != 200:
@@ -212,7 +209,7 @@ class GithubLatest(object):
                 failed=True,
                 status=status_code,
                 msg="An error has occurred with a request against GitHub.",
-                stderr=error
+                stderr=error,
             )
 
         # filter beta version
@@ -220,7 +217,9 @@ class GithubLatest(object):
             self.filter_elements.append("beta")
 
         if self.github_releases and not self.github_tags:
-            gh_latest_release = gh.latest_published(gh_releases, filter_elements=self.filter_elements)
+            gh_latest_release = gh.latest_published(
+                gh_releases, filter_elements=self.filter_elements
+            )
         if self.github_tags:
             gh_latest_release = gh.latest_tag(gh_releases)
 
@@ -230,29 +229,19 @@ class GithubLatest(object):
             latest_release = gh_latest_release.get("name", None)
 
             if latest_release:
-                pattern = re.compile(r'^\s*(\d+(?:\.\d+){1,})')
+                pattern = re.compile(r"^\s*(\d+(?:\.\d+){1,})")
                 match = pattern.match(latest_release)
                 if match:
                     latest_release = match.group(1)
 
-        return dict(
-            failed=False,
-            latest_release=latest_release.lstrip("v")
-        )
+        return dict(failed=False, latest_release=latest_release.lstrip("v"))
 
 
 def main():
-    """
-    """
+    """ """
     args = dict(
-        project=dict(
-            required=True,
-            type=str
-        ),
-        repository=dict(
-            required=True,
-            type=str
-        ),
+        project=dict(required=True, type=str),
+        repository=dict(required=True, type=str),
         github_releases=dict(
             required=False,
             type=bool,
@@ -263,37 +252,15 @@ def main():
             type=bool,
             default=False,
         ),
-        user=dict(
-            required=False,
-            type=str
-        ),
-        password=dict(
-            required=False,
-            type=str,
-            no_log=True
-        ),
+        user=dict(required=False, type=str),
+        password=dict(required=False, type=str, no_log=True),
         major_version=dict(
             required=False,
         ),
-        without_beta=dict(
-            required=False,
-            type=bool,
-            default=True
-        ),
-        filter_elements=dict(
-            required=False,
-            type=list,
-            default=[]
-        ),
-        only_version=dict(
-            required=False,
-            type=bool,
-            default=True
-        ),
-        cache=dict(
-            required=False,
-            default=60
-        )
+        without_beta=dict(required=False, type=bool, default=True),
+        filter_elements=dict(required=False, type=list, default=[]),
+        only_version=dict(required=False, type=bool, default=True),
+        cache=dict(required=False, default=60),
     )
 
     module = AnsibleModule(
@@ -310,5 +277,5 @@ def main():
 
 
 # import module snippets
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

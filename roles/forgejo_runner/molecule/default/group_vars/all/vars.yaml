@@ -9,7 +9,7 @@ forgejo_runner_controller:
   username: "forgejo"
 
 forgejo_runner_register:
-  - name: "{{ ansible_hostname }}"
+  - name: "{{ ansible_facts.hostname }}"
     tags: []
     instance: "http://forgejo.molecule.lan"
     secret: "4ef3eb262c04aad5e279511c1c86f7377e28d6b9"

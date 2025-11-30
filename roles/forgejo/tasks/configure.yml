@@ -82,7 +82,7 @@
     - data/packages
     - data/home
 
-- name: create forgejo configuration
+- name: create temporary forgejo configuration
   ansible.builtin.template:
     force: true
     src: conf/forgejo.ini.j2
@@ -100,12 +100,12 @@
   register: forgejo_config
   notify:
     - restart forgejo
-    - check if forgejo are available
+    - "wait for '/run/forgejo/forgejo.pid'"
 
 - name: restart forgejo if needed
   ansible.builtin.meta: flush_handlers
 
-- name: wait for running forgejo
+- name: wait for running forgejo (on {{ forgejo_server.http_addr | default('127.0.0.1') }}:{{ forgejo_server.http_port | default(3000) | int }})
   ansible.builtin.wait_for:
     host: "{{ forgejo_server.http_addr | default('127.0.0.1') }}"
     port: "{{ forgejo_server.http_port | default(3000) | int }}"

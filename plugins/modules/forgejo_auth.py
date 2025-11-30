@@ -5,14 +5,16 @@
 # Apache (see LICENSE or https://opensource.org/licenses/Apache-2.0)
 
 from __future__ import absolute_import, print_function
-import os
+
 import json
+import os
 import re
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.bodsch.core.plugins.module_utils.directory import create_directory
 from ansible_collections.bodsch.core.plugins.module_utils.checksum import Checksum
-
+from ansible_collections.bodsch.core.plugins.module_utils.directory import (
+    create_directory,
+)
 
 __metaclass__ = type
 
@@ -221,13 +223,12 @@ msg:
 
 
 class ForgejoAuth(object):
-    """
-    """
+    """ """
+
     module = None
 
     def __init__(self, module):
-        """
-        """
+        """ """
         self.module = module
 
         self.state = module.params.get("state")
@@ -243,7 +244,9 @@ class ForgejoAuth(object):
         self.filter_admin = self.filters.get("admin", None)
         self.filter_restricted = self.filters.get("restricted", None)
         self.allow_deactivate_all = module.params.get("allow_deactivate_all")
-        self.attributes = module.params.get("attributes")  # { username, firstname, surename, email, public_ssh_key, avatar }
+        self.attributes = module.params.get(
+            "attributes"
+        )  # { username, firstname, surename, email, public_ssh_key, avatar }
         self.attribute_username = self.attributes.get("username", None)
         self.attribute_firstname = self.attributes.get("firstname", None)
         self.attribute_surname = self.attributes.get("surname", None)
@@ -258,14 +261,17 @@ class ForgejoAuth(object):
         self.working_dir = module.params.get("working_dir")
         self.config = module.params.get("config")
 
-        self.forgejo_bin = module.get_bin_path('forgejo', True)
+        self.forgejo_bin = module.get_bin_path("forgejo", True)
         self.cache_directory = os.path.dirname(self.config)
-        self.checksum_file_name = os.path.join(self.cache_directory, "forgejo_auth.checksum")
-        self.auth_config_json_file = os.path.join(self.cache_directory, "forgejo_auth.json")
+        self.checksum_file_name = os.path.join(
+            self.cache_directory, "forgejo_auth.checksum"
+        )
+        self.auth_config_json_file = os.path.join(
+            self.cache_directory, "forgejo_auth.json"
+        )
 
     def run(self):
-        """
-        """
+        """ """
         create_directory(directory=self.cache_directory, mode="0750")
 
         checksum = Checksum(self.module)
@@ -273,7 +279,9 @@ class ForgejoAuth(object):
         failed = False
 
         if self.state == "present":
-            new_checksum = checksum.checksum(json.dumps(self.module.params, indent=2, sort_keys=False) + "\n")
+            new_checksum = checksum.checksum(
+                json.dumps(self.module.params, indent=2, sort_keys=False) + "\n"
+            )
             old_checksum = checksum.checksum_from_file(self.auth_config_json_file)
 
             changed = not (new_checksum == old_checksum)
@@ -310,7 +318,7 @@ class ForgejoAuth(object):
 
     def auth_exists(self, name):
         """
-            su forgejo -c "/usr/bin/forgejo --config /etc/forgejo/forgejo.ini --work-path /var/lib/forgejo admin auth list"
+        su forgejo -c "/usr/bin/forgejo --config /etc/forgejo/forgejo.ini --work-path /var/lib/forgejo admin auth list"
         """
         args_list = [
             self.forgejo_bin,
@@ -318,28 +326,35 @@ class ForgejoAuth(object):
             "auth",
             "list",
             "--vertical-bars",
-            "--work-path", self.working_dir,
-            "--config", self.config,
+            "--work-path",
+            self.working_dir,
+            "--config",
+            self.config,
         ]
 
         result = (False, 0)
         rc, out, err = self._exec(args_list)
 
         pattern = re.compile(
-            r'^\s*(?P<id>\d+)\s*\|\s*'
-            r'(?P<name>[^\|]+?)\s*\|\s*'
-            r'(?P<type>[^\|]+?)\s*\|\s*'
-            r'(?P<enabled>\w+)\s*$'
+            r"^\s*(?P<id>\d+)\s*\|\s*"
+            r"(?P<name>[^\|]+?)\s*\|\s*"
+            r"(?P<type>[^\|]+?)\s*\|\s*"
+            r"(?P<enabled>\w+)\s*$"
         )
-        match = next((m.groupdict() for s in out.splitlines()[1:] if (m := pattern.search(s))), None)
+        match = next(
+            (m.groupdict() for s in out.splitlines()[1:] if (m := pattern.search(s))),
+            None,
+        )
 
         if match and isinstance(match, dict):
-            auth_id = match.get('id')
-            auth_name = match.get('name')
-            auth_type = match.get('type')
+            auth_id = match.get("id")
+            auth_name = match.get("name")
+            auth_type = match.get("type")
             # auth_enabled = match.get('enabled')
 
-            self.module.log(msg=f"  found authentication : {auth_name} with type {auth_type.strip()}")
+            self.module.log(
+                msg=f"  found authentication : {auth_name} with type {auth_type.strip()}"
+            )
 
             result = (True, auth_id)
 
@@ -347,24 +362,19 @@ class ForgejoAuth(object):
 
     def add_auth(self):
         """
-            su forgejo -c "forgejo admin auth add-ldap
-               --name
-               --security-protocol LDAPS
-               --host
-               --port
-               --bind-dn
-               --bind-password
-               --user-search-base <ie: “DC=company,DC=int”
-               --user-filter
-               --admin-filter
-               --username-attribute
+        su forgejo -c "forgejo admin auth add-ldap
+           --name
+           --security-protocol LDAPS
+           --host
+           --port
+           --bind-dn
+           --bind-password
+           --user-search-base <ie: “DC=company,DC=int”
+           --user-filter
+           --admin-filter
+           --username-attribute
         """
-        args_list = [
-            self.forgejo_bin,
-            "admin",
-            "auth",
-            "add-ldap"
-        ]
+        args_list = [self.forgejo_bin, "admin", "auth", "add-ldap"]
 
         args_list += self.__auth_params()
 
@@ -374,26 +384,15 @@ class ForgejoAuth(object):
             return dict(
                 failed=False,
                 changed=True,
-                msg=f"LDAP Auth {self.name} successful created."
+                msg=f"LDAP Auth {self.name} successful created.",
             )
         else:
-            return dict(
-                failed=True,
-                msg=err
-            )
+            return dict(failed=True, msg=err)
 
     # TODO
     def update_auth(self, auth_id):
-        """
-        """
-        args_list = [
-            self.forgejo_bin,
-            "admin",
-            "auth",
-            "update-ldap",
-            "--id",
-            auth_id
-        ]
+        """ """
+        args_list = [self.forgejo_bin, "admin", "auth", "update-ldap", "--id", auth_id]
 
         args_list += self.__auth_params()
 
@@ -403,100 +402,80 @@ class ForgejoAuth(object):
             return dict(
                 failed=False,
                 changed=True,
-                msg=f"LDAP Auth {self.name} successful updated."
+                msg=f"LDAP Auth {self.name} successful updated.",
             )
         else:
-            return dict(
-                failed=True,
-                msg=err
-            )
+            return dict(failed=True, msg=err)
 
     def __auth_params(self):
 
         args_list = [
-            "--config", self.config,
-            "--work-path", self.working_dir,
-            "--name", self.name,
-            "--host", self.hostname,
-            "--port", self.port,
-            "--bind-dn", self.bind_dn,
-            "--bind-password", self.bind_password,
-            "--user-search-base", self.user_search_base,
-            "--security-protocol", self.security_protocol
+            "--config",
+            self.config,
+            "--work-path",
+            self.working_dir,
+            "--name",
+            self.name,
+            "--host",
+            self.hostname,
+            "--port",
+            self.port,
+            "--bind-dn",
+            self.bind_dn,
+            "--bind-password",
+            self.bind_password,
+            "--user-search-base",
+            self.user_search_base,
+            "--security-protocol",
+            self.security_protocol,
         ]
 
         if self.filter_user:
-            args_list += [
-                "--user-filter", self.filter_user
-            ]
+            args_list += ["--user-filter", self.filter_user]
 
         if self.filter_admin:
-            args_list += [
-                "--admin-filter", self.filter_admin
-            ]
+            args_list += ["--admin-filter", self.filter_admin]
 
         if self.filter_restricted:
-            args_list += [
-                "--restricted-filter", self.filter_restricted
-            ]
+            args_list += ["--restricted-filter", self.filter_restricted]
 
         if self.attribute_username:
-            args_list += [
-                "--username-attribute", self.attribute_username
-            ]
+            args_list += ["--username-attribute", self.attribute_username]
 
         if self.attribute_firstname:
-            args_list += [
-                "--firstname-attribute", self.attribute_firstname
-            ]
+            args_list += ["--firstname-attribute", self.attribute_firstname]
 
         if self.attribute_surname:
-            args_list += [
-                "--surname-attribute", self.attribute_surname
-            ]
+            args_list += ["--surname-attribute", self.attribute_surname]
 
         if self.attribute_email:
-            args_list += [
-                "--email-attribute", self.attribute_email
-            ]
+            args_list += ["--email-attribute", self.attribute_email]
 
         if self.attribute_public_ssh_key:
-            args_list += [
-                "--public-ssh-key-attribute", self.attribute_public_ssh_key
-            ]
+            args_list += ["--public-ssh-key-attribute", self.attribute_public_ssh_key]
 
         if self.attribute_avatar:
-            args_list += [
-                "--avatar-attribute", self.attribute_avatar
-            ]
+            args_list += ["--avatar-attribute", self.attribute_avatar]
 
         if not self.synchronize_users:
-            args_list += [
-                "--disable-synchronize-users"
-            ]
+            args_list += ["--disable-synchronize-users"]
 
         if not self.active:
-            args_list += [
-                "--not-active"
-            ]
+            args_list += ["--not-active"]
 
         if self.skip_tls_verify:
-            args_list += [
-                "--skip-tls-verify"
-            ]
+            args_list += ["--skip-tls-verify"]
 
         return args_list
 
     def __write_config(self, file_name, data):
-        """
-        """
-        with open(file_name, 'w') as fp:
+        """ """
+        with open(file_name, "w") as fp:
             json_data = json.dumps(data, indent=2, sort_keys=False)
-            fp.write(f'{json_data}\n')
+            fp.write(f"{json_data}\n")
 
     def _exec(self, commands, check_rc=True):
-        """
-        """
+        """ """
         rc, out, err = self.module.run_command(commands, check_rc=check_rc)
         # self.module.log(msg=f"  rc : '{rc}'")
 
@@ -508,40 +487,18 @@ class ForgejoAuth(object):
 
 
 def main():
-    """
-    """
+    """ """
     specs = dict(
-        state=dict(
-            default="present",
-            choices=[
-                "present",
-                "absent"
-            ]
-        ),
-        name=dict(
-            required=True,
-            type=str
-        ),
-        active=dict(
-            required=False,
-            type=bool,
-            default=True
-        ),
+        state=dict(default="present", choices=["present", "absent"]),
+        name=dict(required=True, type=str),
+        active=dict(required=False, type=bool, default=True),
         security_protocol=dict(
             required=False,
             type=str,
-            choices=[
-                "Unencrypted",
-                "LDAPS",
-                "StartTLS"
-            ],
-            default="Unencrypted"
+            choices=["Unencrypted", "LDAPS", "StartTLS"],
+            default="Unencrypted",
         ),
-        skip_tls_verify=dict(
-            required=False,
-            type=bool,
-            default=True
-        ),
+        skip_tls_verify=dict(required=False, type=bool, default=True),
         hostname=dict(
             required=True,
             type=str,
@@ -550,59 +507,25 @@ def main():
             required=False,
             type=str,
         ),
-        user_search_base=dict(
-            required=True,
-            type=str
-        ),
+        user_search_base=dict(required=True, type=str),
         filters=dict(
             required=False,
-            type=dict
+            type=dict,
             # { user, admin, restricted }
         ),
-        allow_deactivate_all=dict(
-            required=False,
-            type=bool,
-            default=False
-        ),
+        allow_deactivate_all=dict(required=False, type=bool, default=False),
         attributes=dict(
             required=True,
-            type=dict
+            type=dict,
             # { username, firstname, surename, email,public_ssh_key, avatar }
         ),
-        skip_local_2fa=dict(
-            required=False,
-            type=bool,
-            default=False
-        ),
-        bind_dn=dict(
-            required=True,
-            type=str
-        ),
-        bind_password=dict(
-            required=True,
-            type=str,
-            no_log=True
-        ),
-        attributes_in_bind=dict(
-            required=False,
-            type=bool,
-            default=False
-        ),
-        synchronize_users=dict(
-            required=False,
-            type=bool,
-            default=False
-        ),
-        working_dir=dict(
-            required=False,
-            default="/var/lib/forgejo",
-            type=str
-        ),
-        config=dict(
-            required=False,
-            default="/etc/forgejo/forgejo.ini",
-            type=str
-        )
+        skip_local_2fa=dict(required=False, type=bool, default=False),
+        bind_dn=dict(required=True, type=str),
+        bind_password=dict(required=True, type=str, no_log=True),
+        attributes_in_bind=dict(required=False, type=bool, default=False),
+        synchronize_users=dict(required=False, type=bool, default=False),
+        working_dir=dict(required=False, default="/var/lib/forgejo", type=str),
+        config=dict(required=False, default="/etc/forgejo/forgejo.ini", type=str),
     )
 
     module = AnsibleModule(
@@ -619,7 +542,7 @@ def main():
 
 
 # import module snippets
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
 
 """

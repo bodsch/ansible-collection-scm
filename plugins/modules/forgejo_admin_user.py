@@ -5,10 +5,13 @@
 # Apache (see LICENSE or https://opensource.org/licenses/Apache-2.0)
 
 from __future__ import absolute_import, print_function
+
 import os
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.bodsch.scm.plugins.module_utils.forgejo.cli_user import ForgejoCliUser
+from ansible_collections.bodsch.scm.plugins.module_utils.forgejo.cli_user import (
+    ForgejoCliUser,
+)
 
 __metaclass__ = type
 
@@ -107,13 +110,12 @@ msg:
 
 
 class ForgejoAdminUser(ForgejoCliUser):
-    """
-    """
+    """ """
+
     module = None
 
     def __init__(self, module):
-        """
-        """
+        """ """
         self.module = module
 
         self.state = module.params.get("state")
@@ -126,18 +128,12 @@ class ForgejoAdminUser(ForgejoCliUser):
         self.config = module.params.get("config")
 
         super().__init__(
-            module,
-            working_dir=self.working_dir,
-            forgejo_config=self.config
+            module, working_dir=self.working_dir, forgejo_config=self.config
         )
 
     def run(self):
-        """
-        """
-        result = dict(
-            changed=False,
-            failed=True
-        )
+        """ """
+        result = dict(changed=False, failed=True)
 
         if os.path.isdir(self.working_dir):
             os.chdir(self.working_dir)
@@ -152,13 +148,10 @@ class ForgejoAdminUser(ForgejoCliUser):
                 username=self.username,
                 password=self.password,
                 email=self.email,
-                admin_user=True
+                admin_user=True,
             )
         else:
-            result = dict(
-                changed=False,
-                msg=f"user {self.username} already created."
-            )
+            result = dict(changed=False, msg=f"user {self.username} already created.")
 
         if self.state == "absent":
             result["msg"] = "This part is currently not supported."
@@ -167,32 +160,17 @@ class ForgejoAdminUser(ForgejoCliUser):
 
 
 def main():
-    """
-    """
+    """ """
     specs = dict(
-        username=dict(
-            required=False,
-            type=str
-        ),
+        username=dict(required=False, type=str),
         password=dict(
             required=False,
             type=str,
             no_log=True,
         ),
-        email=dict(
-            required=False,
-            type=str
-        ),
-        working_dir=dict(
-            required=False,
-            default="/var/lib/forgejo",
-            type=str
-        ),
-        config=dict(
-            required=False,
-            default="/etc/forgejo/forgejo.ini",
-            type=str
-        )
+        email=dict(required=False, type=str),
+        working_dir=dict(required=False, default="/var/lib/forgejo", type=str),
+        config=dict(required=False, default="/etc/forgejo/forgejo.ini", type=str),
     )
 
     module = AnsibleModule(
@@ -209,7 +187,7 @@ def main():
 
 
 # import module snippets
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
 
 """

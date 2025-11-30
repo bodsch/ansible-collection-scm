@@ -5,11 +5,11 @@
 # Apache (see LICENSE or https://opensource.org/licenses/Apache-2.0)
 
 from __future__ import absolute_import, print_function
+
 import os
 import socket
 
 from ansible.module_utils.basic import AnsibleModule
-
 
 __metaclass__ = type
 
@@ -108,13 +108,12 @@ msg:
 
 
 class ForgejoRunner(object):
-    """
-    """
+    """ """
+
     module = None
 
     def __init__(self, module):
-        """
-        """
+        """ """
         self.module = module
 
         # self._console = module.get_bin_path('console', False)
@@ -123,16 +122,13 @@ class ForgejoRunner(object):
         self.working_dir = module.params.get("working_dir")
         self.runners = module.params.get("runners")
 
-        self.forgejo_runner_bin = module.get_bin_path('forgejo-runner', True)
+        self.forgejo_runner_bin = module.get_bin_path("forgejo-runner", True)
 
     def run(self):
-        """
-        """
+        """ """
         if not os.path.exists(self.working_dir):
             return dict(
-                failed=True,
-                changed=False,
-                msg=f"missing directory {self.working_dir}"
+                failed=True, changed=False, msg=f"missing directory {self.working_dir}"
             )
 
         if self.command == "create_runner":
@@ -142,7 +138,7 @@ class ForgejoRunner(object):
 
     def create_runner(self):
         """
-            forgejo-runner create-runner-file --secret <secret>
+        forgejo-runner create-runner-file --secret <secret>
         """
         os.chdir(self.working_dir)
 
@@ -160,7 +156,7 @@ class ForgejoRunner(object):
             return dict(
                 failed=True,
                 msg=f"I can't find the runner with the name '{runner_name}'.\n"
-                    f"I know the following runners: '{known_runners}'"
+                f"I know the following runners: '{known_runners}'",
             )
 
         # self.module.log(msg=f"me : {thats_me[0]}")
@@ -171,9 +167,12 @@ class ForgejoRunner(object):
         args_list = [
             self.forgejo_runner_bin,
             "create-runner-file",
-            "--secret", runner_secret,
-            "--instance", instance,
-            "--name", runner_name,
+            "--secret",
+            runner_secret,
+            "--instance",
+            instance,
+            "--name",
+            runner_name,
         ]
 
         rc, out, err = self._exec(args_list)
@@ -186,18 +185,13 @@ class ForgejoRunner(object):
             return dict(
                 failed=False,
                 changed=True,
-                msg=f"Runner {runner_name} succesfully registerd."
+                msg=f"Runner {runner_name} succesfully registerd.",
             )
         else:
-            return dict(
-                failed=True,
-                changed=False,
-                msg=err.strip()
-            )
+            return dict(failed=True, changed=False, msg=err.strip())
 
     def _exec(self, commands, check_rc=True):
-        """
-        """
+        """ """
         rc, out, err = self.module.run_command(commands, check_rc=check_rc)
         # self.module.log(msg=f"  rc : '{rc}'")
 
@@ -209,23 +203,19 @@ class ForgejoRunner(object):
 
 
 def main():
-    """
-    """
+    """ """
     specs = dict(
         command=dict(
             default="create_runner",
             choices=[
                 "create_runner",
-            ]
+            ],
         ),
         runners=dict(
             required=True,
             type=list,
         ),
-        working_dir=dict(
-            required=True,
-            type=str
-        ),
+        working_dir=dict(required=True, type=str),
     )
 
     module = AnsibleModule(
@@ -242,7 +232,7 @@ def main():
 
 
 # import module snippets
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
 
 """

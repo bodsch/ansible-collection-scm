@@ -63,8 +63,8 @@ forgejo_runner_defaults_config:
 
 forgejo_runner_defaults_release:
   download_url: https://code.forgejo.org/forgejo/runner/releases
-  file: forgejo-runner-{{ forgejo_runner_version }}-{{ ansible_system | lower }}-{{ system_architecture }}
-  checksum: forgejo-runner-{{ forgejo_runner_version }}-{{ ansible_system | lower }}-{{ system_architecture }}.sha256
+  file: forgejo-runner-{{ forgejo_runner_version }}-{{ ansible_facts.system | lower }}-{{ system_architecture }}
+  checksum: forgejo-runner-{{ forgejo_runner_version }}-{{ ansible_facts.system | lower }}-{{ system_architecture }}.sha256
   binary: forgejo-runner-{{ forgejo_runner_version }}-linux-{{ system_architecture }}
 
 # ----------------------------------------------------------------------------------------
@@ -79,7 +79,7 @@ go_arch_map:
   armv7l: 'armv7'
   armv6l: 'armv6'
 
-system_architecture: "{{ go_arch_map[ansible_architecture] | default(ansible_architecture) }}"
+system_architecture: "{{ go_arch_map[ansible_facts.architecture] | default(ansible_facts.architecture) }}"
 
 systemd_lib_directory: /lib/systemd/system
 

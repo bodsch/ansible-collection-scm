@@ -1,7 +1,7 @@
 #jinja2: trim_blocks: True, lstrip_blocks: True
 # {{ ansible_managed }}
 
-GOMAXPROCS={{ ansible_processor_vcpus | default(ansible_processor_count) }}
+GOMAXPROCS={{ ansible_facts.processor_vcpus | default(ansible_facts.processor_count) }}
 
 OPTIONS="
   --config /etc/opengist/config.yml
