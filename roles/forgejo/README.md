@@ -96,6 +96,7 @@ Tested on
 forgejo_version: 1.20.5-0
 
 forgejo_system_user: forgejo
+forgejo_remote_user: forgejo
 forgejo_system_group: forgejo
 forgejo_config_dir: /etc/forgejo
 forgejo_working_dir: /var/lib/forgejo
