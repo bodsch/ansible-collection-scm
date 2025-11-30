@@ -1,3 +1,8 @@
 ---
 
+forgejo_requirements:
+  - iproute2
+  - python-requests
+  - git
+
 ...

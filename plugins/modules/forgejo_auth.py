@@ -169,7 +169,7 @@ options:
 
 EXAMPLES = r"""
 - name: enable ldap authentication
-  remote_user: "{{ forgejo_system_user }}"
+  remote_user: "{{ forgejo_remote_user }}"
   become_user: "{{ forgejo_system_user }}"
   become: true
   bodsch.scm.forgejo_auth:

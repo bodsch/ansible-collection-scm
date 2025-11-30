@@ -33,7 +33,7 @@
     - restart forgejo-runner
 
 - name: create runner token on {{ forgejo_runner_controller.hostname }}
-  remote_user: "{{ forgejo_runner_controller.username }}"
+  remote_user: "{{ forgejo_runner_controller.remoteuser | default(forgejo_runner_controller.username) }}"
   become_user: "{{ forgejo_runner_controller.username }}"
   become: true
   delegate_to: "{{ forgejo_runner_controller.hostname }}"
@@ -50,6 +50,8 @@
     command: create_runner
     working_dir: "{{ forgejo_runner_working_dir }}"
     runners: "{{ forgejo_runner_register | default([]) }}"
+  notify:
+    - restart forgejo-runner
 
 - name: restart forgejo-runner if needed
   ansible.builtin.meta: flush_handlers

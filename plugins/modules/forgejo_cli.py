@@ -64,7 +64,7 @@ options:
 
 EXAMPLES = r"""
 - name: create runner token on {{ forgejo_runner_controller.hostname }}
-  remote_user: "{{ forgejo_runner_controller.username }}"
+  remote_user: "{{ forgejo_runner_controller.remoteuser }}"
   become_user: "{{ forgejo_runner_controller.username }}"
   become: true
   delegate_to: "{{ forgejo_runner_controller.hostname }}"
@@ -76,7 +76,7 @@ EXAMPLES = r"""
 
 - name: Register runners on Forgejo
   become: true
-  remote_user: "{{ forgejo_runner_controller.username }}"
+  remote_user: "{{ forgejo_runner_controller.remoteuser }}"
   become_user: "{{ forgejo_runner_controller.username }}"
   delegate_to: "{{ forgejo_runner_controller.hostname }}"
   bodsch.scm.forgejo_cli:
