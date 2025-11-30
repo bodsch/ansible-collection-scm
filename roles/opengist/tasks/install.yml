@@ -139,7 +139,7 @@
 
 - name: systemd
   when:
-    - ansible_service_mgr | lower == "systemd"
+    - ansible_facts.service_mgr | lower == "systemd"
     - not running_in_check_mode
   block:
     - name: create opengist run configuration
@@ -166,7 +166,7 @@
 
 - name: openrc
   when:
-    - ansible_service_mgr | lower == "openrc"
+    - ansible_facts.service_mgr | lower == "openrc"
     - not running_in_check_mode
   block:
     - name: create openrc service configuration

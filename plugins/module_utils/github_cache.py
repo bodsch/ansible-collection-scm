@@ -1,10 +1,13 @@
-
 import json
 from pathlib import Path
-from typing import Optional, Union, List, Dict
+from typing import Dict, List, Optional, Union
 
-from ansible_collections.bodsch.core.plugins.module_utils.directory import create_directory
-from ansible_collections.bodsch.core.plugins.module_utils.cache.cache_valid import cache_valid
+from ansible_collections.bodsch.core.plugins.module_utils.cache.cache_valid import (
+    cache_valid,
+)
+from ansible_collections.bodsch.core.plugins.module_utils.directory import (
+    create_directory,
+)
 
 
 class GitHubCache:
@@ -22,8 +25,8 @@ class GitHubCache:
 
     def cache_path(self, filename: str) -> Path:
         """
-            Gibt den vollständigen Pfad zu einer Cache-Datei zurück,
-            basierend auf `self.cache_dir` und `filename`.
+        Gibt den vollständigen Pfad zu einer Cache-Datei zurück,
+        basierend auf `self.cache_dir` und `filename`.
         """
         # self.module.log(msg=f"GitHubCache::cache_path(filename={filename})")
 
@@ -36,8 +39,8 @@ class GitHubCache:
 
     def cached_data(self, cache_path: Path) -> Optional[Union[List, Dict]]:
         """
-            Liest eine Cache-Datei, wenn sie existiert und noch gültig ist.
-            Gibt deren Inhalt (aus JSON) zurück oder None, falls kein gültiger Cache vorliegt.
+        Liest eine Cache-Datei, wenn sie existiert und noch gültig ist.
+        Gibt deren Inhalt (aus JSON) zurück oder None, falls kein gültiger Cache vorliegt.
         """
         # self.module.log(msg=f"GitHubCache::cached_data(cache_path={cache_path})")
 
@@ -45,7 +48,9 @@ class GitHubCache:
             return None
 
         # Prüfe mit cache_valid: Gibt False zurück, wenn die Datei existiert und jünger als cache_minutes ist.
-        is_still_valid = not cache_valid(self.module, str(cache_path), self.cache_minutes, True)
+        is_still_valid = not cache_valid(
+            self.module, str(cache_path), self.cache_minutes, True
+        )
 
         # _valid = "not " if not is_still_valid else ""
         # self.module.log(msg=f" - cache is {_valid}valid.")
@@ -64,7 +69,7 @@ class GitHubCache:
 
     def write_cache(self, cache_path: Path, data):
         """
-            Schreibt `data` als JSON in die Cache-Datei `cache_path`, falls Cache aktiviert.
+        Schreibt `data` als JSON in die Cache-Datei `cache_path`, falls Cache aktiviert.
         """
         # self.module.log(msg=f"GitHubCache::write_cache(cache_path={cache_path})")
 

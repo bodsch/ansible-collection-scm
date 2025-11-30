@@ -5,10 +5,11 @@
 # Apache (see LICENSE or https://opensource.org/licenses/Apache-2.0)
 
 from __future__ import absolute_import, division, print_function
-import os
-import shutil
+
 import grp
+import os
 import pwd
+import shutil
 
 from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.bodsch.scm.plugins.module_utils.forgejo.ini import ForgejoIni
@@ -98,13 +99,12 @@ msg:
 
 
 class ForgejoConfigCompare(object):
-    """
-    """
+    """ """
+
     module = None
 
     def __init__(self, module):
-        """
-        """
+        """ """
         self.module = module
 
         self.config = module.params.get("config")
@@ -112,10 +112,7 @@ class ForgejoConfigCompare(object):
         self.owner = module.params.get("owner")
         self.group = module.params.get("group")
 
-        self.ignore_map = {
-            'oauth2': ['JWT_SECRET'],
-            'security': ['INTERNAL_TOKEN']
-        }
+        self.ignore_map = {"oauth2": ["JWT_SECRET"], "security": ["INTERNAL_TOKEN"]}
 
     def run(self):
         """ """
@@ -123,20 +120,14 @@ class ForgejoConfigCompare(object):
         Annahme: self.config ist Pfad zu forgejo.ini, self.new_config zu forgejo.new,
         self.ignore_map ist das Dict für ignore_keys, self.owner/group usw. existieren.
         """
-        result = dict(
-            failed=False,
-            changed=False,
-            msg="forgejo.ini is up-to-date."
-        )
+        result = dict(failed=False, changed=False, msg="forgejo.ini is up-to-date.")
 
         # 1) Wenn config nicht existiert: neu kopieren
         if not os.path.exists(self.config):
             shutil.copyfile(self.new_config, self.config)
             shutil.chown(self.config, self.owner, self.group)
             return dict(
-                failed=False,
-                changed=True,
-                msg="forgejo.ini was created successfully."
+                failed=False, changed=True, msg="forgejo.ini was created successfully."
             )
 
         # 2) Sonst manuell beide Dateien einlesen, OHNE ConfigParser
@@ -144,7 +135,9 @@ class ForgejoConfigCompare(object):
         new = ForgejoIni(self.module, path=self.new_config, ignore_keys=self.ignore_map)
 
         # 3) Alle möglichen Sektionen sammeln
-        all_sections = set(org.data.keys()) | set(new.data.keys()) | set(self.ignore_map.keys())
+        all_sections = (
+            set(org.data.keys()) | set(new.data.keys()) | set(self.ignore_map.keys())
+        )
 
         # 4) Struktur, um Unterschiede zu protokollieren
         #    Zum Beispiel: differences = { section: {"status": ..., "cs_base": ..., "cs_new": ...}, ... }
@@ -193,7 +186,9 @@ class ForgejoConfigCompare(object):
             }
 
         # 5) Prüfen, ob irgendwo eine Sektion nicht "identical" ist
-        sections_with_changes = [sec for sec, info in differences.items() if info["status"] != "identical"]
+        sections_with_changes = [
+            sec for sec, info in differences.items() if info["status"] != "identical"
+        ]
         if not sections_with_changes:
             # Alles identisch – kein Merge nötig
             return result
@@ -205,49 +200,28 @@ class ForgejoConfigCompare(object):
             base_path=self.config,
             new_path=self.new_config,
             output_path=merged_path,
-            ignore_keys=self.ignore_map
+            ignore_keys=self.ignore_map,
         )
 
         shutil.copyfile(merged_path, self.config)
         shutil.chown(self.config, self.owner, self.group)
 
-        return dict(
-            failed=False,
-            changed=True,
-            msg="forgejo.ini was changed."
-        )
+        return dict(failed=False, changed=True, msg="forgejo.ini was changed.")
 
     def get_file_ownership(self, filename):
         return (
             pwd.getpwuid(os.stat(filename).st_uid).pw_name,
-            grp.getgrgid(os.stat(filename).st_gid).gr_name
+            grp.getgrgid(os.stat(filename).st_gid).gr_name,
         )
 
 
 def main():
-    """
-    """
+    """ """
     specs = dict(
-        config=dict(
-            required=False,
-            default="/etc/forgejo/forgejo.ini",
-            type=str
-        ),
-        new_config=dict(
-            required=False,
-            default="/etc/forgejo/forgejo.new",
-            type=str
-        ),
-        owner=dict(
-            required=False,
-            type='str',
-            default="forgejo"
-        ),
-        group=dict(
-            required=False,
-            type='str',
-            default="forgejo"
-        ),
+        config=dict(required=False, default="/etc/forgejo/forgejo.ini", type=str),
+        new_config=dict(required=False, default="/etc/forgejo/forgejo.new", type=str),
+        owner=dict(required=False, type="str", default="forgejo"),
+        group=dict(required=False, type="str", default="forgejo"),
     )
 
     module = AnsibleModule(
@@ -264,5 +238,5 @@ def main():
 
 
 # import module snippets
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

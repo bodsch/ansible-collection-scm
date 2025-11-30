@@ -8,7 +8,7 @@ After             = network-online.target
 
 [Service]
 Type              = simple
-Environment       = "GOMAXPROCS={{ ansible_processor_vcpus | default(ansible_processor_count) }}"
+Environment       = "GOMAXPROCS={{ ansible_facts.processor_vcpus | default(ansible_facts.processor_count) }}"
 EnvironmentFile   = {{ opengist_defaults_directory }}/opengist
 
 User              = {{ opengist_user.owner }}

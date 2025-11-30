@@ -8,7 +8,6 @@ from __future__ import absolute_import, print_function
 
 from ansible.module_utils.basic import AnsibleModule
 
-
 __metaclass__ = type
 
 DOCUMENTATION = r"""
@@ -102,13 +101,12 @@ msg:
 
 
 class ForgejoMigrate(object):
-    """
-    """
+    """ """
+
     module = None
 
     def __init__(self, module):
-        """
-        """
+        """ """
         self.module = module
 
         # self._console = module.get_bin_path('console', False)
@@ -119,11 +117,10 @@ class ForgejoMigrate(object):
         self.environment = module.params.get("environment")
         self.config = module.params.get("config")
 
-        self.forgejo_bin = module.get_bin_path('forgejo', True)
+        self.forgejo_bin = module.get_bin_path("forgejo", True)
 
     def run(self):
-        """
-        """
+        """ """
 
         result = self.migrate()
 
@@ -131,14 +128,16 @@ class ForgejoMigrate(object):
 
     def migrate(self):
         """
-            forgejo migrate --help --config /etc/forgejo/forgejo.ini
+        forgejo migrate --help --config /etc/forgejo/forgejo.ini
         """
 
         args_list = [
             self.forgejo_bin,
-            "--work-path", self.working_dir,
-            "--config", self.config,
-            "migrate"
+            "--work-path",
+            self.working_dir,
+            "--config",
+            self.config,
+            "migrate",
         ]
 
         # self.module.log(msg=f"  args_list : '{args_list}'")
@@ -146,20 +145,12 @@ class ForgejoMigrate(object):
         rc, out, err = self._exec(args_list)
 
         if rc == 0:
-            return dict(
-                failed=False,
-                changed=True,
-                msg="Database successful migrated."
-            )
+            return dict(failed=False, changed=True, msg="Database successful migrated.")
         else:
-            return dict(
-                failed=True,
-                msg=err
-            )
+            return dict(failed=True, msg=err)
 
     def _exec(self, commands, check_rc=True):
-        """
-        """
+        """ """
         rc, out, err = self.module.run_command(commands, check_rc=check_rc)
         # self.module.log(msg=f"  rc : '{rc}'")
 
@@ -171,34 +162,18 @@ class ForgejoMigrate(object):
 
 
 def main():
-    """
-    """
+    """ """
     specs = dict(
         command=dict(
             default="migrate",
             choices=[
                 "migrate",
-            ]
+            ],
         ),
-        parameters=dict(
-            required=False,
-            type=list,
-            default=[]
-        ),
-        working_dir=dict(
-            required=False,
-            default="/var/lib/forgejo",
-            type=str
-        ),
-        environment=dict(
-            required=False,
-            default="prod"
-        ),
-        config=dict(
-            required=False,
-            default="/etc/forgejo/forgejo.ini",
-            type=str
-        )
+        parameters=dict(required=False, type=list, default=[]),
+        working_dir=dict(required=False, default="/var/lib/forgejo", type=str),
+        environment=dict(required=False, default="prod"),
+        config=dict(required=False, default="/etc/forgejo/forgejo.ini", type=str),
     )
 
     module = AnsibleModule(
@@ -215,7 +190,7 @@ def main():
 
 
 # import module snippets
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
 
 """

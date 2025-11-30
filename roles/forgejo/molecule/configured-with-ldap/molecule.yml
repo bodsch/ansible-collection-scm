@@ -93,7 +93,7 @@ platforms:
 
 provisioner:
   name: ansible
-  ansible_args:
+  ansible_facts.args:
     - --diff
     - -v
   config_options:

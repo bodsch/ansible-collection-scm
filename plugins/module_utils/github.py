@@ -1,22 +1,23 @@
-
 import re
 import time
+from pathlib import Path
+from typing import Dict, List, Optional, Tuple, Union
+
 import requests
+from ansible_collections.bodsch.scm.plugins.module_utils.github_cache import GitHubCache
+from ansible_collections.bodsch.scm.plugins.module_utils.release_finder import (
+    ReleaseFinder,
+)
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 
-from pathlib import Path
-from typing import Optional, Tuple, Union, List, Dict
-
-from ansible_collections.bodsch.scm.plugins.module_utils.github_cache import GitHubCache
-from ansible_collections.bodsch.scm.plugins.module_utils.release_finder import ReleaseFinder
-
 
 class GitHub:
-    """
-    """
+    """ """
 
-    def __init__(self, module: any, owner: str, repository: str, auth: Optional[dict] = None):
+    def __init__(
+        self, module: any, owner: str, repository: str, auth: Optional[dict] = None
+    ):
         """
         Initialisiert die Klasse mit einem Ansible-Modulobjekt, setzt Header und Base-URL.
         """
@@ -28,16 +29,16 @@ class GitHub:
 
         # Basis-URL und Standard-Header für GitHub API v3
         self.base_api_url = "https://api.github.com"
-        self.headers: Dict[str, str] = {
-            "Accept": "application/vnd.github.v3+json"
-        }
+        self.headers: Dict[str, str] = {"Accept": "application/vnd.github.v3+json"}
 
         # Caching-Konfiguration (wird extern initialisiert)
         self.cache_dir: Optional[Path] = None
         self.cache_minutes: int = 0
 
         # Regex, um GitHub-URLs (owner/repo) zu erkennen
-        self.github_url_re = re.compile(r"https://.*github\.com/([^/\s]+)/([^/\s]+)(?:/.*)?")
+        self.github_url_re = re.compile(
+            r"https://.*github\.com/([^/\s]+)/([^/\s]+)(?:/.*)?"
+        )
         self.github_owner = owner
         self.github_repository = repository
 
@@ -58,7 +59,7 @@ class GitHub:
 
     def enable_cache(self, cache_file: str = None, cache_minutes: int = 60):
         """
-            Instanziert den GitHubCache Helper
+        Instanziert den GitHubCache Helper
         """
         # self.module.log(msg=f"GitHub::enable_cache(cache_file={cache_file}, cache_minutes={cache_minutes})")
 
@@ -66,10 +67,10 @@ class GitHub:
         self.cache_file = cache_file
 
         self.gh_cache = GitHubCache(
-            module = self.module,
-            cache_dir = cache_directory,
-            cache_file = cache_file,
-            cache_minutes = cache_minutes
+            module=self.module,
+            cache_dir=cache_directory,
+            cache_file=cache_file,
+            cache_minutes=cache_minutes,
         )
 
     def architecture(self, system: str, architecture: str):
@@ -97,16 +98,14 @@ class GitHub:
             return (200, cached, None)
 
         api_url = f"{self.base_api_url}/repos/{self.github_owner}/{self.github_repository}/releases"
-        params = {
-            "per_page": min(count, 100)
-        }
+        params = {"per_page": min(count, 100)}
 
         status_code, releases, error = self._get_request(
             url=api_url,
             params=params,
             stream=False,
-            paginate=True,     # ❗ bewusst keine Pagination hier
-            expect_json=True
+            paginate=True,  # ❗ bewusst keine Pagination hier
+            expect_json=True,
         )
 
         if status_code != 200:
@@ -118,7 +117,7 @@ class GitHub:
                 "name": r.get("name", "N/A"),
                 "tag_name": r.get("tag_name", "N/A"),
                 "published_at": r.get("published_at", "N/A"),
-                "url": r.get("html_url", "N/A")
+                "url": r.get("html_url", "N/A"),
             }
             for r in releases  # [:count]
         ]
@@ -142,16 +141,14 @@ class GitHub:
             return (200, cached, None)
 
         api_url = f"{self.base_api_url}/repos/{self.github_owner}/{self.github_repository}/tags"
-        params = {
-            "per_page": min(count, 100)
-        }
+        params = {"per_page": min(count, 100)}
 
         status_code, releases, error = self._get_request(
             url=api_url,
             params=params,
             stream=False,
-            paginate=False,     # ❗ bewusst keine Pagination hier
-            expect_json=True
+            paginate=False,  # ❗ bewusst keine Pagination hier
+            expect_json=True,
         )
 
         if status_code != 200:
@@ -187,11 +184,7 @@ class GitHub:
         params = {"per_page": 100}  # Maximale Page-Größe von GitHub
 
         status_code, releases, error = self._get_request(
-            url=api_url,
-            params=params,
-            stream=False,
-            paginate=True,
-            expect_json=True
+            url=api_url, params=params, stream=False, paginate=True, expect_json=True
         )
 
         if status_code != 200:
@@ -202,14 +195,18 @@ class GitHub:
         for release in releases:
             try:
                 assets = release.get("assets", [])
-                download_urls = [x.get("browser_download_url") for x in assets if x.get("browser_download_url")]
+                download_urls = [
+                    x.get("browser_download_url")
+                    for x in assets
+                    if x.get("browser_download_url")
+                ]
 
                 filtered_release = {
                     "name": release.get("name", "N/A"),
                     "tag_name": release.get("tag_name", "N/A"),
                     "published_at": release.get("published_at", "N/A"),
                     "url": release.get("html_url", "N/A"),
-                    "download_urls": download_urls
+                    "download_urls": download_urls,
                 }
                 all_releases.append(filtered_release)
 
@@ -221,8 +218,7 @@ class GitHub:
         return (status_code, all_releases, None)
 
     def latest_published(self, releases: list = [], filter_elements: list = []) -> dict:
-        """
-        """
+        """ """
         # self.module.log(msg=f"GitHub::latest_published(releases={releases}, filter_elements={filter_elements})")
 
         rf = ReleaseFinder(module=self.module, releases=releases)
@@ -232,23 +228,19 @@ class GitHub:
         return latest
 
     def latest_tag(self, tags: list = [], filter_elements: list = []) -> dict:
-        """
-        """
+        """ """
         # self.module.log(msg=f"GitHub::latest_tag(tags={tags}, filter_elements={filter_elements})")
 
         from packaging import version
 
-        latest = max(
-            tags,
-            key=lambda d: version.parse(d['name'])
-        )
+        latest = max(tags, key=lambda d: version.parse(d["name"]))
 
         return latest
 
     def release_exists(self, tag: str) -> bool:
         """
-            Prüft, ob für ein Repo ein Release mit dem exakten Tag existiert.
-            Gibt True zurück, falls vorhanden, sonst False.
+        Prüft, ob für ein Repo ein Release mit dem exakten Tag existiert.
+        Gibt True zurück, falls vorhanden, sonst False.
         """
         # self.module.log(msg=f"GitHub::release_exists(tag={tag})")
 
@@ -290,19 +282,17 @@ class GitHub:
 
         for asset in releases:
             name_lower = asset["name"].lower()
-            name_matches = (
-                any(kw in name_lower for kw in keywords)
-            )
+            name_matches = any(kw in name_lower for kw in keywords)
 
             if name_matches:
                 # self.module.log(msg=f"  → Checksum asset found: {asset['name']}")
                 return asset
 
             name_matches = (
-                normalized_tag in name_lower and
-                self.system in name_lower and
-                self.architecture in name_lower and
-                any(kw in name_lower for kw in keywords)
+                normalized_tag in name_lower
+                and self.system in name_lower
+                and self.architecture in name_lower
+                and any(kw in name_lower for kw in keywords)
             )
 
             if name_matches:
@@ -312,22 +302,25 @@ class GitHub:
         return None
 
     def checksum(self, repo: str, filename: str):
-        """
-        """
+        """ """
         # self.module.log(msg=f"GitHub::checksum(filename={filename})")
 
         cache_file = self.gh_cache.cache_path(filename)
         cached_data = self.gh_cache.cached_data(cache_file)
 
         if cached_data:
-            checksum = [x for x in cached_data if re.search(fr".*{repo}.*{self.system}.*{self.architecture}.*", x)]
+            checksum = [
+                x
+                for x in cached_data
+                if re.search(rf".*{repo}.*{self.system}.*{self.architecture}.*", x)
+            ]
 
             if isinstance(checksum, list) and len(checksum) == 1:
                 checksum = checksum[0]
             else:
                 if isinstance(cached_data, list) and len(cached_data) == 1:
                     """
-                        single entry
+                    single entry
                     """
                     _chk = cached_data[0].split(" ")
                     _len = len(_chk)
@@ -350,7 +343,7 @@ class GitHub:
         params: Optional[dict] = None,
         stream: bool = False,
         paginate: bool = True,
-        expect_json: bool = True
+        expect_json: bool = True,
     ) -> Tuple[int, Union[List[dict], str, requests.Response], Optional[str]]:
         """
         Robuste GET-Anfrage mit:
@@ -359,14 +352,16 @@ class GitHub:
         - Rate Limit Handling
         - JSON oder plain text/streaming Download
         """
-        self.module.log(msg=f"GitHub::_get_request(url={url}, params={params}, stream={stream}, paginate={paginate}, expect_json={expect_json})")
+        self.module.log(
+            msg=f"GitHub::_get_request(url={url}, params={params}, stream={stream}, paginate={paginate}, expect_json={expect_json})"
+        )
 
         session = requests.Session()
         retry_strategy = Retry(
             total=3,
             backoff_factor=1,
             status_forcelist=[429, 500, 502, 503, 504],
-            allowed_methods=["GET"]
+            allowed_methods=["GET"],
         )
         adapter = HTTPAdapter(max_retries=retry_strategy)
         session.mount("https://", adapter)
@@ -377,12 +372,17 @@ class GitHub:
 
         while url:
             try:
-                response = session.get(url, headers=headers, params=params, stream=stream, timeout=15)
+                response = session.get(
+                    url, headers=headers, params=params, stream=stream, timeout=15
+                )
 
                 self.module.log(msg=f"- response: {response.status_code}")
 
                 # Rate limit erreicht
-                if response.status_code == 403 and "X-RateLimit-Remaining" in response.headers:
+                if (
+                    response.status_code == 403
+                    and "X-RateLimit-Remaining" in response.headers
+                ):
                     remaining = int(response.headers["X-RateLimit-Remaining"])
                     if remaining == 0:
                         reset_time = int(response.headers.get("X-RateLimit-Reset", 0))
@@ -414,7 +414,7 @@ class GitHub:
                 next_url = None
                 for link in link_header.split(","):
                     if 'rel="next"' in link:
-                        next_url = link[link.find("<") + 1: link.find(">")]
+                        next_url = link[link.find("<") + 1 : link.find(">")]
                         break
 
                 if next_url:
@@ -441,7 +441,8 @@ class GitHub:
         """
         # self.module.log(msg=f"GitHub::_filter_by_semver(entries, {version})")
 
-        from packaging.version import Version, InvalidVersion
+        from packaging.version import InvalidVersion, Version
+
         try:
             target = Version(version)
         except InvalidVersion:
@@ -451,12 +452,12 @@ class GitHub:
 
         result = []
         for e in entries:
-            for key in ('tag_name', 'name'):
+            for key in ("tag_name", "name"):
                 raw = e.get(key)
                 if not raw:
                     continue
                 # 'v' am Anfang ignorieren
-                candidate = raw.lstrip('v')
+                candidate = raw.lstrip("v")
                 try:
                     if Version(candidate) == target:
                         result.append(e)
@@ -487,7 +488,9 @@ class GitHub:
         (status_code, releases, error) = self._get_request(api_url)
 
         if status_code != 200:
-            self.module.log(f"Error when retrieving the release assets: {status_code} - {error}")
+            self.module.log(
+                f"Error when retrieving the release assets: {status_code} - {error}"
+            )
 
             return (status_code, [], error)
 
@@ -502,7 +505,7 @@ class GitHub:
             {
                 "name": asset.get("name"),
                 "url": asset.get("browser_download_url"),
-                "size": asset.get("size")
+                "size": asset.get("size"),
             }
             for asset in assets
         ]
@@ -519,7 +522,9 @@ class GitHub:
         """
         # self.module.log(msg=f"GitHub::_download_file(url={url}, dest={dest_path}, stream={stream})")
 
-        (status_code, content, error) = self._get_request(url, stream=stream, expect_json=False)
+        (status_code, content, error) = self._get_request(
+            url, stream=stream, expect_json=False
+        )
 
         if status_code != 200:
             raise Exception(f"Error downloading the file: {status_code}")
@@ -536,7 +541,9 @@ class GitHub:
 
     # ------------------------------------------------------------------------------------------
 
-    def get_releases_old(self, repo_url: str, count: int = 10) -> Union[List[Dict], Dict]:
+    def get_releases_old(
+        self, repo_url: str, count: int = 10
+    ) -> Union[List[Dict], Dict]:
         """
         Fragt bis zu `count` Releases (max. 100) eines Repos ab.
         Cacht das Ergebnis in "releases.json" im cache_dir (sofern aktiviert).
@@ -572,7 +579,7 @@ class GitHub:
                     "name": r.get("name"),
                     "tag_name": r.get("tag_name"),
                     "published_at": r.get("published_at"),
-                    "url": r.get("html_url")
+                    "url": r.get("html_url"),
                 }
                 for r in releases
             ]
@@ -625,7 +632,7 @@ class GitHub:
                         "tag_name": release.get("tag_name", "N/A"),
                         "published_at": release.get("published_at", "N/A"),
                         "url": release.get("html_url", "N/A"),
-                        "download_urls": download_urls  # Liste von URLs
+                        "download_urls": download_urls,  # Liste von URLs
                     }
 
                     all_releases.append(filtered_release)

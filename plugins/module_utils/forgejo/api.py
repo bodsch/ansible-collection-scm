@@ -1,9 +1,9 @@
-
 import re
+from typing import Dict, List, Optional, Union
+
 import requests
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
-from typing import Optional, Union, List, Dict
 
 
 class ForgejoApi:
@@ -12,13 +12,14 @@ class ForgejoApi:
     - Unterstützt Token Auth (empfohlen)
     - Fällt zurück auf Basic Auth (username+password), wenn kein Token gesetzt ist
     """
+
     def __init__(
         self,
         module: any,
         base_url: str,
         username: Optional[str] = None,
         password: Optional[str] = None,
-        token: Optional[str] = None
+        token: Optional[str] = None,
     ):
         """
         :param base_url: z.B. "https://codeberg.org/api/v1"
@@ -35,7 +36,7 @@ class ForgejoApi:
             total=3,
             backoff_factor=1,
             status_forcelist=[429, 500, 502, 503, 504],
-            allowed_methods=["GET", "POST", "PATCH", "DELETE"]
+            allowed_methods=["GET", "POST", "PATCH", "DELETE"],
         )
         adapter = HTTPAdapter(max_retries=retry_strategy)
         self.session.mount("https://", adapter)
@@ -43,9 +44,7 @@ class ForgejoApi:
 
         # Auth
         self.auth = None
-        self.headers: Dict[str, str] = {
-            "Accept": "application/json"
-        }
+        self.headers: Dict[str, str] = {"Accept": "application/json"}
         if token:
             self.headers["Authorization"] = f"token {token}"
         elif username and password:
@@ -87,11 +86,12 @@ class ForgejoApi:
 
     # --------------------------------------------------------------------------------
     def _request(
-            self,
-            method: str,
-            path: str,
-            params: Optional[dict] = None,
-            json: Optional[dict] = None) -> Union[List[dict], dict]:
+        self,
+        method: str,
+        path: str,
+        params: Optional[dict] = None,
+        json: Optional[dict] = None,
+    ) -> Union[List[dict], dict]:
 
         url = f"{self.base_url}{path}"
         result: List[dict] = []
@@ -104,7 +104,7 @@ class ForgejoApi:
                 params=params,
                 json=json,
                 auth=self.auth,
-                timeout=15
+                timeout=15,
             )
             resp.raise_for_status()
 

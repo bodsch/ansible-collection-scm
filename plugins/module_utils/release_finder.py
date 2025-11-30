@@ -1,15 +1,17 @@
-
-from typing import List, Dict, Any, Optional, Tuple
-from datetime import datetime
-from dateutil import parser as date_parser
-from packaging.version import Version, InvalidVersion, parse as parse_version
 import re
+from datetime import datetime
+from typing import Any, Dict, List, Optional, Tuple
+
+from dateutil import parser as date_parser
+from packaging.version import InvalidVersion, Version
+from packaging.version import parse as parse_version
 
 
 class ReleaseFinder:
     """
     To find the latest release entry from a list of releases.
     """
+
     def __init__(self, module: any, releases: List[Dict[str, Any]]) -> None:
         """
         Initialises the ReleaseFinder with raw release data.
@@ -36,8 +38,7 @@ class ReleaseFinder:
     # ------------------------------------------------------------------------------------------
     # public API
     def find_latest(self, mode: str = "published") -> Optional[Dict[str, Any]]:
-        """
-        """
+        """ """
         self.module.log(msg=f"ReleaseFinder::find_latest(mode={mode})")
 
         # candidates = list(filter(None, (
@@ -100,7 +101,7 @@ class ReleaseFinder:
         Attempts to parse the ISO date in the “published_at” field.
         Returns None if the value is missing or invalid.
         """
-        raw = release.get('published_at')
+        raw = release.get("published_at")
         if not raw:
             return None
         try:
@@ -113,8 +114,8 @@ class ReleaseFinder:
         Fallback: Extract date from the “name” field in the format YYYY-MM-DD.
         Example: 'Release v2.0.0 / 2025-05-27'
         """
-        name = release.get('name', '')
-        match = re.search(r'/\s*(\d{4}-\d{2}-\d{2})', name)
+        name = release.get("name", "")
+        match = re.search(r"/\s*(\d{4}-\d{2}-\d{2})", name)
         if not match:
             return None
         try:
@@ -127,13 +128,15 @@ class ReleaseFinder:
         Parses the semantic version string “tag_name”.
         Returns version(“0.0.0”) if the tag is invalid.
         """
-        tag = release.get('tag_name', '')
+        tag = release.get("tag_name", "")
         try:
             return parse_version(tag)
         except InvalidVersion:
             return parse_version("0.0.0")
 
-    def _get_candidate(self, release: Dict[str, Any]) -> Optional[Tuple[datetime, Version, Dict[str, Any]]]:
+    def _get_candidate(
+        self, release: Dict[str, Any]
+    ) -> Optional[Tuple[datetime, Version, Dict[str, Any]]]:
         """
         Builds a tuple (Date, SemVer, ReleaseDict) for sorting.
         Returns None if no date was found.

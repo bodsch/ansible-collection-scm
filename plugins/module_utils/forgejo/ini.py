@@ -1,16 +1,12 @@
-
+import datetime
+import hashlib
 import os
 import re
-import hashlib
-import datetime
+
 # import shutil
 from collections import OrderedDict
 
-
-DEFAULT_IGNORE_KEYS = {
-    "security": ["INTERNAL_TOKEN"],
-    "oauth2": ["JWT_SECRET"]
-}
+DEFAULT_IGNORE_KEYS = {"security": ["INTERNAL_TOKEN"], "oauth2": ["JWT_SECRET"]}
 
 
 class ForgejoIni:
@@ -52,11 +48,11 @@ class ForgejoIni:
         self.data[current_section] = {}
 
         # Regex für Section-Header: [irgendwas]
-        section_pattern = re.compile(r'^\s*\[(?P<name>[^]]+)\]\s*$')
+        section_pattern = re.compile(r"^\s*\[(?P<name>[^]]+)\]\s*$")
         # Regex für Key=Value: split an erstem '='
-        kv_pattern = re.compile(r'^\s*(?P<key>[^=]+?)\s*=\s*(?P<val>.*)$')
+        kv_pattern = re.compile(r"^\s*(?P<key>[^=]+?)\s*=\s*(?P<val>.*)$")
 
-        with open(self.path, 'r', encoding='utf-8') as f:
+        with open(self.path, "r", encoding="utf-8") as f:
             for raw_line in f:
                 line = raw_line.rstrip("\n")
 
@@ -66,13 +62,13 @@ class ForgejoIni:
 
                 # 2) Kommentarzeile → überspringen
                 stripped = line.lstrip()
-                if stripped.startswith(';') or stripped.startswith('#'):
+                if stripped.startswith(";") or stripped.startswith("#"):
                     continue
 
                 # 3) Section-Header?
                 m_sec = section_pattern.match(line)
                 if m_sec:
-                    sec_name = m_sec.group('name').strip()
+                    sec_name = m_sec.group("name").strip()
                     current_section = sec_name
                     if sec_name not in self.data:
                         self.data[sec_name] = {}
@@ -81,11 +77,13 @@ class ForgejoIni:
                 # 4) Key=Value?
                 m_kv = kv_pattern.match(line)
                 if m_kv:
-                    key = m_kv.group('key').strip()
-                    val = m_kv.group('val')
+                    key = m_kv.group("key").strip()
+                    val = m_kv.group("val")
                     # Prüfen, ob key in ignore_keys[current_section] steht
-                    if current_section in self.ignore_keys and \
-                       key in self.ignore_keys[current_section]:
+                    if (
+                        current_section in self.ignore_keys
+                        and key in self.ignore_keys[current_section]
+                    ):
                         # ignorieren
                         continue
                     # Ansonsten übernehmen
@@ -123,7 +121,7 @@ class ForgejoIni:
         2. Dann je Section sortiert: eine Leerzeile, [Section], dann keys.
         3. Innerhalb jeder Sektion Keys alphabetisch.
         """
-        with open(output_path, 'w', encoding='utf-8') as f:
+        with open(output_path, "w", encoding="utf-8") as f:
             # 1) Default-Keys (ohne Header) ganz vorne
             if "__default__" in self.data:
                 for key in sorted(self.data["__default__"]):
@@ -151,8 +149,7 @@ class ForgejoIni:
             # f.write(content)
 
     def create_backup(self, config_file):
-        """
-        """
+        """ """
         timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M")
         basename, ext = os.path.splitext(config_file)
         backup_config = f"{basename}_{timestamp}{ext}"
@@ -185,7 +182,11 @@ class ForgejoIni:
 
         # 1) Alle möglichen Sektionen zusammentragen,
         #    inklusive '__default__' und alle keys aus ignore_keys
-        all_sections = set(base_ini.data.keys()) | set(new_ini.data.keys()) | set(ignore_keys.keys())
+        all_sections = (
+            set(base_ini.data.keys())
+            | set(new_ini.data.keys())
+            | set(ignore_keys.keys())
+        )
 
         merged_data = OrderedDict()
         for section in sorted(all_sections):

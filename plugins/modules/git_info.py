@@ -5,9 +5,10 @@
 # Apache (see LICENSE or https://opensource.org/licenses/Apache-2.0)
 
 from __future__ import absolute_import, division, print_function
-import git
+
 import os
 
+import git
 from ansible.module_utils.basic import AnsibleModule
 
 DOCUMENTATION = r"""
@@ -108,33 +109,27 @@ msg:
 
 
 class GitInfo(object):
-    """
-    """
+    """ """
+
     module = None
 
     def __init__(self, module):
-        """
-        """
+        """ """
         self.module = module
 
         self.work_dir = module.params.get("work_dir")
 
     def run(self):
-        """
-        """
+        """ """
         if self.work_dir:
             os.chdir(self.work_dir)
         else:
-            return dict(
-                failed=True,
-                msg=f"work_dir {self.work_dir} does not exist."
-            )
+            return dict(failed=True, msg=f"work_dir {self.work_dir} does not exist.")
 
         return self.git_info()
 
     def git_info(self):
-        """
-        """
+        """ """
         git_version = None
         git_commit_short = None
         git_commit_date = None
@@ -142,21 +137,15 @@ class GitInfo(object):
         try:
             repo = git.Repo(search_parent_directories=True)
         except (git.InvalidGitRepositoryError, git.NoSuchPathError):
-            return dict(
-                failed=True,
-                msg="Error: No valid Git repository was found."
-            )
+            return dict(failed=True, msg="Error: No valid Git repository was found.")
 
         except Exception as e:
-            return dict(
-                failed=True,
-                msg=f"An unexpected error has occurred: {e}"
-            )
+            return dict(failed=True, msg=f"An unexpected error has occurred: {e}")
 
         try:
             if repo.head.is_detached:
                 try:
-                    git_latest_tag = repo.git.describe('--tags', '--exact-match')
+                    git_latest_tag = repo.git.describe("--tags", "--exact-match")
                     # use the git tag as branch name
                     git_current_branch = git_latest_tag
                 except git.GitCommandError:
@@ -166,7 +155,15 @@ class GitInfo(object):
             else:
                 git_current_branch = repo.active_branch.name
                 git_latest_tag = next(
-                    (tag.name for tag in sorted(repo.tags, key=lambda t: t.commit.committed_datetime, reverse=True)), None
+                    (
+                        tag.name
+                        for tag in sorted(
+                            repo.tags,
+                            key=lambda t: t.commit.committed_datetime,
+                            reverse=True,
+                        )
+                    ),
+                    None,
                 )
 
             git_commit_short = repo.git.rev_parse("--short", "HEAD")
@@ -174,19 +171,21 @@ class GitInfo(object):
             git_commit_id = repo.commit(git_current_branch).hexsha
             git_commit_lastid = next(repo.iter_commits(all=True)).hexsha
             git_latest_tag = next(
-                (tag.name for tag in sorted(repo.tags, key=lambda t: t.commit.committed_datetime, reverse=True)), None
+                (
+                    tag.name
+                    for tag in sorted(
+                        repo.tags,
+                        key=lambda t: t.commit.committed_datetime,
+                        reverse=True,
+                    )
+                ),
+                None,
             )
         except (git.InvalidGitRepositoryError, git.NoSuchPathError):
-            return dict(
-                failed=True,
-                msg="Error: No valid Git repository was found."
-            )
+            return dict(failed=True, msg="Error: No valid Git repository was found.")
 
         except Exception as e:
-            return dict(
-                failed=True,
-                msg=f"An unexpected error has occurred: {e}"
-            )
+            return dict(failed=True, msg=f"An unexpected error has occurred: {e}")
 
         try:
             if git_current_branch in ["master", "main"]:
@@ -196,7 +195,7 @@ class GitInfo(object):
                 upstream_commit = repo.git.rev_parse("@{upstream}")
                 git_version = repo.git.rev_parse("--short", upstream_commit)
             elif not git_current_branch:
-                repo.git.describe('--tags', '--exact-match')
+                repo.git.describe("--tags", "--exact-match")
             else:
                 git_version = repo.git.rev_parse("--short", "HEAD")
 
@@ -221,30 +220,18 @@ class GitInfo(object):
                 "commit_date": git_commit_date.strftime("%Y-%m-%d %H:%M:%S"),
             }
 
-            return dict(
-                failed=False,
-                git=result
-            )
+            return dict(failed=False, git=result)
 
         except git.GitCommandError as e:
-            return dict(
-                failed=True,
-                msg=f"An error has occurred when calling git: {e}"
-            )
+            return dict(failed=True, msg=f"An error has occurred when calling git: {e}")
         except Exception as e:
-            return dict(
-                failed=True,
-                msg=f"An unexpected error has occurred: {e}"
-            )
+            return dict(failed=True, msg=f"An unexpected error has occurred: {e}")
 
 
 def main():
 
     specs = dict(
-        work_dir=dict(
-            required=True,
-            type='path'
-        ),
+        work_dir=dict(required=True, type="path"),
     )
 
     module = AnsibleModule(
@@ -261,5 +248,5 @@ def main():
 
 
 # import module snippets
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

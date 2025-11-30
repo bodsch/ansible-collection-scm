@@ -832,8 +832,8 @@ forgejo_defaults_server:
   domain: ""                                      # localhost
   root_url: ""                                    # "%(protocol)s://%(domain)s:%(HTTP_PORT)s/"
   static_url_prefix: ""
-  http_addr: ""                                   # 0.0.0.0
-  http_port: ""                                   # 3000
+  http_addr: "0.0.0.0"                            # 0.0.0.0
+  http_port: "3000"                               # 3000
   redirect_other_port: ""                         # false
   port_to_redirect: ""                            # 80
   redirector_use_proxy_protocol: ""               # "%(use_proxy_pROTOCOL)s"
@@ -1081,8 +1081,8 @@ forgejo_defaults_webhook:
 
 forgejo_defaults_release:
   download_url: https://codeberg.org/forgejo/forgejo/releases
-  file: forgejo-{{ forgejo_version }}-{{ ansible_system | lower }}-{{ system_architecture }}
-  checksum: forgejo-{{ forgejo_version }}-{{ ansible_system | lower }}-{{ system_architecture }}.sha256
+  file: forgejo-{{ forgejo_version }}-{{ ansible_facts.system | lower }}-{{ system_architecture }}
+  checksum: forgejo-{{ forgejo_version }}-{{ ansible_facts.system | lower }}-{{ system_architecture }}.sha256
   binary: forgejo-{{ forgejo_version }}-linux-{{ system_architecture }}
 
 # ----------------------------------------------------------------------------------------
@@ -1097,7 +1097,7 @@ go_arch_map:
   armv7l: 'armv7'
   armv6l: 'armv6'
 
-system_architecture: "{{ go_arch_map[ansible_architecture] | default(ansible_architecture) }}"
+system_architecture: "{{ go_arch_map[ansible_facts.architecture] | default(ansible_facts.architecture) }}"
 
 systemd_lib_directory: /lib/systemd/system
 

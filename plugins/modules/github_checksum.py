@@ -2,23 +2,23 @@
 # -*- coding: utf-8 -*-
 
 from __future__ import absolute_import, print_function
+
 import os
 from enum import Enum
 from pathlib import Path
 
 from ansible.module_utils.basic import AnsibleModule
-
 from ansible_collections.bodsch.scm.plugins.module_utils.github import GitHub
 
 __metaclass__ = type
 
 ANSIBLE_METADATA = {
-    'metadata_version': '0.1',
-    'status': ['preview'],
-    'supported_by': 'community'
+    "metadata_version": "0.1",
+    "status": ["preview"],
+    "supported_by": "community",
 }
 
-DOCUMENTATION = r'''
+DOCUMENTATION = r"""
 ---
 module: github_latest
 author: Bodo 'bodsch' Schulz <bodo@boone-schulz.de>
@@ -86,7 +86,7 @@ options:
     required: false
     type: int
     default: 60
-'''
+"""
 
 EXAMPLES = r"""
 - name: Get checksum list for a GitHub release
@@ -157,11 +157,12 @@ class GithubChecksum(object):
     """
     Main Class
     """
+
     module = None
 
     def __init__(self, module):
         """
-          Initialize all needed Variables
+        Initialize all needed Variables
         """
         self.module = module
 
@@ -179,22 +180,26 @@ class GithubChecksum(object):
         # https://github.com/prometheus/alertmanager/releases/download/v0.25.0/sha256sums.txt
         # self.github_url = f"https://github.com/{self.project}/{self.repository}/releases/download"
 
-        self.cache_directory = f"{Path.home()}/.cache/ansible/github/{self.project}/{self.repository}"
+        self.cache_directory = (
+            f"{Path.home()}/.cache/ansible/github/{self.project}/{self.repository}"
+        )
         self.cache_file_name = f"{self.version}_{self.checksum_file}"
 
         # urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
     def run(self):
-        """
-        """
+        """ """
         rc = 10
 
         # create_directory(self.cache_directory)
-        gh_authentication = dict(
-            token=self.github_password
-        )
+        gh_authentication = dict(token=self.github_password)
 
-        gh = GitHub(self.module, owner=self.project, repository=self.repository, auth=gh_authentication)
+        gh = GitHub(
+            self.module,
+            owner=self.project,
+            repository=self.repository,
+            auth=gh_authentication,
+        )
         gh.architecture(system=self.system, architecture=self.architecture)
         gh.enable_cache(cache_minutes=self.cache_minutes)
 
@@ -205,7 +210,7 @@ class GithubChecksum(object):
                 failed=True,
                 checksum=None,
                 checksums=[],
-                msg=f"An error has occurred. Please check the availability of {self.project}/{self.repository} and version {self.version} at Github!"
+                msg=f"An error has occurred. Please check the availability of {self.project}/{self.repository} and version {self.version} at Github!",
             )
 
         gh_checksum_data = gh.get_checksum_asset(tag=self.version)
@@ -221,17 +226,11 @@ class GithubChecksum(object):
         if len(gh_checksum) > 0:
             rc = 0
 
-        return dict(
-            failed=False,
-            rc=rc,
-            checksum=gh_checksum,
-            checksums=data
-        )
+        return dict(failed=False, rc=rc, checksum=gh_checksum, checksums=data)
 
 
 def main():
-    """
-    """
+    """ """
     argument_spec = dict(
         project=dict(
             type=str,
@@ -260,20 +259,12 @@ def main():
             type=str,
             required=False,
         ),
-        password=dict(
-            type=str,
-            required=False,
-            no_log=True
-        ),
+        password=dict(type=str, required=False, no_log=True),
         version=dict(
             type=str,
             required=True,
         ),
-        cache=dict(
-            type=int,
-            required=False,
-            default=60
-        )
+        cache=dict(type=int, required=False, default=60),
     )
 
     module = AnsibleModule(
@@ -290,5 +281,5 @@ def main():
 
 
 # import module snippets
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

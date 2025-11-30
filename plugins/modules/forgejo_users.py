@@ -7,11 +7,15 @@
 from __future__ import absolute_import, print_function
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.bodsch.scm.plugins.module_utils.forgejo.api import ForgejoApi
-from ansible_collections.bodsch.scm.plugins.module_utils.forgejo.users import ForgejoApiUsers
-from ansible_collections.bodsch.scm.plugins.module_utils.forgejo.utils import validate_users, check_existing_users
-
 from ansible_collections.bodsch.core.plugins.module_utils.module_results import results
+from ansible_collections.bodsch.scm.plugins.module_utils.forgejo.api import ForgejoApi
+from ansible_collections.bodsch.scm.plugins.module_utils.forgejo.users import (
+    ForgejoApiUsers,
+)
+from ansible_collections.bodsch.scm.plugins.module_utils.forgejo.utils import (
+    check_existing_users,
+    validate_users,
+)
 
 __metaclass__ = type
 
@@ -111,13 +115,12 @@ failed:
 
 
 class ForgejoUsers:
-    """
-    """
+    """ """
+
     module = None
 
     def __init__(self, module):
-        """
-        """
+        """ """
         self.module = module
 
         self.users = module.params.get("users")
@@ -129,38 +132,39 @@ class ForgejoUsers:
             module=self.module,
             base_url=f"{self.server}/api/v1",
             username=self.api_user,
-            password=self.api_password
+            password=self.api_password,
             # token="DEIN_TOKEN"  # optional
         )
 
         self.users_api = ForgejoApiUsers(api)
 
     def run(self):
-        """
-        """
-        result = dict(
-            changed=False,
-            failed=True
-        )
+        """ """
+        result = dict(changed=False, failed=True)
         result_state = []
 
         status_code, existing_users = self.users_api.list_users()
 
         valid_users, invalid_users = validate_users(users=self.users)
-        _existing_users, non_existing_users = check_existing_users(new_users=valid_users, existing=existing_users)
+        _existing_users, non_existing_users = check_existing_users(
+            new_users=valid_users, existing=existing_users
+        )
 
         if len(invalid_users) > 0:
-            result_state.append({
-                "invalid users": {
-                    "failed": True,
-                    "changed": False,
-                    "usernames": ", ".join([x.get("username") for x in invalid_users])
+            result_state.append(
+                {
+                    "invalid users": {
+                        "failed": True,
+                        "changed": False,
+                        "usernames": ", ".join(
+                            [x.get("username") for x in invalid_users]
+                        ),
+                    }
                 }
-            })
+            )
 
         for user in _existing_users:
-            """
-            """
+            """ """
             user_state = user.get("state", "present")
             user_name = user.get("username")
 
@@ -168,25 +172,22 @@ class ForgejoUsers:
 
             if user_state == "absent":
                 """
-                    Delete users
+                Delete users
                 """
-                status_code, _result = self.users_api.delete_user(
-                    username=user_name
-                )
+                status_code, _result = self.users_api.delete_user(username=user_name)
 
                 if status_code == 204:
 
                     res[user_name] = {
                         "failed": False,
                         "changed": True,
-                        "msg": "The user has been successfully deleted."
+                        "msg": "The user has been successfully deleted.",
                     }
 
                 result_state.append(res)
 
         for user in non_existing_users:
-            """
-            """
+            """ """
             user_state = user.get("state", "present")
             user_name = user.get("username")
             user_password = user.get("password")
@@ -197,9 +198,7 @@ class ForgejoUsers:
             if user_state == "present":
 
                 status_code, _result = self.users_api.create_user(
-                    username=user_name,
-                    password=user_password,
-                    email=user_email
+                    username=user_name, password=user_password, email=user_email
                 )
 
                 if status_code == 201:
@@ -207,44 +206,27 @@ class ForgejoUsers:
                     res[user_name] = {
                         "failed": False,
                         "changed": True,
-                        "msg": "The user has been successfully created."
+                        "msg": "The user has been successfully created.",
                     }
 
                 result_state.append(res)
 
-        _state, _changed, _failed, state, changed, failed = results(self.module, result_state)
-
-        result = dict(
-            changed=_changed,
-            failed=_failed,
-            state=result_state
+        _state, _changed, _failed, state, changed, failed = results(
+            self.module, result_state
         )
+
+        result = dict(changed=_changed, failed=_failed, state=result_state)
 
         return result
 
 
 def main():
-    """
-    """
+    """ """
     specs = dict(
-        users=dict(
-            required=True,
-            type=list
-        ),
-        server=dict(
-            required=False,
-            default="http://localhost:3000",
-            type=str
-        ),
-        api_user=dict(
-            required=False,
-            type=str
-        ),
-        api_password=dict(
-            required=False,
-            type=str,
-            no_log=True
-        )
+        users=dict(required=True, type=list),
+        server=dict(required=False, default="http://localhost:3000", type=str),
+        api_user=dict(required=False, type=str),
+        api_password=dict(required=False, type=str, no_log=True),
     )
 
     module = AnsibleModule(
@@ -261,5 +243,5 @@ def main():
 
 
 # import module snippets
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

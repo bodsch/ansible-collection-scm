@@ -6,12 +6,12 @@
 # SPDX-License-Identifier: Apache-2.0
 
 from __future__ import absolute_import, print_function
+
 import re
 from enum import Enum
 from pathlib import Path
 
 from ansible.module_utils.basic import AnsibleModule
-
 from ansible_collections.bodsch.scm.plugins.module_utils.github import GitHub
 
 __metaclass__ = type
@@ -125,11 +125,12 @@ class GithubReleases(object):
     """
     Main Class
     """
+
     module = None
 
     def __init__(self, module):
         """
-          Initialize all needed Variables
+        Initialize all needed Variables
         """
         self.module = module
 
@@ -144,19 +145,23 @@ class GithubReleases(object):
 
         self.github_url = f"https://github.com/{self.project}/{self.repository}"
 
-        self.cache_directory = f"{Path.home()}/.cache/ansible/github/{self.project}/{self.repository}"
+        self.cache_directory = (
+            f"{Path.home()}/.cache/ansible/github/{self.project}/{self.repository}"
+        )
         # self.cache_file_name = f"{self.repository}_releases.json"
 
     def run(self):
-        """
-        """
+        """ """
         # create_directory(self.cache_directory)
 
-        gh_authentication = dict(
-            token=self.github_password
-        )
+        gh_authentication = dict(token=self.github_password)
 
-        gh = GitHub(self.module, owner=self.project, repository=self.repository, auth=gh_authentication)
+        gh = GitHub(
+            self.module,
+            owner=self.project,
+            repository=self.repository,
+            auth=gh_authentication,
+        )
         gh.architecture(system=self.system, architecture=self.architecture)
         gh.enable_cache(cache_minutes=self.cache_minutes)
 
@@ -171,7 +176,7 @@ class GithubReleases(object):
                 failed=True,
                 status=419,
                 msg="An internal error has occurred. Probably a GitHub request could not be parsed properly. Please contact the developer.",
-                stderr=error
+                stderr=error,
             )
 
         if status_code != 200:
@@ -179,22 +184,30 @@ class GithubReleases(object):
                 failed=True,
                 status=status_code,
                 msg="An error has occurred with a request against GitHub.",
-                stderr=error
+                stderr=error,
             )
 
         if gh_result:
 
             if isinstance(gh_result, list):
 
-                download_urls = [x.get("download_urls") for x in gh_result if x.get("name").lstrip("v") == self.version.lstrip("v")]
+                download_urls = [
+                    x.get("download_urls")
+                    for x in gh_result
+                    if x.get("name").lstrip("v") == self.version.lstrip("v")
+                ]
 
                 try:
                     if len(download_urls) > 0:
                         download_urls = download_urls[0]
 
                         matches = [
-                            x for x in download_urls
-                            if re.search(fr".*{self.version.lstrip('v')}.*{self.system}.*{self.architecture}.*", x)
+                            x
+                            for x in download_urls
+                            if re.search(
+                                rf".*{self.version.lstrip('v')}.*{self.system}.*{self.architecture}.*",
+                                x,
+                            )
                         ]
 
                         # contains_list = any(isinstance(item, list) for item in download_urls)
@@ -204,20 +217,16 @@ class GithubReleases(object):
                             return dict(
                                 status=200,
                                 urls=download_urls,
-                                download_url=download_url
+                                download_url=download_url,
                             )
                         else:
                             return dict(
-                                status=500,
-                                msg="No matching download URL found."
+                                status=500, msg="No matching download URL found."
                             )
 
                 except Exception as e:
                     self.module.log(msg=f"Error: {e}")
-                    return dict(
-                        status=500,
-                        msg=e
-                    )
+                    return dict(status=500, msg=e)
 
         return dict(
             status=500,
@@ -226,17 +235,10 @@ class GithubReleases(object):
 
 
 def main():
-    """
-    """
+    """ """
     args = dict(
-        project=dict(
-            required=True,
-            type=str
-        ),
-        repository=dict(
-            required=True,
-            type=str
-        ),
+        project=dict(required=True, type=str),
+        repository=dict(required=True, type=str),
         version=dict(
             required=True,
             type=str,
@@ -251,19 +253,9 @@ def main():
             type=str,
             default="Linux",
         ),
-        user=dict(
-            required=False,
-            type=str
-        ),
-        password=dict(
-            required=False,
-            type=str,
-            no_log=True
-        ),
-        cache=dict(
-            required=False,
-            default=120
-        )
+        user=dict(required=False, type=str),
+        password=dict(required=False, type=str, no_log=True),
+        cache=dict(required=False, default=120),
     )
 
     module = AnsibleModule(
@@ -280,5 +272,5 @@ def main():
 
 
 # import module snippets
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
