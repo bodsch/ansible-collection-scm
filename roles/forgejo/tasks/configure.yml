@@ -100,7 +100,7 @@
   register: forgejo_config
   notify:
     - restart forgejo
-    - check if forgejo are available
+    - "wait for '/run/forgejo/forgejo.pid'"
 
 - name: restart forgejo if needed
   ansible.builtin.meta: flush_handlers

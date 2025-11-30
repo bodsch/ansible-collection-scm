@@ -84,7 +84,7 @@
             follow: false
           notify:
             - restart forgejo
-            - check if forgejo are available
+            - "wait for '/run/forgejo/forgejo.pid'"
 
         - name: restart after update
           when:
