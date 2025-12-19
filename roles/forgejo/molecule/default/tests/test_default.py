@@ -124,15 +124,18 @@ def test_forgejo_files(host, get_vars):
     """
     distribution = host.system_info.distribution
     release = host.system_info.release
+    version = local_facts(host).get("version")
 
     print(f"distribution: {distribution}")
     print(f"release     : {release}")
-
-    version = local_facts(host).get("version")
+    print(f"version     : {version}")
 
     install_dir = get_vars.get("forgejo_install_path")
     defaults_dir = get_vars.get("forgejo_defaults_directory")
     config_dir = get_vars.get("forgejo_config_dir")
+
+    if "{{ forgejo_version }}" in install_dir:
+        install_dir = install_dir.replace('{{ forgejo_version }}', version)
 
     if 'latest' in install_dir:
         install_dir = install_dir.replace('latest', version)

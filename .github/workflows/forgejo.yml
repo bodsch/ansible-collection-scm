@@ -181,6 +181,7 @@ jobs:
           - configured-with-local-users
           - custom-config-directory
           - update
+          - direct-download
         collection_role:
           - forgejo
 

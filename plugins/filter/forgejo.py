@@ -25,13 +25,13 @@ class FilterModule:
         ;logger.router.MODE=,
         ;logger.xorm.MODE=,
         """
-        display.v(f"sub_logger(self, {data})")
+        display.vv(f"bodsch.scm.sub_logger(self, {data})")
 
         return [x.get("name") for x in data if x.get("mode", None)]
 
     def sub_logger_data(self, data, logger):
         """ """
-        display.v(f"sub_logger_data(self, {data}, {logger})")
+        display.vv(f"bodsch.scm.sub_logger_data(self, {data}, {logger})")
 
         result = [x for x in data if x.get("name", None) == logger]
 

@@ -68,8 +68,6 @@ def get_vars(host):
 
     if distribution in ['debian', 'ubuntu']:
         operation_system = "debian"
-    elif distribution in ['redhat', 'ol', 'centos', 'rocky', 'almalinux']:
-        operation_system = "redhat"
     elif distribution in ['arch', 'artix']:
         operation_system = f"{distribution}linux"
 
@@ -101,6 +99,8 @@ def get_vars(host):
     templar = Templar(loader=DataLoader(), variables=ansible_vars)
     result = templar.template(ansible_vars, fail_on_undefined=False)
 
+    # pp_json(result)
+
     return result
 
 
@@ -112,7 +112,7 @@ def local_facts(host):
 
 
 @pytest.mark.parametrize("dirs", [
-    "/srv/forgejo/config"
+    "/etc/forgejo"
 ])
 def test_directories(host, dirs):
     d = host.file(dirs)
@@ -166,7 +166,7 @@ def test_user(host, get_vars):
     assert host.group(group).exists
     assert host.user(user).exists
     assert group in host.user(user).groups
-    assert host.user(user).home == "/srv/forgejo"
+    assert host.user(user).home == "/var/lib/forgejo"
 
 
 def test_service(host, get_vars):

@@ -75,7 +75,8 @@ class FilterModule:
           ##- 'lxc:lxc://debian:bullseye'
           ##- 'self-hosted:host://-self-hosted'
         """
-        # display.v(f"runner_labels(self, {data})")
+        display.vv(f"bodsch.scm.runner_labels(self, {data})")
+
         result = []
 
         if isinstance(data, list) and len(data) > 0:

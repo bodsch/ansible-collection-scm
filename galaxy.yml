@@ -1,7 +1,7 @@
 namespace: bodsch
 name: scm
 
-version: 1.7.0
+version: 1.7.1
 
 readme: README.md
 
@@ -20,7 +20,7 @@ tags:
 
 dependencies:
   "community.general": "*"
-  "bodsch.core": "*"
+  "bodsch.core": ">=2.8.2"
 
 repository: https://github.com/bodsch/ansible-collection-scm
 documentation: https://github.com/bodsch/ansible-collection-scm/README.md
