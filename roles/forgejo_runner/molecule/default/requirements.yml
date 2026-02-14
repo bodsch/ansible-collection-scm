@@ -1,8 +1,8 @@
 ---
 
 roles:
-  - name: nginx
+  - name: bodsch.nginx
     src: bodsch.nginx
-    version: 0.30.1
+    version: 1.0.0
 
 ...

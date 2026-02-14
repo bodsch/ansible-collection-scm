@@ -32,7 +32,7 @@
   notify:
     - restart forgejo-runner
 
-- name: create runner token on {{ forgejo_runner_controller.hostname }}
+- name: "create runner token on '{{ forgejo_runner_controller.hostname }}'"
   remote_user: "{{ forgejo_runner_controller.remoteuser | default(forgejo_runner_controller.username) }}"
   become_user: "{{ forgejo_runner_controller.username }}"
   become: true
@@ -43,7 +43,7 @@
     working_dir: "{{ forgejo_working_dir }}"
     runners: "{{ forgejo_runner_register | default([]) }}"
 
-- name: append runner to {{ forgejo_runner_controller.hostname }}
+- name: "append runner to '{{ forgejo_runner_controller.hostname }}'"
   become_user: "{{ forgejo_runner_system_user }}"
   become: true
   bodsch.scm.forgejo_runner:

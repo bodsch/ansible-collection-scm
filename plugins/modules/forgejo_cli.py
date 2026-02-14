@@ -1,27 +1,40 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# (c) 2023, Bodo Schulz <bodo@boone-schulz.de>
-# Apache (see LICENSE or https://opensource.org/licenses/Apache-2.0)
+"""
+Ansible module to execute Forgejo CLI operations.
 
-from __future__ import absolute_import, print_function
+Currently supported:
+- Register Forgejo Actions runners via `forgejo forgejo-cli actions register`.
+
+The module is designed to be safe and predictable:
+- Typed parameter handling and runner validation.
+- No logging of secrets.
+- Check mode support (reports what would be done without calling the CLI).
+"""
+
+from __future__ import annotations
+
+import os
+
+from dataclasses import dataclass
+from pathlib import Path
+from typing import Any, Dict, List, Literal, Optional, Sequence, Tuple, TypedDict, cast
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.bodsch.core.plugins.module_utils.module_results import results
-
-__metaclass__ = type
 
 DOCUMENTATION = r"""
 ---
 module: forgejo_cli
 author: Bodo 'bodsch' Schulz <bodo@boone-schulz.de>
-version_added: 1.0.0
+version_added: "1.0.0"
 
 short_description: Register Forgejo runners using the Forgejo CLI.
 description:
-  - This module allows registering Forgejo runners on a Forgejo server
+  - This module allows registering Forgejo Actions runners on a Forgejo server
     by invoking the Forgejo CLI.
   - It supports assigning runner secrets, scopes and labels.
+  - Check mode is supported and will report planned changes without executing them.
 
 options:
   command:
@@ -29,14 +42,16 @@ options:
       - The operation to perform.
       - Currently only runner registration is supported.
     choices: ["register"]
-    default: register
+    default: "register"
     type: str
 
   parameters:
     description:
-      - Optional additional parameters (currently unused).
+      - Optional additional CLI parameters to pass through to the Forgejo CLI command.
+      - Use with care; parameters are appended verbatim.
     required: false
     type: list
+    elements: str
     default: []
 
   working_dir:
@@ -56,24 +71,18 @@ options:
   runners:
     description:
       - List of runners to register.
-      - Each runner is a dictionary with at least C(name) and C(secret).
+      - Each runner must contain C(name) and C(secret).
       - Optional keys: C(scope), C(labels) (list of labels).
     required: true
     type: list
+    elements: dict
+
+notes:
+  - True idempotency depends on Forgejo exposing a CLI to list existing runners.
+    This module currently treats a successful registration as a change.
 """
 
 EXAMPLES = r"""
-- name: create runner token on {{ forgejo_runner_controller.hostname }}
-  remote_user: "{{ forgejo_runner_controller.remoteuser }}"
-  become_user: "{{ forgejo_runner_controller.username }}"
-  become: true
-  delegate_to: "{{ forgejo_runner_controller.hostname }}"
-  bodsch.scm.forgejo_cli:
-    command: register
-    config: "{{ forgejo_config_dir }}/forgejo.ini"
-    working_dir: "{{ forgejo_working_dir }}"
-    runners: "{{ forgejo_runner_register | default([]) }}"
-
 - name: Register runners on Forgejo
   become: true
   remote_user: "{{ forgejo_runner_controller.remoteuser }}"
@@ -90,8 +99,6 @@ EXAMPLES = r"""
         labels:
           - linux
           - x86
-      - name: runner2
-        secret: "SECRET_TOKEN_2"
 """
 
 RETURN = r"""
@@ -111,112 +118,187 @@ state:
   type: list
   elements: dict
   sample:
-    - runner1:
-        failed: false
-        msg: "Runner runner1 succesfully created."
-    - runner2:
-        failed: true
-        msg: "Missing secret."
-
+    - name: runner1
+      changed: true
+      failed: false
+      msg: "Runner runner1 successfully registered."
+    - name: runner2
+      changed: false
+      failed: true
+      msg: "Missing secret."
 """
 
-# ----------------------------------------------------------------------
+
+Command = Literal["register"]
+Scope = Literal[
+    "instance", "org", "repo"
+]  # Forgejo supports more; keep permissive at runtime.
 
 
-class ForgejoCli(object):
-    """ """
+class RunnerResult(TypedDict, total=False):
+    """Result structure for a single runner."""
 
-    module = None
+    name: str
+    changed: bool
+    failed: bool
+    msg: str
+    rc: int
+    stdout: str
+    stderr: str
 
-    def __init__(self, module):
-        """ """
+
+class ModuleResult(TypedDict):
+    """Result structure returned by the module."""
+
+    changed: bool
+    failed: bool
+    state: List[RunnerResult]
+
+
+@dataclass(frozen=True)
+class RunnerSpec:
+    """
+    Typed representation of a runner registration request.
+
+    Attributes:
+        name: Runner name.
+        secret: Runner registration secret.
+        scope: Optional scope (e.g. instance/org/repo).
+        labels: Optional list of labels.
+    """
+
+    name: str
+    secret: str
+    scope: Optional[str] = None
+    labels: Tuple[str, ...] = ()
+
+
+class ForgejoCli:
+    """
+    Execute Forgejo CLI operations for Ansible.
+
+    This class currently supports runner registration. The implementation avoids
+    leaking secrets and provides deterministic results per runner.
+    """
+
+    def __init__(self, module: AnsibleModule) -> None:
+        """
+        Initialize the CLI executor from Ansible module parameters.
+
+        Args:
+            module: The active AnsibleModule instance.
+        """
         self.module = module
 
-        # self._console = module.get_bin_path('console', False)
-
-        self.command = module.params.get("command")
-        self.parameters = module.params.get("parameters")
-        self.working_dir = module.params.get("working_dir")
-        self.environment = module.params.get("environment")
-        self.config = module.params.get("config")
-        self.runners = module.params.get("runners")
-
-        self.forgejo_bin = module.get_bin_path("forgejo", True)
-
-    def run(self):
-        """ """
-
-        if self.command == "register":
-            result = self.register()
-
-        return result
-
-    def register(self):
-        """
-        https://forgejo.org/docs/latest/admin/actions/#registration
-        forgejo forgejo-cli actions register --secret <secret>
-
-        forgejo action --help --config /etc/forgejo/forgejo.ini
-        """
-
-        result_state = []
-
-        for runner in self.runners:
-            res = {}
-            self.module.log(msg=f"  - '{runner}' ({type(runner)})")
-
-            runner_name = runner.get("name", None)
-
-            self.module.log(msg=f"     '{runner_name}'")
-            # runner_tags = []
-            # runner_token = ""
-            runner_secret = ""
-            runner_scope = ""
-            runner_labels = []
-
-            if runner_name:
-                # runner_tags = runner.get("tags", [None])
-                # runner_token = runner.get("token", None)
-                runner_secret = runner.get("secret", None)
-                runner_scope = runner.get("scope", None)
-                runner_labels = runner.get("labels", [])
-
-                if not runner_secret:
-                    res[runner_name] = dict(failed=True, msg="Missing secret.")
-                else:
-                    data = dict(
-                        runner_secret=runner_secret,
-                        runner_scope=runner_scope,
-                        runner_labels=runner_labels,
-                    )
-
-                    rc, out, err = self.register_runner(runner_name, data=data)
-
-                    if rc == 0:
-                        res = dict(
-                            failed=False,
-                            msg=f"Runner {runner_name} succesfully created.",
-                        )
-
-                result_state.append(res)
-
-        self.module.log(msg=f"= {result_state}")
-
-        _state, _changed, _failed, state, changed, failed = results(
-            self.module, result_state
+        self.command: Command = cast(Command, module.params.get("command", "register"))
+        self.parameters: List[str] = self._as_str_list(
+            module.params.get("parameters", [])
         )
 
-        result = dict(changed=_changed, failed=failed, state=result_state)
+        self.working_dir: str = cast(str, module.params.get("working_dir"))
+        self.config: str = cast(
+            str, module.params.get("config", "/etc/forgejo/forgejo.ini")
+        )
 
-        return result
+        self.runners_raw: List[Dict[str, Any]] = cast(
+            List[Dict[str, Any]], module.params.get("runners", [])
+        )
 
-    def register_runner(self, runner_name, data):
+        self.forgejo_bin: str = module.get_bin_path("forgejo", required=True)
 
-        secret = data.get("runner_secret")
-        scope = data.get("runner_scope", None)
-        labels = data.get("runner_labels", [])
+    def run(self) -> ModuleResult:
+        """
+        Execute the requested command.
 
-        args_list = [
+        Returns:
+            A module result containing aggregated status and per-runner state.
+        """
+        self._validate_paths()
+
+        os.chdir(self.working_dir)
+
+        if self.command != "register":
+            self.module.fail_json(
+                msg=f"Unsupported command '{self.command}'. Supported: register"
+            )
+
+        return self.register()
+
+    def register(self) -> ModuleResult:
+        """
+        Register one or more Forgejo Actions runners.
+
+        The underlying CLI call used:
+        `forgejo forgejo-cli actions register --name <name> --secret <secret> ...`
+
+        Returns:
+            Aggregated module result with one state entry per runner.
+        """
+        state: List[RunnerResult] = []
+        any_changed = False
+        any_failed = False
+
+        for runner_spec, parse_error in self._parse_runner_specs(self.runners_raw):
+            if parse_error is not None:
+                state.append(parse_error)
+                any_failed = True
+                continue
+
+            if self.module.check_mode:
+                state.append(
+                    {
+                        "name": runner_spec.name,
+                        "changed": True,
+                        "failed": False,
+                        "msg": f"Runner {runner_spec.name} would be registered (check mode).",
+                    }
+                )
+                any_changed = True
+                continue
+
+            rc, out, err = self.register_runner(runner_spec)
+
+            if rc == 0:
+                state.append(
+                    {
+                        "name": runner_spec.name,
+                        "changed": True,
+                        "failed": False,
+                        "msg": f"Runner {runner_spec.name} successfully registered.",
+                    }
+                )
+                any_changed = True
+            else:
+                state.append(
+                    {
+                        "name": runner_spec.name,
+                        "changed": False,
+                        "failed": True,
+                        "msg": (
+                            err
+                            or out
+                            or f"Runner {runner_spec.name} registration failed."
+                        ).strip(),
+                        "rc": rc,
+                        "stdout": (out or "").strip(),
+                        "stderr": (err or "").strip(),
+                    }
+                )
+                any_failed = True
+
+        return {"changed": any_changed, "failed": any_failed, "state": state}
+
+    def register_runner(self, runner: RunnerSpec) -> Tuple[int, str, str]:
+        """
+        Register a single runner via Forgejo CLI.
+
+        Args:
+            runner: Parsed runner specification.
+
+        Returns:
+            Tuple of (rc, stdout, stderr).
+        """
+        args: List[str] = [
             self.forgejo_bin,
             "--work-path",
             self.working_dir,
@@ -226,126 +308,206 @@ class ForgejoCli(object):
             "actions",
             "register",
             "--name",
-            runner_name,
+            runner.name,
             "--secret",
-            secret,
+            runner.secret,
         ]
 
-        if scope:
-            args_list.append(["--scope", scope])
+        if runner.scope:
+            args += ["--scope", runner.scope]
 
-        if isinstance(labels, list) and len(labels) > 0:
-            _labels = ",".join(labels)
-            args_list += ["--labels", _labels]
+        if runner.labels:
+            args += ["--labels", ",".join(runner.labels)]
 
-        self.module.log(msg=f"cmd: {args_list}")
+        if self.parameters:
+            args += self.parameters
 
-        rc, out, err = self._exec(args_list, check_rc=False)
+        return self._exec(args)
 
-        self.module.log(msg=f"out: {out}")
-        self.module.log(msg=f"err: {err}")
-        self.module.log(msg=f"cmd: {args_list}")
+    def _validate_paths(self) -> None:
+        """
+        Validate required filesystem paths.
 
-        return rc, out, err
+        Raises:
+            Calls module.fail_json on invalid paths.
+        """
+        wd = Path(self.working_dir)
+        if not wd.exists() or not wd.is_dir():
+            self.module.fail_json(msg=f"missing directory '{self.working_dir}'")
 
-    def _exec(self, commands, check_rc=True):
-        """ """
-        rc, out, err = self.module.run_command(commands, check_rc=check_rc)
+        cfg = Path(self.config)
+        if not cfg.exists() or not cfg.is_file():
+            self.module.fail_json(msg=f"missing config file '{self.config}'")
 
-        self.module.log(msg=f"  rc : '{rc}'")
+    def _parse_runner_specs(
+        self, raw_runners: Sequence[Dict[str, Any]]
+    ) -> List[Tuple[Optional[RunnerSpec], Optional[RunnerResult]]]:
+        """
+        Parse and validate runner dictionaries to typed RunnerSpec objects.
 
-        # if rc != 0:
-        self.module.log(msg=f"  out: '{out}'")
-        self.module.log(msg=f"  err: '{err}'")
+        Args:
+            raw_runners: Runner dictionaries from module parameters.
 
-        return rc, out, err
+        Returns:
+            List of tuples: (RunnerSpec or None, RunnerResult error or None).
+        """
+        parsed: List[Tuple[Optional[RunnerSpec], Optional[RunnerResult]]] = []
+
+        for idx, r in enumerate(raw_runners):
+            name = (r.get("name") or "").strip()
+            secret = (r.get("secret") or "").strip()
+            scope = r.get("scope")
+            labels_raw = r.get("labels", [])
+
+            if not name:
+                parsed.append(
+                    (
+                        None,
+                        {
+                            "name": f"<runner[{idx}]>",
+                            "changed": False,
+                            "failed": True,
+                            "msg": "Missing runner name.",
+                        },
+                    )
+                )
+                continue
+
+            if not secret:
+                parsed.append(
+                    (
+                        None,
+                        {
+                            "name": name,
+                            "changed": False,
+                            "failed": True,
+                            "msg": "Missing secret.",
+                        },
+                    )
+                )
+                continue
+
+            labels = self._as_str_tuple(labels_raw)
+            if labels is None:
+                parsed.append(
+                    (
+                        None,
+                        {
+                            "name": name,
+                            "changed": False,
+                            "failed": True,
+                            "msg": "labels must be a list of strings.",
+                        },
+                    )
+                )
+                continue
+
+            parsed.append(
+                (
+                    RunnerSpec(
+                        name=name,
+                        secret=secret,
+                        scope=cast(Optional[str], scope),
+                        labels=labels,
+                    ),
+                    None,
+                )
+            )
+
+        return parsed
+
+    def _exec(self, args: List[str]) -> Tuple[int, str, str]:
+        """
+        Execute a CLI command without logging secrets.
+
+        Args:
+            args: CLI token list.
+
+        Returns:
+            Tuple of (rc, stdout, stderr).
+        """
+        # Never log secrets: redact before any debug output.
+        redacted = self._redact_args(args)
+        self.module.log(msg=f"cmd: {redacted}")
+
+        rc, out, err = self.module.run_command(args, check_rc=False)
+        return int(rc), cast(str, out), cast(str, err)
+
+    @staticmethod
+    def _redact_args(args: Sequence[str]) -> List[str]:
+        """
+        Redact secret values from an argument list.
+
+        Args:
+            args: Command arguments.
+
+        Returns:
+            A copy of args where the value following '--secret' is replaced by '***'.
+        """
+        redacted = list(args)
+        for i in range(len(redacted) - 1):
+            if redacted[i] == "--secret":
+                redacted[i + 1] = "***"
+        return redacted
+
+    @staticmethod
+    def _as_str_list(value: Any) -> List[str]:
+        """
+        Convert a value to a list of strings.
+
+        Args:
+            value: Input value.
+
+        Returns:
+            List of strings (best-effort).
+        """
+        if value is None:
+            return []
+        if isinstance(value, list):
+            return [str(v) for v in value]
+        return [str(value)]
+
+    @staticmethod
+    def _as_str_tuple(value: Any) -> Optional[Tuple[str, ...]]:
+        """
+        Convert a value to a tuple of strings, or return None if invalid.
+
+        Args:
+            value: Expected to be a list/tuple of values.
+
+        Returns:
+            Tuple of strings if valid, otherwise None.
+        """
+        if value is None:
+            return tuple()
+        if isinstance(value, (list, tuple)):
+            return tuple(str(v) for v in value)
+        return None
 
 
-def main():
-    """ """
-    specs = dict(
-        command=dict(
-            default="register",
-            choices=[
-                "register",
-            ],
-        ),
-        parameters=dict(required=False, type=list, default=[]),
-        working_dir=dict(required=True, type=str),
-        config=dict(required=False, default="/etc/forgejo/forgejo.ini", type=str),
-        runners=dict(
-            required=True,
-            type=list,
-        ),
+def main() -> None:
+    """
+    Ansible module entry point.
+
+    Defines argument specification and executes the Forgejo CLI wrapper.
+    """
+    specs: Dict[str, Any] = dict(
+        command=dict(type="str", default="register", choices=["register"]),
+        parameters=dict(type="list", elements="str", required=False, default=[]),
+        working_dir=dict(type="str", required=True),
+        config=dict(type="str", required=False, default="/etc/forgejo/forgejo.ini"),
+        runners=dict(type="list", required=True, elements="dict"),
     )
 
     module = AnsibleModule(
         argument_spec=specs,
-        supports_check_mode=False,
+        supports_check_mode=True,
     )
 
-    kc = ForgejoCli(module)
-    result = kc.run()
-
-    module.log(msg=f"= result : '{result}'")
-
+    manager = ForgejoCli(module)
+    result = manager.run()
     module.exit_json(**result)
 
 
-# import module snippets
 if __name__ == "__main__":
     main()
-
-"""
-root@instance:/# forgejo --help
-NAME:
-   Forgejo - A painless self-hosted Git service
-
-USAGE:
-   forgejo [global options] command [command options] [arguments...]
-
-VERSION:
-   1.19.0 built with GNU Make 4.1, go1.20.2 : bindata, sqlite, sqlite_unlock_notify
-
-DESCRIPTION:
-   By default, forgejo will start serving using the webserver with no
-arguments - which can alternatively be run by running the subcommand web.
-
-COMMANDS:
-   web              Start Forgejo web server
-   serv             This command should only be called by SSH shell
-   hook             Delegate commands to corresponding Git hooks
-   dump             Dump Forgejo files and database
-   cert             Generate self-signed certificate
-   admin            Command line interface to perform common administrative operations
-   generate         Command line interface for running generators
-   migrate          Migrate the database
-   keys             This command queries the Forgejo database to get the authorized command for a given ssh key fingerprint
-   convert          Convert the database
-   doctor           Diagnose and optionally fix problems
-   manager          Manage the running forgejo process
-   embedded         Extract embedded resources
-   migrate-storage  Migrate the storage
-   docs             Output CLI documentation
-   dump-repo        Dump the repository from git/github/forgejo/gitlab
-   restore-repo     Restore the repository from disk
-   help, h          Shows a list of commands or help for one command
-
-GLOBAL OPTIONS:
-   --port value, -p value         Temporary port number to prevent conflict (default: "3000")
-   --install-port value           Temporary port number to run the install page on to prevent conflict (default: "3000")
-   --pid value, -P value          Custom pid file path (default: "/run/forgejo.pid")
-   --quiet, -q                    Only display Fatal logging errors until logging is set-up
-   --verbose                      Set initial logging to TRACE level until logging is properly set-up
-   --custom-path value, -C value  Custom path file path (default: "/usr/bin/custom")
-   --config value, -c value       Custom configuration file path (default: "/usr/bin/custom/conf/app.ini")
-   --version, -v                  print the version
-   --work-path value, -w value    Set the forgejo working path (default: "/usr/bin")
-   --help, -h                     show help
-
-DEFAULT CONFIGURATION:
-     CustomPath:  /usr/bin/custom
-     CustomConf:  /usr/bin/custom/conf/app.ini
-     AppPath:     /usr/bin/forgejo
-     AppWorkPath: /usr/bin
-"""

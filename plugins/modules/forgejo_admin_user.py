@@ -1,34 +1,55 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# (c) 2023-2025, Bodo Schulz <bodo@boone-schulz.de>
-# Apache (see LICENSE or https://opensource.org/licenses/Apache-2.0)
+"""
+Ansible module to manage a Forgejo admin user.
 
-from __future__ import absolute_import, print_function
+This module is intended to be executed on the Forgejo host and typically as the
+Forgejo service user so the Forgejo CLI can access the configured installation.
+
+Behavior:
+- Ensures a single admin user exists (idempotent).
+- If the user already exists, no change is reported.
+- User deletion is currently not supported (state=absent returns a message).
+
+The module uses the collection utility:
+`ansible_collections.bodsch.scm.plugins.module_utils.forgejo.cli_user.ForgejoCliUser`.
+"""
+
+from __future__ import annotations
 
 import os
+from pathlib import Path
+from typing import Any, Literal, Mapping, Optional, TypedDict, cast
 
 from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.bodsch.scm.plugins.module_utils.forgejo.cli_user import (
     ForgejoCliUser,
 )
 
-__metaclass__ = type
-
 DOCUMENTATION = r"""
 ---
-module: forgejo_user
+module: forgejo_admin_user
 author: Bodo 'bodsch' Schulz (@bodsch)
 version_added: "1.0.0"
 
 short_description: Manage Forgejo admin users.
 description:
-  - This module allows to create an admin user in a Forgejo installation
-    if it does not already exist.
+  - This module creates an admin user in a Forgejo installation if it does not exist.
   - Deletion of users is currently not supported.
   - The module must be executed as the Forgejo service user to access the database.
 
 options:
+  state:
+    description:
+      - Target state of the user.
+      - C(present) ensures the user exists.
+      - C(absent) is currently not supported and will return without changes.
+    required: false
+    type: str
+    choices: ["present", "absent"]
+    default: "present"
+
   username:
     description:
       - The Forgejo username to create if it does not exist.
@@ -38,6 +59,7 @@ options:
   password:
     description:
       - Password for the Forgejo user.
+      - Required when I(state=present) and the user does not yet exist.
     required: false
     type: str
     no_log: true
@@ -45,6 +67,7 @@ options:
   email:
     description:
       - Email address of the Forgejo user.
+      - Required when I(state=present) and the user does not yet exist.
     required: false
     type: str
 
@@ -74,6 +97,7 @@ EXAMPLES = r"""
   become_user: "{{ forgejo_system_user }}"
   become: true
   bodsch.scm.forgejo_admin_user:
+    state: present
     username: "{{ forgejo_admin_user.username }}"
     password: "{{ forgejo_admin_user.password }}"
     email: "{{ forgejo_admin_user.email }}"
@@ -93,153 +117,232 @@ changed:
   type: bool
   sample: true
 
-failed:
-  description: Indicates if the module encountered a failure.
-  returned: always
-  type: bool
-  sample: false
-
 msg:
   description: Human-readable message with details about the operation.
   returned: always
   type: str
-  sample: "user admin already created."
+  sample: "User admin was created."
+
+user:
+  description: The username that was evaluated/managed by this module.
+  returned: always
+  type: str
+  sample: "admin"
 """
 
-# ----------------------------------------------------------------------
+
+class ModuleResult(TypedDict, total=False):
+    """Typed structure for module return values."""
+
+    changed: bool
+    msg: str
+    user: str
+
+
+State = Literal["present", "absent"]
 
 
 class ForgejoAdminUser(ForgejoCliUser):
-    """ """
+    """
+    Ensure a Forgejo admin user exists.
 
-    module = None
+    This class provides idempotent user creation by checking existing Forgejo users
+    and creating the requested admin user if missing.
 
-    def __init__(self, module):
-        """ """
-        self.module = module
+    Deletion is intentionally not implemented. If called with state=absent, a
+    non-changing result is returned.
+    """
 
-        self.state = module.params.get("state")
-        self.admin = module.params.get("admin")
-        self.username = module.params.get("username")
-        self.password = module.params.get("password")
-        self.email = module.params.get("email")
+    def __init__(self, module: AnsibleModule) -> None:
+        """
+        Initialize the manager with module parameters.
 
-        self.working_dir = module.params.get("working_dir")
-        self.config = module.params.get("config")
+        Args:
+            module: The active AnsibleModule instance providing parameters and helpers.
+        """
+        self.module: AnsibleModule = module
+
+        self.state: State = cast(State, module.params.get("state", "present"))
+        self.username: Optional[str] = module.params.get("username")
+        self.password: Optional[str] = module.params.get("password")
+        self.email: Optional[str] = module.params.get("email")
+
+        self.working_dir: str = module.params.get("working_dir", "/var/lib/forgejo")
+        self.config: str = module.params.get("config", "/etc/forgejo/forgejo.ini")
 
         super().__init__(
             module, working_dir=self.working_dir, forgejo_config=self.config
         )
 
-    def run(self):
-        """ """
-        result = dict(changed=False, failed=True)
+    def _validate_paths(self) -> None:
+        """
+        Validate working directory and configuration file paths.
 
-        if os.path.isdir(self.working_dir):
-            os.chdir(self.working_dir)
-
-        existing_users = self.list_users()
-
-        # self.module.log(msg=f"  existing_users : '{existing_users}'")
-
-        # if self.state == "present":
-        if not existing_users.get(self.username):
-            result = self.add_user(
-                username=self.username,
-                password=self.password,
-                email=self.email,
-                admin_user=True,
+        Raises:
+            Calls module.fail_json on validation errors.
+        """
+        wd = Path(self.working_dir)
+        if not wd.exists() or not wd.is_dir():
+            self.module.fail_json(
+                msg=f"working_dir '{self.working_dir}' does not exist or is not a directory."
             )
-        else:
-            result = dict(changed=False, msg=f"user {self.username} already created.")
+
+        cfg = Path(self.config)
+        if not cfg.exists() or not cfg.is_file():
+            self.module.fail_json(
+                msg=f"config '{self.config}' does not exist or is not a file."
+            )
+
+    def _ensure_required_params_for_create(self) -> None:
+        """
+        Ensure required parameters for user creation are present.
+
+        For idempotency we validate them only when we might need to create the user.
+        This method is called after the existence check when applicable.
+
+        Raises:
+            Calls module.fail_json on missing parameters.
+        """
+        if not self.username or not str(self.username).strip():
+            self.module.fail_json(
+                msg="Parameter 'username' must be set for state=present."
+            )
+
+        if not self.password or not str(self.password).strip():
+            self.module.fail_json(
+                msg="Parameter 'password' must be set to create a new user."
+            )
+
+        if not self.email or not str(self.email).strip():
+            self.module.fail_json(
+                msg="Parameter 'email' must be set to create a new user."
+            )
+
+    @staticmethod
+    def _user_exists(existing_users: Any, username: str) -> bool:
+        """
+        Determine whether a user exists in the data returned by list_users().
+
+        The underlying helper may return different shapes depending on implementation.
+        This method safely supports common patterns (mapping or iterable).
+
+        Args:
+            existing_users: Data returned by ForgejoCliUser.list_users().
+            username: Username to search for.
+
+        Returns:
+            True if the user exists, otherwise False.
+        """
+        if isinstance(existing_users, Mapping):
+            return username in existing_users
+        if isinstance(existing_users, (list, tuple, set, frozenset)):
+            return username in existing_users
+        return False
+
+    def run(self) -> ModuleResult:
+        """
+        Execute the desired state operation.
+
+        Returns:
+            A dict compatible with AnsibleModule.exit_json().
+        """
+        result: ModuleResult = {"changed": False, "user": self.username or ""}
 
         if self.state == "absent":
-            result["msg"] = "This part is currently not supported."
+            result["msg"] = "User deletion is currently not supported."
+            return result
 
-        return result
+        # state == "present"
+        self._validate_paths()
+
+        if not self.username or not str(self.username).strip():
+            self.module.fail_json(
+                msg="Parameter 'username' must be set for state=present."
+            )
+
+        try:
+            os.chdir(self.working_dir)
+        except OSError as exc:
+            self.module.fail_json(
+                msg=f"Failed to change directory to '{self.working_dir}': {exc}"
+            )
+
+        try:
+            existing_users = self.list_users()
+        except Exception as exc:  # pragma: no cover - depends on external CLI utility
+            self.module.fail_json(msg=f"Failed to list Forgejo users: {exc}")
+
+        if self._user_exists(existing_users, self.username):
+            result["msg"] = f"User {self.username} already exists."
+            return result
+
+        # Only now we require password/email, because creation is needed.
+        self._ensure_required_params_for_create()
+
+        if self.module.check_mode:
+            return {
+                "changed": True,
+                "msg": f"User {self.username} would be created (check mode).",
+                "user": self.username,
+            }
+
+        try:
+            created = self.add_user(
+                username=self.username,
+                password=cast(str, self.password),
+                email=cast(str, self.email),
+                admin_user=True,
+            )
+        except Exception as exc:  # pragma: no cover - depends on external CLI utility
+            self.module.fail_json(
+                msg=f"Failed to create Forgejo user '{self.username}': {exc}"
+            )
+
+        # Normalize add_user result to include minimum keys expected by this module.
+        if isinstance(created, dict):
+            normalized: ModuleResult = {
+                "user": self.username,
+                "changed": bool(created.get("changed", True)),
+            }
+            normalized["msg"] = str(
+                created.get("msg", f"User {self.username} was created.")
+            )
+            return normalized
+
+        return {
+            "changed": True,
+            "msg": f"User {self.username} was created.",
+            "user": self.username,
+        }
 
 
-def main():
-    """ """
-    specs = dict(
-        username=dict(required=False, type=str),
-        password=dict(
-            required=False,
-            type=str,
-            no_log=True,
+def main() -> None:
+    """
+    Ansible module entrypoint.
+
+    Defines the argument specification, instantiates the manager and exits with the
+    resulting data structure.
+    """
+    argument_spec = dict(
+        state=dict(
+            type="str", required=False, default="present", choices=["present", "absent"]
         ),
-        email=dict(required=False, type=str),
-        working_dir=dict(required=False, default="/var/lib/forgejo", type=str),
-        config=dict(required=False, default="/etc/forgejo/forgejo.ini", type=str),
+        username=dict(type="str", required=False),
+        password=dict(type="str", required=False, no_log=True),
+        email=dict(type="str", required=False),
+        working_dir=dict(type="str", required=False, default="/var/lib/forgejo"),
+        config=dict(type="str", required=False, default="/etc/forgejo/forgejo.ini"),
     )
 
     module = AnsibleModule(
-        argument_spec=specs,
-        supports_check_mode=False,
+        argument_spec=argument_spec,
+        supports_check_mode=True,
     )
 
-    kc = ForgejoAdminUser(module)
-    result = kc.run()
-
-    module.log(msg=f"= result : '{result}'")
-
+    manager = ForgejoAdminUser(module)
+    result = manager.run()
     module.exit_json(**result)
 
 
-# import module snippets
 if __name__ == "__main__":
     main()
-
-"""
-root@instance:/# forgejo --help
-NAME:
-   Forgejo - A painless self-hosted Git service
-
-USAGE:
-   forgejo [global options] command [command options] [arguments...]
-
-VERSION:
-   1.19.0 built with GNU Make 4.1, go1.20.2 : bindata, sqlite, sqlite_unlock_notify
-
-DESCRIPTION:
-   By default, forgejo will start serving using the webserver with no
-arguments - which can alternatively be run by running the subcommand web.
-
-COMMANDS:
-   web              Start Forgejo web server
-   serv             This command should only be called by SSH shell
-   hook             Delegate commands to corresponding Git hooks
-   dump             Dump Forgejo files and database
-   cert             Generate self-signed certificate
-   admin            Command line interface to perform common administrative operations
-   generate         Command line interface for running generators
-   migrate          Migrate the database
-   keys             This command queries the Forgejo database to get the authorized command for a given ssh key fingerprint
-   convert          Convert the database
-   doctor           Diagnose and optionally fix problems
-   manager          Manage the running forgejo process
-   embedded         Extract embedded resources
-   migrate-storage  Migrate the storage
-   docs             Output CLI documentation
-   dump-repo        Dump the repository from git/github/forgejo/gitlab
-   restore-repo     Restore the repository from disk
-   help, h          Shows a list of commands or help for one command
-
-GLOBAL OPTIONS:
-   --port value, -p value         Temporary port number to prevent conflict (default: "3000")
-   --install-port value           Temporary port number to run the install page on to prevent conflict (default: "3000")
-   --pid value, -P value          Custom pid file path (default: "/run/forgejo.pid")
-   --quiet, -q                    Only display Fatal logging errors until logging is set-up
-   --verbose                      Set initial logging to TRACE level until logging is properly set-up
-   --custom-path value, -C value  Custom path file path (default: "/usr/bin/custom")
-   --config value, -c value       Custom configuration file path (default: "/usr/bin/custom/conf/app.ini")
-   --version, -v                  print the version
-   --work-path value, -w value    Set the forgejo working path (default: "/usr/bin")
-   --help, -h                     show help
-
-DEFAULT CONFIGURATION:
-     CustomPath:  /usr/bin/custom
-     CustomConf:  /usr/bin/custom/conf/app.ini
-     AppPath:     /usr/bin/forgejo
-     AppWorkPath: /usr/bin
-"""
