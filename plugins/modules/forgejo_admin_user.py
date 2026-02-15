@@ -255,6 +255,8 @@ class ForgejoAdminUser(ForgejoCliUser):
         # state == "present"
         self._validate_paths()
 
+        os.chdir(self.working_dir)
+
         if not self.username or not str(self.username).strip():
             self.module.fail_json(
                 msg="Parameter 'username' must be set for state=present."

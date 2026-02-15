@@ -169,8 +169,6 @@ class ForgejoConfigCompare:
         """
         self._validate_inputs()
 
-        os.chdir(self.working_dir)
-
         result: ModuleResult = {
             "failed": False,
             "changed": False,

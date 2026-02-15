@@ -506,6 +506,9 @@ class ForgejoAuth:
             ModuleResult for exit_json().
         """
         self._validate_paths()
+
+        os.chdir(self.working_dir)
+
         create_directory(directory=self.cache_directory, mode="0750")
 
         if self.state == "absent":
