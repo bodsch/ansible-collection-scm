@@ -1,3 +1,4 @@
+import os
 from typing import List, Tuple
 
 
@@ -46,3 +47,8 @@ def check_existing_users(
             existing_emails.add(email)
 
     return existing_users, non_existing_users
+
+
+def is_absolute_path(path: str) -> bool:
+    """ """
+    return os.path.isabs(path)

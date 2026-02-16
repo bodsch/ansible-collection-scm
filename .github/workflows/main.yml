@@ -22,8 +22,7 @@ on:
     paths:
       - "!Makefile"
       - "!README.md"
-      - '.config/ansible-lint.yml'
-      - '.yamllint'
+      - '!roles/*/*.md'
   pull_request:
     branches:
       - 'main'
@@ -33,8 +32,7 @@ on:
     paths:
       - "!Makefile"
       - "!README.md"
-      - '.config/ansible-lint.yml'
-      - '.yamllint'
+      - '!roles/*/*.md'
 
 env:
   COLLECTION_NAMESPACE: bodsch

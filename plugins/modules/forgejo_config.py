@@ -1,15 +1,31 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
 
-# (c) 2020-2025, Bodo Schulz <bodo@boone-schulz.de>
-# Apache (see LICENSE or https://opensource.org/licenses/Apache-2.0)
+"""
+Ansible module to compare and update Forgejo configuration files efficiently.
 
-from __future__ import absolute_import, division, print_function
+This module compares an existing Forgejo configuration file (typically `forgejo.ini`)
+with a newly generated configuration file and applies changes only when relevant.
+
+To avoid unnecessary service restarts, it can ignore specific auto-generated keys
+that Forgejo may update at runtime (e.g., INTERNAL_TOKEN, JWT_SECRET).
+
+Key features:
+- Section-based comparison (via ForgejoIni checksums) with an ignore-map.
+- Atomic replacement of the configuration file when changes are required.
+- Ownership enforcement after updates/creation.
+- Check mode support (reports changes without writing files).
+"""
+
+from __future__ import annotations
 
 import grp
 import os
 import pwd
 import shutil
+import tempfile
+from pathlib import Path
+from typing import Any, Dict, Mapping, Optional, Sequence, TypedDict
 
 from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.bodsch.scm.plugins.module_utils.forgejo.ini import ForgejoIni
@@ -62,9 +78,10 @@ notes:
   - Only updates the configuration file if relevant changes are detected.
   - Ignores automatic Forgejo-generated values such as INTERNAL_TOKEN
     in C(security) and JWT_SECRET in C(oauth2).
+  - Supports check mode: changes are reported, no files are written.
 """
 
-EXAMPLES = """
+EXAMPLES = r"""
 - name: Update Forgejo configuration without unnecessary restarts
   bodsch.scm.forgejo_config:
     config: "{{ forgejo_config_dir }}/forgejo.ini"
@@ -95,148 +112,311 @@ msg:
   sample: "forgejo.ini was changed."
 """
 
-# ---------------------------------------------------------------------------------------
+
+class ModuleResult(TypedDict):
+    """Typed result structure returned by this module."""
+
+    failed: bool
+    changed: bool
+    msg: str
 
 
-class ForgejoConfigCompare(object):
-    """ """
+IgnoreMap = Mapping[str, Sequence[str]]
 
-    module = None
 
-    def __init__(self, module):
-        """ """
+class ForgejoConfigCompare:
+    """
+    Compare and update Forgejo configuration files.
+
+    The comparison is performed section-by-section using `ForgejoIni` checksums.
+    Sections and keys configured in `ignore_map` are excluded from checksum and merge
+    operations to prevent changes caused by Forgejo runtime-generated secrets from
+    triggering updates and restarts.
+
+    This class performs:
+    - Validation of input paths and owner/group values.
+    - Config creation if missing.
+    - Merge+replace when relevant changes exist.
+    - Ownership enforcement on the resulting config file.
+    """
+
+    def __init__(self, module: AnsibleModule) -> None:
+        """
+        Initialize the comparer from Ansible module parameters.
+
+        Args:
+            module: The active AnsibleModule instance.
+        """
         self.module = module
 
-        self.config = module.params.get("config")
-        self.new_config = module.params.get("new_config")
-        self.owner = module.params.get("owner")
-        self.group = module.params.get("group")
+        self.config: str = str(module.params.get("config"))
+        self.new_config: str = str(module.params.get("new_config"))
+        self.owner: str = str(module.params.get("owner"))
+        self.group: str = str(module.params.get("group"))
 
-        self.ignore_map = {"oauth2": ["JWT_SECRET"], "security": ["INTERNAL_TOKEN"]}
+        # Keys that Forgejo may rewrite at runtime and should not trigger a config update.
+        self.ignore_map: IgnoreMap = {
+            "oauth2": ["JWT_SECRET"],
+            "security": ["INTERNAL_TOKEN"],
+        }
 
-    def run(self):
-        """ """
+    def run(self) -> ModuleResult:
         """
-        Annahme: self.config ist Pfad zu forgejo.ini, self.new_config zu forgejo.new,
-        self.ignore_map ist das Dict für ignore_keys, self.owner/group usw. existieren.
+        Execute the comparison and update flow.
+
+        Returns:
+            ModuleResult with keys: failed, changed, msg.
         """
-        result = dict(failed=False, changed=False, msg="forgejo.ini is up-to-date.")
+        self._validate_inputs()
 
-        # 1) Wenn config nicht existiert: neu kopieren
-        if not os.path.exists(self.config):
-            shutil.copyfile(self.new_config, self.config)
-            shutil.chown(self.config, self.owner, self.group)
-            return dict(
-                failed=False, changed=True, msg="forgejo.ini was created successfully."
-            )
+        result: ModuleResult = {
+            "failed": False,
+            "changed": False,
+            "msg": "forgejo.ini is up-to-date.",
+        }
 
-        # 2) Sonst manuell beide Dateien einlesen, OHNE ConfigParser
-        org = ForgejoIni(self.module, path=self.config, ignore_keys=self.ignore_map)
-        new = ForgejoIni(self.module, path=self.new_config, ignore_keys=self.ignore_map)
+        config_path = Path(self.config)
+        new_path = Path(self.new_config)
 
-        # 3) Alle möglichen Sektionen sammeln
-        all_sections = (
-            set(org.data.keys()) | set(new.data.keys()) | set(self.ignore_map.keys())
-        )
+        # 1) Config does not exist -> create from new_config.
+        if not config_path.exists():
+            if self.module.check_mode:
+                return {
+                    "failed": False,
+                    "changed": True,
+                    "msg": "forgejo.ini would be created (check mode).",
+                }
 
-        # 4) Struktur, um Unterschiede zu protokollieren
-        #    Zum Beispiel: differences = { section: {"status": ..., "cs_base": ..., "cs_new": ...}, ... }
-        differences = {}
-
-        for section in sorted(all_sections):
-
-            cs_base = ""
-            cs_new = ""
-            # a) Items (Key→Value) aus Base/ New holen, oder {} falls fehlt
-            items_base = org.data.get(section, {})
-            items_new = new.data.get(section, {})
-
-            if len(items_base) > 0:
-                cs_base = org.checksum_section(section)
-            if len(items_new) > 0:
-                cs_new = new.checksum_section(section)
-
-            # c) Status bestimmen:
-            #    - "org"      : Sektion nur in Base vorhanden
-            #    - "new"      : Sektion nur in New vorhanden
-            #    - "identical": in beiden vorhanden & gleiche Hashes
-            #    - "modified" : in beiden vorhanden, aber unterschiedliche Hashes
-
-            if cs_base == cs_new:
-                status = "identical"
-            else:
-                if section in org.data and section not in new.data:
-                    status = "org"
-                    self.module.log("  only in org data")
-                elif section not in org.data and section in new.data:
-                    status = "new"
-                    self.module.log("  only in new data")
-                else:  # existiert in beiden
-                    if cs_base == cs_new:
-                        status = "identical"
-                    else:
-                        status = "modified"
-
-            differences[section] = {
-                "status": status,
-                "cs_base": cs_base,
-                "cs_new": cs_new,
-                "items_base": items_base,
-                "items_new": items_new,
+            self._atomic_copy(src=new_path, dst=config_path)
+            self._ensure_ownership(config_path)
+            return {
+                "failed": False,
+                "changed": True,
+                "msg": "forgejo.ini was created successfully.",
             }
 
-        # 5) Prüfen, ob irgendwo eine Sektion nicht "identical" ist
-        sections_with_changes = [
-            sec for sec, info in differences.items() if info["status"] != "identical"
-        ]
-        if not sections_with_changes:
-            # Alles identisch – kein Merge nötig
+        # 2) Compare (section checksums) while ignoring volatile keys.
+        org_ini = ForgejoIni(
+            self.module, path=str(config_path), ignore_keys=dict(self.ignore_map)
+        )
+        new_ini = ForgejoIni(
+            self.module, path=str(new_path), ignore_keys=dict(self.ignore_map)
+        )
+
+        if not self._relevant_changes_exist(org_ini, new_ini):
             return result
 
-        merged_path = os.path.join(os.path.dirname(self.config), "forgejo.merged")
+        # 3) Merge and replace.
+        if self.module.check_mode:
+            return {
+                "failed": False,
+                "changed": True,
+                "msg": "forgejo.ini would be updated (check mode).",
+            }
+
+        merged_path = self._merge_to_tempfile(base_path=config_path, new_path=new_path)
+        try:
+            self._atomic_copy(src=merged_path, dst=config_path)
+            self._ensure_ownership(config_path)
+        finally:
+            try:
+                merged_path.unlink(missing_ok=True)  # py3.8+: missing_ok supported
+            except TypeError:
+                if merged_path.exists():
+                    merged_path.unlink()
+
+        return {"failed": False, "changed": True, "msg": "forgejo.ini was changed."}
+
+    def _validate_inputs(self) -> None:
+        """
+        Validate module inputs (paths and owner/group).
+
+        Raises:
+            Calls module.fail_json() on validation errors.
+        """
+        config_path = Path(self.config)
+        new_path = Path(self.new_config)
+
+        # new_config must exist because it is the comparison source and creation source.
+        if not new_path.exists() or not new_path.is_file():
+            self.module.fail_json(
+                msg=f"new_config '{self.new_config}' does not exist or is not a file."
+            )
+
+        # If config exists, it must be a file. If it doesn't exist, creation path is used.
+        if config_path.exists() and not config_path.is_file():
+            self.module.fail_json(
+                msg=f"config '{self.config}' exists but is not a file."
+            )
+
+        # Validate owner/group early to get deterministic failures.
+        try:
+            pwd.getpwnam(self.owner)
+        except KeyError:
+            self.module.fail_json(
+                msg=f"owner '{self.owner}' does not exist on the target system."
+            )
+        try:
+            grp.getgrnam(self.group)
+        except KeyError:
+            self.module.fail_json(
+                msg=f"group '{self.group}' does not exist on the target system."
+            )
+
+    def _relevant_changes_exist(self, org_ini: ForgejoIni, new_ini: ForgejoIni) -> bool:
+        """
+        Determine whether there are relevant config changes.
+
+        The comparison is based on per-section checksums as computed by ForgejoIni.
+        Sections that only differ in ignored keys will be treated as identical.
+
+        Args:
+            org_ini: Parsed original config.
+            new_ini: Parsed new config.
+
+        Returns:
+            True if any relevant change is detected, otherwise False.
+        """
+        all_sections = self._collect_sections(org_ini, new_ini, self.ignore_map)
+
+        for section in all_sections:
+            items_org = org_ini.data.get(section, {})
+            items_new = new_ini.data.get(section, {})
+
+            cs_org = org_ini.checksum_section(section) if items_org else ""
+            cs_new = new_ini.checksum_section(section) if items_new else ""
+
+            if cs_org != cs_new:
+                return True
+
+        return False
+
+    @staticmethod
+    def _collect_sections(
+        org_ini: ForgejoIni, new_ini: ForgejoIni, ignore_map: IgnoreMap
+    ) -> Sequence[str]:
+        """
+        Collect a stable list of sections to compare.
+
+        Args:
+            org_ini: Parsed original config.
+            new_ini: Parsed new config.
+            ignore_map: Ignore map containing sections that should always be considered.
+
+        Returns:
+            Sorted list of section names.
+        """
+        sections = (
+            set(org_ini.data.keys()) | set(new_ini.data.keys()) | set(ignore_map.keys())
+        )
+        return sorted(sections)
+
+    def _merge_to_tempfile(self, base_path: Path, new_path: Path) -> Path:
+        """
+        Merge base and new config into a temporary file in the target directory.
+
+        The temp file is created next to the destination to support atomic replacement.
+
+        Args:
+            base_path: Existing config file path.
+            new_path: New config file path.
+
+        Returns:
+            Path to the merged temporary file.
+        """
+        target_dir = str(base_path.parent)
+
+        fd, tmp_name = tempfile.mkstemp(
+            prefix="forgejo.", suffix=".merged", dir=target_dir
+        )
+        os.close(fd)
+        tmp_path = Path(tmp_name)
 
         ForgejoIni.merge(
             module=self.module,
-            base_path=self.config,
-            new_path=self.new_config,
-            output_path=merged_path,
-            ignore_keys=self.ignore_map,
+            base_path=str(base_path),
+            new_path=str(new_path),
+            output_path=str(tmp_path),
+            ignore_keys=dict(self.ignore_map),
         )
 
-        shutil.copyfile(merged_path, self.config)
-        shutil.chown(self.config, self.owner, self.group)
+        return tmp_path
 
-        return dict(failed=False, changed=True, msg="forgejo.ini was changed.")
+    def _atomic_copy(self, src: Path, dst: Path) -> None:
+        """
+        Copy `src` to `dst` via a temporary file and then atomically replace.
 
-    def get_file_ownership(self, filename):
-        return (
-            pwd.getpwuid(os.stat(filename).st_uid).pw_name,
-            grp.getgrgid(os.stat(filename).st_gid).gr_name,
-        )
+        This prevents partially written configuration files on failure.
+
+        Args:
+            src: Source file path.
+            dst: Destination file path.
+
+        Raises:
+            Calls module.fail_json() if file operations fail.
+        """
+        try:
+            dst_parent = dst.parent
+            dst_parent.mkdir(parents=True, exist_ok=True)
+
+            # Preserve mode from existing destination if present; otherwise take source mode.
+            dst_mode: Optional[int] = None
+            if dst.exists():
+                dst_mode = dst.stat().st_mode & 0o7777
+
+            fd, tmp_name = tempfile.mkstemp(
+                prefix=dst.name + ".", suffix=".tmp", dir=str(dst_parent)
+            )
+            os.close(fd)
+            tmp_path = Path(tmp_name)
+
+            shutil.copyfile(str(src), str(tmp_path))
+
+            if dst_mode is not None:
+                os.chmod(str(tmp_path), dst_mode)
+
+            os.replace(str(tmp_path), str(dst))
+        except OSError as exc:
+            self.module.fail_json(msg=f"Failed to write '{dst}': {exc}")
+
+    def _ensure_ownership(self, path: Path) -> None:
+        """
+        Ensure file ownership matches the requested owner/group.
+
+        Args:
+            path: Path to apply ownership on.
+
+        Raises:
+            Calls module.fail_json() if chown fails.
+        """
+        try:
+            shutil.chown(str(path), self.owner, self.group)
+        except OSError as exc:
+            self.module.fail_json(msg=f"Failed to set ownership on '{path}': {exc}")
 
 
-def main():
-    """ """
-    specs = dict(
-        config=dict(required=False, default="/etc/forgejo/forgejo.ini", type=str),
-        new_config=dict(required=False, default="/etc/forgejo/forgejo.new", type=str),
+def main() -> None:
+    """
+    Ansible module entry point.
+
+    Defines argument specification and executes ForgejoConfigCompare.
+    """
+    specs: Dict[str, Any] = dict(
+        config=dict(required=False, default="/etc/forgejo/forgejo.ini", type="str"),
+        new_config=dict(required=False, default="/etc/forgejo/forgejo.new", type="str"),
         owner=dict(required=False, type="str", default="forgejo"),
         group=dict(required=False, type="str", default="forgejo"),
     )
 
     module = AnsibleModule(
         argument_spec=specs,
-        supports_check_mode=False,
+        supports_check_mode=True,
     )
 
-    config = ForgejoConfigCompare(module)
-    result = config.run()
-
-    module.log(msg=f"= result : '{result}'")
-
+    comparer = ForgejoConfigCompare(module)
+    result = comparer.run()
     module.exit_json(**result)
 
 
-# import module snippets
 if __name__ == "__main__":
     main()

@@ -485,7 +485,7 @@ class GitHub:
 
         api_url = f"{self.base_api_url}/repos/{self.github_owner}/{self.github_repository}/releases/tags/{tag}"
 
-        (status_code, releases, error) = self._get_request(api_url)
+        status_code, releases, error = self._get_request(api_url)
 
         if status_code != 200:
             self.module.log(
@@ -522,7 +522,7 @@ class GitHub:
         """
         # self.module.log(msg=f"GitHub::_download_file(url={url}, dest={dest_path}, stream={stream})")
 
-        (status_code, content, error) = self._get_request(
+        status_code, content, error = self._get_request(
             url, stream=stream, expect_json=False
         )
 
@@ -567,7 +567,7 @@ class GitHub:
         api_url = f"{self.base_api_url}/repos/{self.github_owner}/{self.github_repository}/releases"
         params = {"per_page": min(count, 500)}
 
-        (status_code, releases, error) = self._get_request(api_url, params=params)
+        status_code, releases, error = self._get_request(api_url, params=params)
 
         if status_code != 200:
             self.module.log(f"ERROR: {error}")
@@ -614,7 +614,7 @@ class GitHub:
         api_url = f"{self.base_api_url}/repos/{self.github_owner}/{self.github_repository}/releases"
 
         try:
-            (status_code, releases, error) = self._get_request(api_url)
+            status_code, releases, error = self._get_request(api_url)
 
             if status_code != 200:
                 self.module.log(f"ERROR: {error}")
