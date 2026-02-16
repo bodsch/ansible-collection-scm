@@ -32,6 +32,17 @@
   notify:
     - restart forgejo-runner
 
+- name: validate runner secret
+  ansible.builtin.set_fact:
+    _valid_runner_secret: "{{ forgejo_runner_register | default([]) | bodsch.scm.validate_runner_secrets() }}"
+
+- name: verify valid runner secret
+  ansible.builtin.assert:
+    that:
+      - _valid_runner_secret
+    msg: The runner secret is not a 40-character hex string
+    quiet: true
+
 - name: "create runner token on '{{ forgejo_runner_controller.hostname }}'"
   remote_user: "{{ forgejo_runner_controller.remoteuser | default(forgejo_runner_controller.username) }}"
   become_user: "{{ forgejo_runner_controller.username }}"

@@ -2,9 +2,8 @@ import datetime
 import hashlib
 import os
 import re
-
-# import shutil
 from collections import OrderedDict
+from typing import Dict, Optional, Sequence
 
 DEFAULT_IGNORE_KEYS = {"security": ["INTERNAL_TOKEN"], "oauth2": ["JWT_SECRET"]}
 
@@ -28,7 +27,7 @@ class ForgejoIni:
         :param ignore_keys: Dict: Sektion → Liste von Schlüsseln, die rausfliegen sollen
         """
         self.module = module
-        # self.module.log(f"ForgejoIni::__init__({path}, {ignore_keys})")
+        self.module.log(f"ForgejoIni::__init__({path}, {ignore_keys})")
 
         self.path = path
         self.ignore_keys = ignore_keys or {}
@@ -104,7 +103,7 @@ class ForgejoIni:
         Berechnet SHA256 über alle "key = value\n"-Zeilen in der Sektion.
         Fehlende oder komplett leere Sektion geben denselben Hash (SHA256 über "") zurück.
         """
-        # self.module.log(f"ForgejoIni::checksum_section({section})")
+        self.module.log(f"ForgejoIni::checksum_section({section})")
 
         items = self.data.get(section, {})  # {} falls fehlt oder leer
         parts = []
@@ -121,6 +120,8 @@ class ForgejoIni:
         2. Dann je Section sortiert: eine Leerzeile, [Section], dann keys.
         3. Innerhalb jeder Sektion Keys alphabetisch.
         """
+        self.module.log(f"ForgejoIni::write({output_path})")
+
         with open(output_path, "w", encoding="utf-8") as f:
             # 1) Default-Keys (ohne Header) ganz vorne
             if "__default__" in self.data:
@@ -150,6 +151,8 @@ class ForgejoIni:
 
     def create_backup(self, config_file):
         """ """
+        self.module.log(f"ForgejoIni::create_backup({config_file})")
+
         timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M")
         basename, ext = os.path.splitext(config_file)
         backup_config = f"{basename}_{timestamp}{ext}"
@@ -174,7 +177,9 @@ class ForgejoIni:
         - Im Write: Default-Block ganz vorne ohne Header, danach jede Section mit Header,
           getrennt durch Leerzeilen.
         """
-        # module.log(f"ForgejoIni::merge({base_path}, {new_path}, {output_path}, {ignore_keys})")
+        module.log(
+            f"ForgejoIni::merge({base_path}, {new_path}, {output_path}, {ignore_keys})"
+        )
 
         ignore_keys = ignore_keys or {}
         base_ini = cls(module, base_path, ignore_keys)
@@ -232,3 +237,79 @@ class ForgejoIni:
 
         # 3) In output_path schreiben
         merged_ini.write(output_path)
+
+    def sections_as_json(
+        self,
+        sections: Optional[Sequence[str]] = None,
+        *,
+        include_default: bool = False,
+        include_missing: bool = True,
+        indent: Optional[int] = 2,
+    ) -> str:
+        """
+        Export selected INI sections as a JSON string.
+
+        This is a read-only helper that serializes the currently loaded configuration
+        (`self.data`) into JSON. It does not modify the internal representation.
+
+        Args:
+            sections:
+                Section names to export. If None, all named sections are exported.
+                The special '__default__' section is only included when `include_default=True`.
+            include_default:
+                If True and '__default__' exists, include it in the JSON output.
+            include_missing:
+                If True, requested sections that are not present in the INI are included
+                as empty objects.
+            indent:
+                Indentation level for pretty printing. Use None for compact JSON.
+
+        Returns:
+            A JSON string mapping section names to key/value mappings.
+
+        Examples:
+            Export two sections:
+                ini.sections_as_json(["server", "database"])
+
+            Export all sections (except '__default__'):
+                ini.sections_as_json()
+
+            Include default keys:
+                ini.sections_as_json(["server"], include_default=True)
+        """
+        self.module.log(
+            f"ForgejoIni::sections_as_json("
+            f"sections: {sections}, include_default: {include_default}, include_missing: {include_missing}, indent: {indent})"
+        )
+
+        # Determine which sections to export (preserve caller order if provided).
+        if sections is None:
+            requested = [s for s in self.data.keys() if s != "__default__"]
+        else:
+            requested = list(sections)
+
+        payload: "OrderedDict[str, Dict[str, str]]" = OrderedDict()
+
+        if include_default and "__default__" in self.data:
+            payload["__default__"] = dict(self.data["__default__"])
+
+        for sec in requested:
+            if sec == "__default__":
+                # Only include via include_default to avoid surprises.
+                if (
+                    include_default
+                    and "__default__" in self.data
+                    and "__default__" not in payload
+                ):
+                    payload["__default__"] = dict(self.data["__default__"])
+                continue
+
+            if sec in self.data:
+                # Keep deterministic key order: sort keys (matches existing checksum/write approach).
+                items = self.data[sec]
+                payload[sec] = {k: items[k] for k in sorted(items)}
+            else:
+                if include_missing:
+                    payload[sec] = {}
+
+        return payload

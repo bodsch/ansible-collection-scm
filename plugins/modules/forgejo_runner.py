@@ -43,6 +43,9 @@ from typing import (
 )
 
 from ansible.module_utils.basic import AnsibleModule
+from ansible_collections.bodsch.core.plugins.module_utils.directory import (
+    create_directory,
+)
 
 DOCUMENTATION = r"""
 ---
@@ -220,6 +223,7 @@ class ForgejoRunner:
             module: The active AnsibleModule instance.
         """
         self.module = module
+        self.module.log("ForgejoRunner::__init__()")
 
         self.command: Command = cast(
             Command, module.params.get("command", "create_runner")
@@ -253,6 +257,11 @@ class ForgejoRunner:
         Returns:
             ModuleResult compatible with `module.exit_json()`.
         """
+        self.module.log("ForgejoRunner::run()")
+
+        if not self.module.check_mode:
+            create_directory(directory=self.cache_dir, mode="0750")
+
         self._validate_inputs()
 
         os.chdir(self.working_dir)
@@ -321,6 +330,8 @@ class ForgejoRunner:
         Raises:
             module.fail_json on validation errors.
         """
+        self.module.log("ForgejoRunner::_validate_inputs()")
+
         wd = Path(self.working_dir)
         if not wd.exists() or not wd.is_dir():
             self.module.fail_json(
@@ -349,6 +360,8 @@ class ForgejoRunner:
         Returns:
             List of RunnerEntry objects.
         """
+        # self.module.log(f"ForgejoRunner::_parse_runners(raw: {raw})")
+
         parsed: List[RunnerEntry] = []
         for idx, item in enumerate(raw):
             name = str(item.get("name") or "").strip()
@@ -376,6 +389,8 @@ class ForgejoRunner:
         Returns:
             Runner selection name.
         """
+        self.module.log("ForgejoRunner::_select_runner_name()")
+
         if self.runner_name_override and self.runner_name_override.strip():
             return self.runner_name_override.strip()
 
@@ -403,6 +418,10 @@ class ForgejoRunner:
         Raises:
             module.fail_json if no match is found.
         """
+        self.module.log(
+            f"ForgejoRunner::_find_runner_entry(selected_name: {selected_name})"
+        )
+
         candidates: List[str] = [selected_name]
         if not (self.runner_name_override and self.runner_name_override.strip()):
             short = socket.gethostname().strip()
@@ -443,6 +462,10 @@ class ForgejoRunner:
         Returns:
             Hex-encoded SHA-256 checksum.
         """
+        self.module.log(
+            f"ForgejoRunner::_desired_checksum(entry: {entry}, runner_name: {runner_name}, runner_file: {runner_file})"
+        )
+
         payload = {
             "runner_name": runner_name,
             "instance": entry.instance,
@@ -461,6 +484,8 @@ class ForgejoRunner:
         Returns:
             Stored checksum string or None.
         """
+        self.module.log("ForgejoRunner::_read_checksum()")
+
         try:
             if self.checksum_file.exists():
                 return self.checksum_file.read_text(encoding="utf-8").strip() or None
@@ -475,6 +500,8 @@ class ForgejoRunner:
         Args:
             value: Checksum string.
         """
+        self.module.log(f"ForgejoRunner::_write_checksum(value: {value})")
+
         cache_path = Path(self.cache_dir)
         cache_path.mkdir(parents=True, exist_ok=True)
         self.checksum_file.write_text(value.strip() + "\n", encoding="utf-8")
@@ -498,6 +525,10 @@ class ForgejoRunner:
         Returns:
             Tuple of (rc, stdout, stderr).
         """
+        self.module.log(
+            f"ForgejoRunner::_create_runner_file(entry: {entry}, runner_name: {runner_name}, runner_file: {runner_file})"
+        )
+
         try:
             os.chdir(self.working_dir)
         except OSError as exc:
@@ -536,6 +567,8 @@ class ForgejoRunner:
         Returns:
             True if output suggests an unknown flag, else False.
         """
+        # self.module.log(f"ForgejoRunner::_looks_like_unknown_flag(output: {output})")
+
         text = (output or "").lower()
         return "unknown flag" in text or "flag provided but not defined" in text
 
@@ -552,6 +585,10 @@ class ForgejoRunner:
         Returns:
             Tuple (rc, stdout, stderr).
         """
+        self.module.log(
+            f"ForgejoRunner::_exec(args: {args}, redact_secret: {redact_secret})"
+        )
+
         log_args = list(args)
         if redact_secret:
             for i in range(len(log_args) - 1):

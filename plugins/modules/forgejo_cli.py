@@ -16,12 +16,20 @@ The module is designed to be safe and predictable:
 from __future__ import annotations
 
 import os
-
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, List, Literal, Optional, Sequence, Tuple, TypedDict, cast
 
 from ansible.module_utils.basic import AnsibleModule
+from ansible_collections.bodsch.scm.plugins.module_utils.forgejo.ini import ForgejoIni
+from ansible_collections.bodsch.scm.plugins.module_utils.forgejo.runner import (
+    DatabaseConfig,
+    ForgejoRunner,
+    RunnerSnapshot,
+)
+from ansible_collections.bodsch.scm.plugins.module_utils.forgejo.utils import (
+    is_absolute_path,
+)
 
 DOCUMENTATION = r"""
 ---
@@ -189,6 +197,7 @@ class ForgejoCli:
             module: The active AnsibleModule instance.
         """
         self.module = module
+        self.module.log("ForgejoCli::__init__()")
 
         self.command: Command = cast(Command, module.params.get("command", "register"))
         self.parameters: List[str] = self._as_str_list(
@@ -213,6 +222,8 @@ class ForgejoCli:
         Returns:
             A module result containing aggregated status and per-runner state.
         """
+        self.module.log("ForgejoCli::run()")
+
         self._validate_paths()
 
         os.chdir(self.working_dir)
@@ -234,14 +245,38 @@ class ForgejoCli:
         Returns:
             Aggregated module result with one state entry per runner.
         """
+        self.module.log("ForgejoCli::register()")
+
         state: List[RunnerResult] = []
         any_changed = False
         any_failed = False
 
+        created_runners = self.list_runners()
+
+        self.module.log(f"  created runners: {created_runners}")
+
         for runner_spec, parse_error in self._parse_runner_specs(self.runners_raw):
+            """ """
+            self.module.log(f"  - runner name: {runner_spec.name}")
+
             if parse_error is not None:
                 state.append(parse_error)
                 any_failed = True
+                continue
+
+            runner_exists = [
+                k for k, _ in created_runners.items() if k == runner_spec.name
+            ]
+
+            if len(runner_exists) > 0:
+                state.append(
+                    {
+                        "name": runner_spec.name,
+                        "changed": False,
+                        "failed": False,
+                        "msg": f"Runner '{runner_spec.name}' already registered.",
+                    }
+                )
                 continue
 
             if self.module.check_mode:
@@ -250,7 +285,7 @@ class ForgejoCli:
                         "name": runner_spec.name,
                         "changed": True,
                         "failed": False,
-                        "msg": f"Runner {runner_spec.name} would be registered (check mode).",
+                        "msg": f"Runner '{runner_spec.name}' would be registered (check mode).",
                     }
                 )
                 any_changed = True
@@ -264,7 +299,7 @@ class ForgejoCli:
                         "name": runner_spec.name,
                         "changed": True,
                         "failed": False,
-                        "msg": f"Runner {runner_spec.name} successfully registered.",
+                        "msg": f"Runner '{runner_spec.name}' successfully registered.",
                     }
                 )
                 any_changed = True
@@ -277,7 +312,7 @@ class ForgejoCli:
                         "msg": (
                             err
                             or out
-                            or f"Runner {runner_spec.name} registration failed."
+                            or f"Runner '{runner_spec.name}' registration failed."
                         ).strip(),
                         "rc": rc,
                         "stdout": (out or "").strip(),
@@ -298,6 +333,8 @@ class ForgejoCli:
         Returns:
             Tuple of (rc, stdout, stderr).
         """
+        self.module.log(f"ForgejoCli::register_runner(runner: {runner})")
+
         args: List[str] = [
             self.forgejo_bin,
             "--work-path",
@@ -323,6 +360,59 @@ class ForgejoCli:
             args += self.parameters
 
         return self._exec(args)
+
+    # -----
+    def list_runners(self):
+        """ """
+        self.module.log("ForgejoCli::list_runners()")
+
+        _config = ForgejoIni(self.module, path=self.config)
+
+        _forgejo_config = _config.sections_as_json(
+            sections=["database", "__default__"], include_default=True
+        )
+
+        if not _forgejo_config:
+            """ """
+            return {}
+
+        db_type = _forgejo_config.get("database", {}).get("DB_TYPE", None)
+
+        if db_type == "sqlite3":
+            work_path = _forgejo_config.get("__default__", {}).get(
+                "WORK_PATH", "/var/lib/forgejo"
+            )
+            db_path = _forgejo_config.get("database", {}).get("PATH", "data/forgejo.db")
+
+            if not is_absolute_path(db_path):
+                db_path = os.path.join(work_path, db_path)
+
+        config = DatabaseConfig(
+            db_type=db_type,
+            # SQLite
+            sqlite_path=db_path if db_path else "",
+            # # MariaDB
+            # host: MariaDB host.
+            # port: MariaDB port.
+            # user: MariaDB username.
+            # password: MariaDB password.
+            # database: MariaDB database name.
+            # charset: Connection charset (default: utf8mb4).
+        )
+
+        _runner = ForgejoRunner(self.module)
+
+        _runner_infos: RunnerSnapshot = _runner.get_runner_snapshot(
+            db=config, mask_token_salt=False
+        )
+
+        # self.module.log(f" runner_infos  : {_runner_infos}")
+        # self.module.log(f"   runners     : {_runner_infos.runners}")
+
+        if _runner_infos.runners:
+            return _runner_infos.runners
+        else:
+            return {}
 
     def _validate_paths(self) -> None:
         """
@@ -426,6 +516,8 @@ class ForgejoCli:
         Returns:
             Tuple of (rc, stdout, stderr).
         """
+        self.module.log(f"ForgejoCli::_exec(args: {args})")
+
         # Never log secrets: redact before any debug output.
         redacted = self._redact_args(args)
         self.module.log(msg=f"cmd: {redacted}")

@@ -6,6 +6,8 @@ filter plugin file for forgejo runner labels: runner_labels
 
 from __future__ import absolute_import, division, print_function
 
+import re
+
 from ansible.utils.display import Display
 
 __metaclass__ = type
@@ -58,6 +60,7 @@ class FilterModule:
 
         return {
             "runner_labels": self.runner_labels,
+            "validate_runner_secrets": self.validate_runner_secrets,
         }
 
     def runner_labels(self, data):
@@ -94,6 +97,30 @@ class FilterModule:
                     result.append(":".join(_label))
             else:
                 result = data
+
+        # display.v(f"= {result}")
+        return result
+
+    def validate_runner_secrets(self, data):
+        """
+        Validate whether a string is a 40-character hexadecimal token.
+
+        Args:
+            value: Candidate token.
+
+        Returns:
+            True if `value` is exactly 40 hex characters (0-9, a-f, case-insensitive),
+            otherwise False.
+        """
+        display.vv(f"bodsch.scm.validate_runner_secrets(self, {data})")
+
+        result: bool = False
+        _SECRET_40_HEX_RE = re.compile(r"^[0-9a-f]{40}$", re.IGNORECASE)
+
+        for r in data:
+            runner_secret = r.get("secret", "")
+            if isinstance(runner_secret, str):
+                result = _SECRET_40_HEX_RE.fullmatch(runner_secret.strip()) is not None
 
         # display.v(f"= {result}")
         return result
