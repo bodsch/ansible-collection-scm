@@ -1,6 +1,8 @@
 ---
 
 - name: detect our installation path '{{ forgejo_install_path | dirname }}'
+  when:
+    - not running_in_check_mode
   ansible.builtin.stat:
     path: "{{ forgejo_install_path | dirname }}"
     get_checksum: false
@@ -8,6 +10,8 @@
   ignore_errors: true
 
 - name: detect old installation
+  when:
+    - not running_in_check_mode
   ansible.builtin.stat:
     path: /usr/bin/forgejo
     get_checksum: false
@@ -15,11 +19,14 @@
   ignore_errors: true
 
 - name: detect if this an upgrade
+  when:
+    - not running_in_check_mode
   ansible.builtin.set_fact:
     forgejo_upgrade: "{{ stat_forgejo_path | bodsch.core.upgrade(stat_old_forgejo_path) }}"
 
 - name: old installation
   when:
+    - not running_in_check_mode
     - forgejo_upgrade
   block:
     - name: stop old service
@@ -52,6 +59,8 @@
         - stat_forgejo_path.stat.path | string | length > 0
 
 - name: flush handlers
+  when:
+    - not running_in_check_mode
   ansible.builtin.meta: flush_handlers
 
 ...

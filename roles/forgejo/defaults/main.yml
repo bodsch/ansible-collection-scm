@@ -1,6 +1,6 @@
 ---
 
-forgejo_version: 9.0.3
+forgejo_version: 12.0.0
 
 forgejo_system_user: forgejo
 forgejo_remote_user: forgejo
@@ -51,7 +51,13 @@ forgejo_api: {}
 forgejo_attachment: {}
 forgejo_auths:
   ldap: {}
-forgejo_badges: {}
+
+forgejo_badges:
+  # Enable repository badges (via shields.io or a similar generator)
+  enabled: true
+  # Template for the badge generator.
+  generator_url_template: !unsafe "https://img.shields.io/badge/{{.label}}-{{.text}}-{{.color}}"
+
 forgejo_cache: {}
 forgejo_camo: {}
 forgejo_cors: {}
@@ -66,7 +72,39 @@ forgejo_i18n: {}
 forgejo_indexer: {}
 forgejo_lfs: {}
 forgejo_log: {}
-forgejo_mailer: {}
+
+forgejo_mailer:
+  enabled: ""                                     # false
+  send_buffer_len: ""                             # 100
+  subject_prefix: ""
+  protocol: ""                                    # one of "smtp", "smtps", "smtp+starttls", "smtp+unix", "sendmail", "dummy"
+  smtp_addr: ""
+  smtp_port: ""                                   # 25:  insecure smtp / 465: smtp secure / 587: starttls
+  enable_helo: ""                                 # true
+  helo_hostname: ""
+  force_trust_server_cert: ""                     # false
+  use_client_cert: ""                             # false
+  client_cert_file: ""                            # custom/mailer/cert.pem
+  client_key_file: ""                             # custom/mailer/key.pem
+  from: ""
+  envelope_from: ""
+  user: ""
+  passwd: ""
+  send_as_plain_text: ""                          # false
+  sendmail_path: ""                               # sendmail
+  sendmail_args: ""
+  sendmail_timeout: ""                            # 5m
+  sendmail_convert_crlf: ""                       # true
+  from_display_name_format: ""                    # !unsafe "{{ .DisplayName }}" # Available Variables: `.DisplayName`, `.AppName` and `.Domain`.
+  override_header:
+    reply_to: []
+    #   - test@example.com
+    #   - test2@example.com
+    content_type: []
+    #   - text/html
+    #   - charset=utf-8
+    in_reply_to: []
+
 forgejo_markdown: {}
 forgejo_markup: {}
 forgejo_metrics: {}

@@ -65,7 +65,7 @@
     state: directory
     owner: "{{ opengist_user.owner }}"
     group: "{{ opengist_user.group }}"
-    mode: 0755
+    mode: "0755"
 
 - name: detect extracted binary file for opengist on '{{ opengist_delegate_to }}'
   become: false
@@ -149,7 +149,7 @@
         force: true
         owner: root
         group: "{{ opengist_user.group }}"
-        mode: 0640
+        mode: "0640"
       notify:
         - restart opengist
 
@@ -159,7 +159,7 @@
         dest: "{{ systemd_lib_directory }}/opengist.service"
         owner: root
         group: root
-        mode: 0644
+        mode: "0644"
       notify:
         - daemon-reload
         - restart opengist
@@ -175,7 +175,7 @@
         dest: "/etc/conf.d/opengist"
         owner: root
         group: root
-        mode: 0644
+        mode: "0644"
 
     - name: create openrc init configuration
       ansible.builtin.template:
@@ -183,7 +183,7 @@
         dest: "/etc/init.d/opengist"
         owner: root
         group: root
-        mode: 0750
+        mode: "0750"
 
 - name: create custom fact file
   when:

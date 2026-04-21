@@ -20,7 +20,7 @@ tags:
 
 dependencies:
   "community.general": "*"
-  "bodsch.core": ">=2.9.0"
+  "bodsch.core": ">=2.12.0"
 
 repository: https://github.com/bodsch/ansible-collection-scm
 documentation: https://github.com/bodsch/ansible-collection-scm/README.md

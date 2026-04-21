@@ -20,7 +20,7 @@
   ansible.builtin.file:
     path: "{{ forgejo_runner_local_tmp_directory }}"
     state: directory
-    mode: 0750
+    mode: "0750"
 
 - name: detect the downloaded forgejo-runner archive
   become: false
@@ -69,7 +69,7 @@
         url: "{{ forgejo_runner_release.download_url }}/download/v{{ forgejo_runner_version }}/{{ forgejo_runner_release.file }}"
         dest: "{{ forgejo_runner_local_tmp_directory }}/{{ forgejo_runner_release.file }}"
         checksum: "sha256:{{ forgejo_runner_release.download_url }}/download/v{{ forgejo_runner_version }}/{{ forgejo_runner_release.checksum }}"
-        mode: 0640
+        mode: "0640"
       register: _download_archive
       until: _download_archive is succeeded
       retries: 5

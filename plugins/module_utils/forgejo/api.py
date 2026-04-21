@@ -110,14 +110,14 @@ class ForgejoApi:
 
             status_code = resp.status_code
 
-            self.module.log(msg=f"{type(resp)}")
-            self.module.log(msg=f"   data: {resp} ")
-            self.module.log(msg=f"   text: {resp.text} ")
+            # self.module.log(msg=f"{type(resp)}")
+            # self.module.log(msg=f"   data: {resp} ")
+            # self.module.log(msg=f"   text: {resp.text} ")
 
             data = resp.text
 
             try:
-                self.module.log(msg=f"   json: {resp.json()} ")
+                # self.module.log(msg=f"   json: {resp.json()} ")
                 data = resp.json()
             except ValueError as e:
                 error = f"Error parsing the JSON: {e}"

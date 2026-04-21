@@ -27,24 +27,29 @@
     forgejo_release: "{{ forgejo_defaults_release | combine(forgejo_release, recursive=True) }}"
 
 - name: define delegate instance for download handling
+  when:
+    - not running_in_check_mode
+    - forgejo_direct_download
   ansible.builtin.set_fact:
     forgejo_delegate_to: "{{ (ansible_facts | default({})) | bodsch.core.hostname(inventory_hostname=inventory_hostname) }}"
     forgejo_local_tmp_directory: "{{
         lookup('env', 'CUSTOM_LOCAL_TMP_DIRECTORY') |
         default('/var/cache/ansible/forgejo', true) }}/{{ forgejo_version }}"
-  when:
-    - forgejo_direct_download
 
 - name: create download directory
+  when:
+    - not running_in_check_mode
   become: false
   delegate_to: "{{ forgejo_delegate_to }}"
   run_once: "{{ 'false' if forgejo_direct_download else 'true' }}"
   ansible.builtin.file:
     path: "{{ forgejo_local_tmp_directory }}"
     state: directory
-    mode: 0750
+    mode: "0750"
 
 - name: detect the downloaded forgejo archive
+  when:
+    - not running_in_check_mode
   become: false
   delegate_to: "{{ forgejo_delegate_to }}"
   run_once: "{{ 'false' if forgejo_direct_download else 'true' }}"
@@ -54,6 +59,7 @@
 
 - name: download
   when:
+    - not running_in_check_mode
     - stat_forgejo_archive.stat is defined
     - not stat_forgejo_archive.stat.exists | default('false')
   block:
@@ -91,7 +97,7 @@
         url: "{{ forgejo_release.download_url }}/download/v{{ forgejo_version }}/{{ forgejo_release.file }}"
         dest: "{{ forgejo_local_tmp_directory }}/{{ forgejo_release.file }}"
         checksum: "{{ __forgejo_checksum | default(omit) }}"
-        mode: 0640
+        mode: "0640"
       register: _download_archive
       until: _download_archive is succeeded
       retries: 5
@@ -110,5 +116,41 @@
     - name: exit with fail
       ansible.builtin.fail:
         msg: A serious error occurred when downloading the archive.
+
+- name: find extracted binaries
+  when:
+    - not running_in_check_mode
+  become: false
+  delegate_to: "{{ forgejo_delegate_to }}"
+  run_once: "{{ 'false' if forgejo_direct_download else 'true' }}"
+  ansible.builtin.find:
+    paths: "{{ forgejo_local_tmp_directory }}"
+    file_type: file
+    patterns:
+      - "forgejo*"
+    recurse: false
+  register: found_binaries
+  no_log: true
+
+- name: define forgejo_binary
+  when:
+    - not running_in_check_mode
+    - found_binaries.files is defined
+    - found_binaries.files | count > 0
+  ansible.builtin.set_fact:
+    stat_forgejo_binary: "{{ found_binaries.files | sort(attribute='path', reverse=True) | map(attribute='path') | list | first }}"
+
+- name: rename forgejo binary
+  when:
+    - not running_in_check_mode
+    - stat_forgejo_binary | default('') | string | length > 0
+  become: false
+  delegate_to: "{{ forgejo_delegate_to }}"
+  run_once: "{{ 'false' if forgejo_direct_download else 'true' }}"
+  ansible.builtin.copy:
+    src: "{{ stat_forgejo_binary }}"
+    dest: "{{ forgejo_local_tmp_directory }}/{{ forgejo_release.binary }}"
+    mode: "0755"
+    remote_src: "{{ ('true' if forgejo_direct_download else 'false') | bool }}"
 
 ...

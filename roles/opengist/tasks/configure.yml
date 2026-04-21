@@ -14,7 +14,7 @@
     state: directory
     owner: root
     group: "{{ opengist_user.group }}"
-    mode: 0775
+    mode: "0775"
 
 - name: create opengist configuration
   ansible.builtin.template:
@@ -23,7 +23,7 @@
     force: true
     owner: root
     group: "{{ opengist_user.group }}"
-    mode: 0640
+    mode: "0640"
   notify:
     - restart opengist
 

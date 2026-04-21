@@ -1,0 +1,17 @@
+---
+
+- name: converge
+  hosts: instance
+
+  any_errors_fatal: false
+  become: false
+
+  vars:
+    forgejo_database:
+      db_type: sqlite3
+      charset: utf8
+      path: /var/lib/forgejo/data/forgejo.db
+      log_sql: true
+
+  roles:
+    - role: bodsch.scm.forgejo

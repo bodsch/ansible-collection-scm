@@ -26,7 +26,7 @@
     state: directory
     owner: "{{ forgejo_runner_system_user }}"
     group: "{{ forgejo_runner_system_group }}"
-    mode: 0755
+    mode: "0755"
 
 - name: detect binary file for forgejo-runner on '{{ forgejo_runner_delegate_to }}'
   become: false
@@ -63,7 +63,7 @@
           ansible.builtin.copy:
             src: "{{ forgejo_runner_local_tmp_directory }}/{{ forgejo_runner_release.binary }}"
             dest: "{{ forgejo_runner_install_path }}/forgejo-runner"
-            mode: 0755
+            mode: "0755"
             owner: "{{ forgejo_runner_system_user }}"
             group: "{{ forgejo_runner_system_group }}"
             remote_src: "{{ 'true' if forgejo_runner_direct_download else 'false' }}"
@@ -71,7 +71,7 @@
         - name: make files executable
           ansible.builtin.file:
             path: "{{ forgejo_runner_install_path }}/forgejo-runner"
-            mode: 0755
+            mode: "0755"
             owner: "{{ forgejo_runner_system_user }}"
             group: "{{ forgejo_runner_system_group }}"
 
@@ -117,7 +117,7 @@
         force: true
         owner: root
         group: "{{ forgejo_runner_system_group }}"
-        mode: 0640
+        mode: "0640"
       notify:
         - restart forgejo-runner
 
@@ -127,7 +127,7 @@
         dest: "{{ systemd_lib_directory }}/forgejo-runner.service"
         owner: root
         group: root
-        mode: 0644
+        mode: "0644"
       notify:
         - daemon-reload
         - restart forgejo-runner
@@ -142,7 +142,7 @@
         dest: "/etc/conf.d/forgejo-runner"
         owner: root
         group: root
-        mode: 0644
+        mode: "0644"
 
     - name: create openrc init configuration
       ansible.builtin.template:
@@ -150,7 +150,7 @@
         dest: "/etc/init.d/forgejo-runner"
         owner: root
         group: root
-        mode: 0750
+        mode: "0750"
 
 - name: create custom fact file
   bodsch.core.facts:

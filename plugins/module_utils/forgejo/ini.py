@@ -27,7 +27,7 @@ class ForgejoIni:
         :param ignore_keys: Dict: Sektion → Liste von Schlüsseln, die rausfliegen sollen
         """
         self.module = module
-        self.module.log(f"ForgejoIni::__init__({path}, {ignore_keys})")
+        # self.module.log(f"ForgejoIni::__init__(path: {path}, ignore_keys: {ignore_keys})")
 
         self.path = path
         self.ignore_keys = ignore_keys or {}
@@ -98,30 +98,25 @@ class ForgejoIni:
         if not self.data["__default__"]:
             del self.data["__default__"]
 
-    def checksum_section(self, section):
+    def checksum_section(self, section: str) -> str:
         """
-        Berechnet SHA256 über alle "key = value\n"-Zeilen in der Sektion.
-        Fehlende oder komplett leere Sektion geben denselben Hash (SHA256 über "") zurück.
+        Berechnet SHA256 über alle normalisierten 'key = value\\n'-Zeilen der Sektion.
+        Fehlende oder leere Sektionen ergeben denselben Hash (SHA256 über "").
         """
-        self.module.log(f"ForgejoIni::checksum_section({section})")
+        items = self.normalize(self.data.get(section, {}))
+        checksum = self._calc_checksum(items)
 
-        items = self.data.get(section, {})  # {} falls fehlt oder leer
-        parts = []
-        for key in sorted(items):
-            val = items[key]
-            parts.append(f"{key} = {val}\n")
-        joined = "".join(parts).encode("utf-8")
-        return hashlib.sha256(joined).hexdigest()
+        return checksum
 
     def write(self, output_path):
         """
+        wird von merge() aufgerufen.
+
         Schreibt self.data in eine INI-Datei:
         1. Erst alle Keys aus '__default__' (falls vorhanden), ohne Header.
         2. Dann je Section sortiert: eine Leerzeile, [Section], dann keys.
         3. Innerhalb jeder Sektion Keys alphabetisch.
         """
-        self.module.log(f"ForgejoIni::write({output_path})")
-
         with open(output_path, "w", encoding="utf-8") as f:
             # 1) Default-Keys (ohne Header) ganz vorne
             if "__default__" in self.data:
@@ -150,17 +145,125 @@ class ForgejoIni:
             # f.write(content)
 
     def create_backup(self, config_file):
-        """ """
-        self.module.log(f"ForgejoIni::create_backup({config_file})")
-
+        """
+        wird von merge() aufgerufen.
+        """
         timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M")
         basename, ext = os.path.splitext(config_file)
         backup_config = f"{basename}_{timestamp}{ext}"
 
         os.rename(config_file, backup_config)
 
+    @staticmethod
+    def _calc_checksum(items: dict) -> str:
+        """
+        Berechnet SHA256 über sortierte 'key = value\\n'-Zeilen eines Dicts.
+        Ersetzt die duplizierte Inline-Logik in merge() und checksum_section().
+        """
+        parts = [f"{key} = {items[key]}\n" for key in sorted(items)]
+        return hashlib.sha256("".join(parts).encode("utf-8")).hexdigest()
+
     @classmethod
     def merge(cls, module, base_path, new_path, output_path, ignore_keys=None):
+        """
+        Merged base_path und new_path.
+
+        Semantik der Sektionsexistenz:
+          - new_config ist autoritativ: Sektionen, die NUR in base existieren,
+            werden nicht übernommen (= gelöschte Sektionen verschwinden).
+          - Sektionen, die nur in new existieren, werden übernommen (= neue Sektionen).
+          - Bei gleichen Checksums wird base beibehalten (Stabilität).
+        """
+        module.log(
+            f"ForgejoIni::merge(base_path: {base_path}, new_path: {new_path}, output_path: {output_path}, ignore_keys: {ignore_keys})"
+        )
+
+        ignore_keys = ignore_keys or {}
+
+        base_ini = cls(module, base_path, ignore_keys)
+        new_ini = cls(module, new_path, ignore_keys)
+
+        merged_data = OrderedDict()
+
+        # Nur über new_ini iterieren → base-only Sektionen fallen raus
+        for section in sorted(new_ini.data.keys()):
+            items_base = base_ini.data.get(section, {})
+            items_new = new_ini.data.get(section, {})
+
+            cs_base = cls._calc_checksum(items_base)
+            cs_new = cls._calc_checksum(items_new)
+
+            merged_data[section] = (
+                items_new.copy() if cs_base != cs_new else items_base.copy()
+            )
+
+        merged_ini = cls.__new__(cls)
+        merged_ini.module = module
+        merged_ini.data = merged_data
+        merged_ini.ignore_keys = ignore_keys
+
+        merged_ini.create_backup(base_path)
+        merged_ini.write(output_path)
+
+    @classmethod
+    def merge_TEST(cls, module, base_path, new_path, output_path, ignore_keys=None):
+        """
+        Merged base_path und new_path nach folgender Semantik:
+
+        - new_config ist autoritativ für Sektionsexistenz:
+            Sektionen, die nur in base vorhanden sind (in new gelöscht), werden NICHT übernommen.
+        - Für Sektionen, die in new vorhanden sind:
+            gleicher Checksum  → base-Werte beibehalten (stabil)
+            verschiedener Checksum → new-Werte übernehmen
+        - Ignored Keys (Runtime-Secrets wie INTERNAL_TOKEN, JWT_SECRET) werden
+            aus einem ungefilterten Base-Read zurückgewonnen und explizit eingetragen,
+            damit Forgejo sie nicht neu generieren muss.
+        """
+        module.log(
+            f"ForgejoIni::merge(base_path: {base_path}, new_path: {new_path}, output_path: {output_path}, ignore_keys: {ignore_keys})"
+        )
+
+        ignore_keys = ignore_keys or {}
+
+        # Gefilterte Instanzen für Vergleich (ohne Runtime-Secrets)
+        base_ini = cls(module, base_path, ignore_keys)
+        new_ini = cls(module, new_path, ignore_keys)
+
+        # Ungefilterte Base-Instanz, um Runtime-Secrets zurückzugewinnen
+        base_full = cls(module, base_path, ignore_keys={})
+
+        merged_data = OrderedDict()
+
+        # Nur Sektionen aus new_config übernehmen – gelöschte Sektionen fallen raus
+        for section in sorted(new_ini.data.keys()):
+            items_base = base_ini.data.get(section, {})
+            items_new = new_ini.data.get(section, {})
+
+            cs_base = cls._calc_checksum(items_base)
+            cs_new = cls._calc_checksum(items_new)
+
+            # Inhalt: new bei Änderung, sonst base (verhindert unnötige Schreibzugriffe)
+            merged = items_new.copy() if cs_base != cs_new else items_base.copy()
+
+            # Runtime-Secrets aus Original-Base zurück eintragen (z.B. INTERNAL_TOKEN)
+            base_section_full = base_full.data.get(section, {})
+            for ignored_key in ignore_keys.get(section, []):
+                if ignored_key in base_section_full:
+                    merged[ignored_key] = base_section_full[ignored_key]
+
+            merged_data[section] = merged
+
+        # Dummy-Instanz für write() und create_backup()
+        merged_ini = cls.__new__(cls)
+        merged_ini.module = module
+        merged_ini.data = merged_data
+        merged_ini.ignore_keys = ignore_keys
+
+        merged_ini.create_backup(base_path)
+        merged_ini.write(output_path)
+
+    @classmethod
+    def merge_OLD(cls, module, base_path, new_path, output_path, ignore_keys=None):
         """
         Liest base_path und new_path jeweils mit ForgejoIni ein,
         filtert laufend ignore_keys heraus
@@ -178,7 +281,7 @@ class ForgejoIni:
           getrennt durch Leerzeilen.
         """
         module.log(
-            f"ForgejoIni::merge({base_path}, {new_path}, {output_path}, {ignore_keys})"
+            f"ForgejoIni::merge(base_path: {base_path}, new_path: {new_path}, output_path: {output_path}, ignore_keys: {ignore_keys})"
         )
 
         ignore_keys = ignore_keys or {}
@@ -277,10 +380,10 @@ class ForgejoIni:
             Include default keys:
                 ini.sections_as_json(["server"], include_default=True)
         """
-        self.module.log(
-            f"ForgejoIni::sections_as_json("
-            f"sections: {sections}, include_default: {include_default}, include_missing: {include_missing}, indent: {indent})"
-        )
+        # self.module.log(
+        #     f"ForgejoIni::sections_as_json("
+        #     f"sections: {sections}, include_default: {include_default}, include_missing: {include_missing}, indent: {indent})"
+        # )
 
         # Determine which sections to export (preserve caller order if provided).
         if sections is None:
@@ -313,3 +416,16 @@ class ForgejoIni:
                     payload[sec] = {}
 
         return payload
+
+    def normalize(self, section_items):
+        """ """
+        if isinstance(section_items, dict):
+            return {k: self.normalize(section_items[k]) for k in sorted(section_items)}
+
+        if isinstance(section_items, list):
+            return [self.normalize(x) for x in section_items]
+
+        if isinstance(section_items, tuple):
+            return tuple(self.normalize(x) for x in section_items)
+
+        return section_items

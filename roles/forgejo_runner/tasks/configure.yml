@@ -10,7 +10,7 @@
     state: directory
     owner: "{{ forgejo_runner_system_user }}"
     group: "{{ forgejo_runner_system_group }}"
-    mode: 0750
+    mode: "0750"
 
 - name: create forgejo-runner working directory
   ansible.builtin.file:
@@ -18,7 +18,7 @@
     state: directory
     owner: "{{ forgejo_runner_system_user }}"
     group: "{{ forgejo_runner_system_group }}"
-    mode: 0770
+    mode: "0770"
 
 - name: create forgejo-runner configuration
   ansible.builtin.template:
@@ -27,7 +27,7 @@
     dest: "{{ forgejo_runner_config_dir }}/config.yaml"
     owner: "{{ forgejo_runner_system_user }}"
     group: "{{ forgejo_runner_system_group }}"
-    mode: 0644
+    mode: "0644"
   register: forgejo_runner_config
   notify:
     - restart forgejo-runner

@@ -105,7 +105,7 @@ forgejo_defaults_auths:
 
 forgejo_defaults_badges:
   enabled: true                                   # Enable repository badges (via shields.io or a similar generator)
-  generator_url_template: !unsafe "https://img.shields.io/badge/{{.label}}-{{.text}}-{{.color}}" # Template for the badge generator.
+  generator_url_template: ""                      # !unsafe "https://img.shields.io/badge/{{.label}}-{{.text}}-{{.color}}" # Template for the badge generator.
 
 forgejo_defaults_cache:
   enabled: ""                                     # true
@@ -536,7 +536,7 @@ forgejo_defaults_mailer:
   sendmail_args: ""
   sendmail_timeout: ""                            # 5m
   sendmail_convert_crlf: ""                       # true
-  from_display_name_format: !unsafe "{{ .DisplayName }}" # Available Variables: `.DisplayName`, `.AppName` and `.Domain`.
+  from_display_name_format: ""                    # !unsafe "{{ .DisplayName }}" # Available Variables: `.DisplayName`, `.AppName` and `.Domain`.
   override_header:
     reply_to: []
     #   - test@example.com
@@ -1088,7 +1088,8 @@ forgejo_defaults_release:
   download_url: https://codeberg.org/forgejo/forgejo/releases
   file: forgejo-{{ forgejo_version }}-{{ ansible_facts.system | lower }}-{{ system_architecture }}
   checksum: forgejo-{{ forgejo_version }}-{{ ansible_facts.system | lower }}-{{ system_architecture }}.sha256
-  binary: forgejo-{{ forgejo_version }}-linux-{{ system_architecture }}
+  extracted: forgejo-{{ forgejo_version }}-linux-{{ system_architecture }}
+  binary: forgejo
 
 # ----------------------------------------------------------------------------------------
 

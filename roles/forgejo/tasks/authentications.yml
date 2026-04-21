@@ -1,6 +1,11 @@
 ---
 
 - name: create admin user
+  when:
+    - not running_in_check_mode
+    - (forgejo_admin_user.username is defined and forgejo_admin_user.username | string | length > 0)
+    - (forgejo_admin_user.password is defined and forgejo_admin_user.password | string | length > 0)
+    - (forgejo_admin_user.email is defined and forgejo_admin_user.email | string | length > 0)
   remote_user: "{{ forgejo_remote_user }}"
   become_user: "{{ forgejo_system_user }}"
   become: true
@@ -10,22 +15,24 @@
     email: "{{ forgejo_admin_user.email }}"
     config: "{{ forgejo_config_dir }}/forgejo.ini"
     working_dir: "{{ forgejo_working_dir }}"
-  when:
-    - not ansible_check_mode
-    - (forgejo_admin_user.username is defined and forgejo_admin_user.username | string | length > 0)
-    - (forgejo_admin_user.password is defined and forgejo_admin_user.password | string | length > 0)
-    - (forgejo_admin_user.email is defined and forgejo_admin_user.email | string | length > 0)
 
 - name: create local users
+  when:
+    - not running_in_check_mode
+    - forgejo_users | default([]) | count > 0
   bodsch.scm.forgejo_users:
     users: "{{ forgejo_users | default([]) }}"
     api_user: "{{ forgejo_admin_user.username }}"
     api_password: "{{ forgejo_admin_user.password }}"
-  when:
-    - not ansible_check_mode
-    - forgejo_users | default([]) | count > 0
 
 - name: enable ldap authentication
+  when:
+    - not running_in_check_mode
+    - forgejo_auths.ldap is defined
+    - forgejo_auths.ldap | count > 0
+    - forgejo_auths.ldap.state is defined
+    - forgejo_auths.ldap.state | string | length > 0
+    - forgejo_auths.ldap.state is in ["present", "absent"]
   remote_user: "{{ forgejo_remote_user }}"
   become_user: "{{ forgejo_system_user }}"
   become: true
@@ -57,11 +64,5 @@
     synchronize_users: "{{ forgejo_auths.ldap.synchronize_users | default(omit) }}"
     config: "{{ forgejo_config_dir }}/forgejo.ini"
     working_dir: "{{ forgejo_working_dir }}"
-  when:
-    - forgejo_auths.ldap is defined
-    - forgejo_auths.ldap | count > 0
-    - forgejo_auths.ldap.state is defined
-    - forgejo_auths.ldap.state | string | length > 0
-    - forgejo_auths.ldap.state is in ["present", "absent"]
 
 ...

@@ -148,6 +148,7 @@ class ForgejoConfigCompare:
             module: The active AnsibleModule instance.
         """
         self.module = module
+        # self.module.log("ForgejoConfigCompare::__init__()")
 
         self.config: str = str(module.params.get("config"))
         self.new_config: str = str(module.params.get("new_config"))
@@ -167,6 +168,8 @@ class ForgejoConfigCompare:
         Returns:
             ModuleResult with keys: failed, changed, msg.
         """
+        # self.module.log("ForgejoConfigCompare::run()")
+
         self._validate_inputs()
 
         result: ModuleResult = {
@@ -215,9 +218,11 @@ class ForgejoConfigCompare:
             }
 
         merged_path = self._merge_to_tempfile(base_path=config_path, new_path=new_path)
+
         try:
             self._atomic_copy(src=merged_path, dst=config_path)
             self._ensure_ownership(config_path)
+
         finally:
             try:
                 merged_path.unlink(missing_ok=True)  # py3.8+: missing_ok supported
@@ -234,6 +239,8 @@ class ForgejoConfigCompare:
         Raises:
             Calls module.fail_json() on validation errors.
         """
+        # self.module.log("ForgejoConfigCompare::_validate_inputs()")
+
         config_path = Path(self.config)
         new_path = Path(self.new_config)
 
@@ -277,6 +284,8 @@ class ForgejoConfigCompare:
         Returns:
             True if any relevant change is detected, otherwise False.
         """
+        # self.module.log("ForgejoConfigCompare::_relevant_changes_exist(org_ini, new_ini)")
+
         all_sections = self._collect_sections(org_ini, new_ini, self.ignore_map)
 
         for section in all_sections:
@@ -286,8 +295,12 @@ class ForgejoConfigCompare:
             cs_org = org_ini.checksum_section(section) if items_org else ""
             cs_new = new_ini.checksum_section(section) if items_new else ""
 
-            if cs_org != cs_new:
+            if str(cs_org) != str(cs_new):
                 return True
+                # self.module.log(f"section '{section}' is different.")
+            else:
+                # self.module.log(f"section '{section}' are equal.")
+                pass
 
         return False
 
@@ -324,6 +337,8 @@ class ForgejoConfigCompare:
         Returns:
             Path to the merged temporary file.
         """
+        # self.module.log(f"ForgejoConfigCompare::_merge_to_tempfile(base_path: {base_path}, new_path: {new_path})")
+
         target_dir = str(base_path.parent)
 
         fd, tmp_name = tempfile.mkstemp(
@@ -355,6 +370,8 @@ class ForgejoConfigCompare:
         Raises:
             Calls module.fail_json() if file operations fail.
         """
+        # self.module.log(f"ForgejoConfigCompare::_atomic_copy(src: {src}, dst: {dst})")
+
         try:
             dst_parent = dst.parent
             dst_parent.mkdir(parents=True, exist_ok=True)
@@ -376,6 +393,7 @@ class ForgejoConfigCompare:
                 os.chmod(str(tmp_path), dst_mode)
 
             os.replace(str(tmp_path), str(dst))
+
         except OSError as exc:
             self.module.fail_json(msg=f"Failed to write '{dst}': {exc}")
 

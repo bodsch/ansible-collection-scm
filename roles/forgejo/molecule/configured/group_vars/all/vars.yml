@@ -1,12 +1,12 @@
 ---
 
-forgejo_version: 12.0.0
+forgejo_version: 14.0.0
 
 forgejo_database:
   db_type: sqlite3
   charset: utf8
   path: /var/lib/forgejo/data/forgejo.db
-  log_sql: false
+  log_sql: true
 
 forgejo_repository:
   root: /var/lib/forgejo/data/forgejo-repositories
@@ -83,8 +83,6 @@ forgejo_users:
     password: "{{ vault__forgejo.bodsch }}"
     email: "bodsch@molecule.lan"
     state: present
-
-forgejo_users:
   - username: "foo"
     password: "{{ vault__forgejo.foo }}"
     email: "foo@example.com"

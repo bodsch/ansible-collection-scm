@@ -2,6 +2,7 @@
 
 - name: user and group handling
   when:
+    - not running_in_check_mode
     - forgejo_system_user != "root"
   block:
     - name: create forgejo group
@@ -21,98 +22,41 @@
         home: "{{ forgejo_working_dir }}"
 
 - name: create install directory
+  when:
+    - not running_in_check_mode
   ansible.builtin.file:
     path: "{{ forgejo_install_path }}"
     state: directory
     owner: "{{ forgejo_system_user }}"
     group: "{{ forgejo_system_group }}"
-    mode: 0755
-
-- name: detect binary file for forgejo on '{{ forgejo_delegate_to }}'
-  become: false
-  delegate_to: "{{ forgejo_delegate_to }}"
-  run_once: "{{ 'false' if forgejo_direct_download else 'true' }}"
-  ansible.builtin.stat:
-    path: "{{ forgejo_local_tmp_directory }}/{{ forgejo_release.binary }}"
-  register: stat_file_binary
-
-- name: fail when binary are missing
-  ansible.builtin.fail:
-    msg: "missing binary on ansible controller"
-  when:
-    - not stat_file_binary.stat.exists
-
-- name: detect installed forgejo binary
-  ansible.builtin.stat:
-    path: "{{ forgejo_install_path }}/forgejo"
-  register: stat_forgejo_binary
+    mode: "0755"
 
 - name: detect activated forgejo binary
   ansible.builtin.stat:
     path: "/usr/bin/forgejo"
-  register: stat_forgejo_activated
+  register: stat_forgejo_first_run
 
-- name: install and activate forgejo
+- name: deploy and activate forgejo version {{ forgejo_version }}
   when:
-    - (stat_forgejo_binary.stat is defined and not stat_forgejo_binary.stat.exists | default('false')) or
-      not stat_forgejo_activated.stat | bodsch.core.linked_version(forgejo_install_path, forgejo_version)
-  block:
-    - name: propagate files
-      block:
-        - name: propagate forgejo binary
-          ansible.builtin.copy:
-            src: "{{ forgejo_local_tmp_directory }}/{{ forgejo_release.binary }}"
-            dest: "{{ forgejo_install_path }}/forgejo"
-            mode: 0755
-            owner: "{{ forgejo_system_user }}"
-            group: "{{ forgejo_system_group }}"
-            remote_src: "{{ 'true' if forgejo_direct_download else 'false' }}"
-
-        - name: make files executable
-          ansible.builtin.file:
-            path: "{{ forgejo_install_path }}/forgejo"
-            mode: 0755
-            owner: "{{ forgejo_system_user }}"
-            group: "{{ forgejo_system_group }}"
-
-        - name: create link to binary
-          ansible.builtin.file:
-            src: "{{ forgejo_install_path }}/forgejo"
-            dest: "/usr/bin/forgejo"
-            state: link
-            force: true
-            follow: false
-          notify:
-            - restart forgejo
-            - "wait for '/run/forgejo/forgejo.pid'"
-
-        - name: restart after update
-          when:
-            - not stat_forgejo_activated.stat | bodsch.core.linked_version(forgejo_install_path, forgejo_version)
-          block:
-            - name: restart forgejo if needed
-              ansible.builtin.meta: flush_handlers
-
-            - name: migrate forgejo database
-              remote_user: "{{ forgejo_remote_user }}"
-              become_user: "{{ forgejo_system_user }}"
-              become: true
-              bodsch.scm.forgejo_migrate:
-                config: "{{ forgejo_config_dir }}/forgejo.ini"
-                working_dir: "{{ forgejo_working_dir }}"
-
-      rescue:
-        - name: delete install directory
-          ansible.builtin.file:
-            path: "{{ forgejo_install_path }}"
-            state: absent
-
-        - name: exit with fail
-          ansible.builtin.fail:
-            msg: A serious error occurred during the installation of the binary.
+    - not running_in_check_mode
+  bodsch.core.deploy_and_activate:
+    src_dir: "{{ forgejo_local_tmp_directory }}"
+    install_dir: "{{ forgejo_install_path }}"
+    link_dir: "/usr/bin"
+    remote_src: "{{ ('true' if forgejo_direct_download else 'false') | bool }}"
+    owner: "{{ forgejo_system_user }}"
+    group: "{{ forgejo_system_group }}"
+    mode: "0755"
+    items:
+      - name: "{{ forgejo_release.binary }}"
+  register: stat_forgejo_deployed
+  notify:
+    - restart forgejo
+    - "wait for '/run/forgejo/forgejo.pid'"
 
 - name: systemd
   when:
+    - not running_in_check_mode
     - ansible_facts.service_mgr | lower == "systemd"
   block:
     - name: create forgejo run configuration
@@ -122,7 +66,7 @@
         force: true
         owner: root
         group: "{{ forgejo_system_group }}"
-        mode: 0640
+        mode: "0640"
       notify:
         - restart forgejo
 
@@ -132,13 +76,14 @@
         dest: "{{ systemd_lib_directory }}/forgejo.service"
         owner: root
         group: root
-        mode: 0644
+        mode: "0644"
       notify:
         - daemon-reload
         - restart forgejo
 
 - name: openrc
   when:
+    - not running_in_check_mode
     - ansible_facts.service_mgr | lower == "openrc"
   block:
     - name: create openrc service configuration
@@ -147,7 +92,7 @@
         dest: "/etc/conf.d/forgejo"
         owner: root
         group: root
-        mode: 0644
+        mode: "0644"
 
     - name: create openrc init configuration
       ansible.builtin.template:
@@ -155,12 +100,32 @@
         dest: "/etc/init.d/forgejo"
         owner: root
         group: root
-        mode: 0750
+        mode: "0750"
 
 - name: create custom fact file
+  when:
+    - not running_in_check_mode
   bodsch.core.facts:
     name: forgejo
     facts:
       version: "{{ forgejo_version }}"
+
+- name: restart after update following database migration
+  when:
+    - not running_in_check_mode
+    - stat_forgejo_deployed.activated
+    - stat_forgejo_deployed.changed
+    - stat_forgejo_first_run.stat.existst | default('false') | bool # | bodsch.core.linked_version(forgejo_install_path, forgejo_version)
+  block:
+    - name: restart forgejo if needed
+      ansible.builtin.meta: flush_handlers
+
+    - name: migrate forgejo database
+      remote_user: "{{ forgejo_remote_user }}"
+      become_user: "{{ forgejo_system_user }}"
+      become: true
+      bodsch.scm.forgejo_migrate:
+        config: "{{ forgejo_config_dir }}/forgejo.ini"
+        working_dir: "{{ forgejo_working_dir }}"
 
 ...
