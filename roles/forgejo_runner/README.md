@@ -55,9 +55,9 @@ forgejo_runner_register:
     state: disabled
     # tags: []                     #
     instance: "http://forgejo.tld" #
-    secret: "" # the secret the runner will use to connect as a 40 character hexadecimal string
-    scope: ""                    # {owner}[/{repo}] - leave empty for a global runner
-    labels: []                   # list of labels supported by the runner (e.g. docker,ubuntu-latest,self-hosted)  (not required since v1.21)
+    secret: ""                     # the secret the runner will use to connect as a 40 character hexadecimal string
+    scope: ""                      # {owner}[/{repo}] - leave empty for a global runner
+    labels: []                     # list of labels supported by the runner (e.g. docker,ubuntu-latest,self-hosted)  (not required since v1.21)
 
 
 forgejo_runner_groups: []
@@ -121,7 +121,25 @@ forgejo_runner_controller:
 ### `forgejo_runner_register`
 
 Defines the runner with its configuration.  
-`secret` must be a 42-character hex string! 
+`secret` **must be a 42-character hex string**!
+
+```bash
+openssl rand -hex 21
+
+head -c 21 /dev/urandom | xxd -p
+
+head -c 21 /dev/urandom | hexdump -v -e '/1 "%02x"'
+```
+
+```python
+import secrets
+hex_string = secrets.token_hex(21)
+print(hex_string)
+
+import os
+hex_string = os.urandom(21).hex()
+print(hex_string)
+```
 
 ```yaml
 forgejo_runner_register:

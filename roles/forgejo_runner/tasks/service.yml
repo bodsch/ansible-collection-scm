@@ -1,6 +1,8 @@
 ---
 
 - name: ensure service is enabled on boot
+  when:
+    - not running_in_check_mode
   become: true
   ansible.builtin.service:
     name: forgejo-runner

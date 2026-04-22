@@ -65,7 +65,8 @@ forgejo_runner_defaults_release:
   download_url: https://code.forgejo.org/forgejo/runner/releases
   file: forgejo-runner-{{ forgejo_runner_version }}-{{ ansible_facts.system | lower }}-{{ system_architecture }}
   checksum: forgejo-runner-{{ forgejo_runner_version }}-{{ ansible_facts.system | lower }}-{{ system_architecture }}.sha256
-  binary: forgejo-runner-{{ forgejo_runner_version }}-linux-{{ system_architecture }}
+  extracted: forgejo-runner-{{ forgejo_runner_version }}-linux-{{ system_architecture }}
+  binary: forgejo-runner
 
 # ----------------------------------------------------------------------------------------
 

@@ -20,7 +20,18 @@
         - default.yaml
       skip: true
 
+- name: detect ansible check_mode
+  bodsch.core.check_mode:
+  register: _check_mode
+
+- name: define running_in_check_mode
+  ansible.builtin.set_fact:
+    running_in_check_mode: '{{ _check_mode.check_mode }}'
+
 - name: install dependency
+  when:
+    - not running_in_check_mode
+    - forgejo_runner_requirements | default([]) | count > 0
   ansible.builtin.package:
     name: "{{ forgejo_runner_requirements }}"
     state: present

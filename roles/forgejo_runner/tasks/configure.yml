@@ -1,10 +1,14 @@
 ---
 
 - name: merge forgejo-runner configuration between defaults and custom
+  when:
+    - not running_in_check_mode
   ansible.builtin.set_fact:
     forgejo_runner_config: "{{ forgejo_runner_defaults_config | combine(forgejo_runner_config, recursive=True) }}"
 
 - name: create forgejo-runner configuration directory
+  when:
+    - not running_in_check_mode
   ansible.builtin.file:
     path: "{{ forgejo_runner_config_dir }}"
     state: directory
@@ -13,6 +17,8 @@
     mode: "0750"
 
 - name: create forgejo-runner working directory
+  when:
+    - not running_in_check_mode
   ansible.builtin.file:
     path: "{{ forgejo_runner_working_dir }}"
     state: directory
@@ -21,6 +27,8 @@
     mode: "0770"
 
 - name: create forgejo-runner configuration
+  when:
+    - not running_in_check_mode
   ansible.builtin.template:
     force: true
     src: forgejo-runner/config.yaml.j2
@@ -33,10 +41,14 @@
     - restart forgejo-runner
 
 - name: validate runner secret
+  when:
+    - not running_in_check_mode
   ansible.builtin.set_fact:
     _valid_runner_secret: "{{ forgejo_runner_register | default([]) | bodsch.scm.validate_runner_secrets() }}"
 
 - name: verify valid runner secret
+  when:
+    - not running_in_check_mode
   ansible.builtin.assert:
     that:
       - _valid_runner_secret
@@ -44,6 +56,8 @@
     quiet: true
 
 - name: "create runner token on '{{ forgejo_runner_controller.hostname }}'"
+  when:
+    - not running_in_check_mode
   remote_user: "{{ forgejo_runner_controller.remoteuser | default(forgejo_runner_controller.username) }}"
   become_user: "{{ forgejo_runner_controller.username }}"
   become: true
@@ -55,6 +69,8 @@
     runners: "{{ forgejo_runner_register | default([]) }}"
 
 - name: "append runner to '{{ forgejo_runner_controller.hostname }}'"
+  when:
+    - not running_in_check_mode
   become_user: "{{ forgejo_runner_system_user }}"
   become: true
   bodsch.scm.forgejo_runner:
@@ -65,9 +81,13 @@
     - restart forgejo-runner
 
 - name: restart forgejo-runner if needed
+  when:
+    - not running_in_check_mode
   ansible.builtin.meta: flush_handlers
 
 - name: check if forgejo-runner are available
+  when:
+    - not running_in_check_mode
   ansible.builtin.wait_for:
     path: /run/forgejo-runner/forgejo-runner.pid
     state: present
