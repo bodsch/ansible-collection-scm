@@ -89,7 +89,7 @@ def test_open_port(host, get_vars):
             listen_address = f"{listen_host}:{listen_port}"
 
     if not listen_address:
-        listen_address = "0.0.0.0:2222"
+        listen_address = "0.0.0.0:6157"
 
     print(listen_address)
 
