@@ -140,7 +140,6 @@ testinfra_hosts = infra_hosts(host_name="instance")
 # _facts = local_facts(host=host, fact="forgejo-runner")
 
 
-
 @pytest.mark.parametrize("dirs", ["/etc/forgejo-runner"])
 def test_directories(host, dirs):
     d = host.file(dirs)
