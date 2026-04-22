@@ -1,6 +1,8 @@
 ---
 
 - name: detect external installation
+  when:
+    - not running_in_check_mode
   ansible.builtin.stat:
     path: /usr/local/bin/opengist
     get_checksum: false
@@ -9,6 +11,7 @@
 
 - name: old installation
   when:
+    - not running_in_check_mode
     - stat_opengist_path is defined
     - stat_opengist_path.stat is defined
     - stat_opengist_path.stat.isdir is defined
@@ -35,6 +38,8 @@
         path: /usr/local/bin/opengist
 
 - name: flush handlers
+  when:
+    - not running_in_check_mode
   ansible.builtin.meta: flush_handlers
 
 

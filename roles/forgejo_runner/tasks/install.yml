@@ -43,8 +43,6 @@
     group: "{{ forgejo_runner_system_group }}"
     mode: "0755"
 
-# ----------------------
-
 - name: deploy and activate forgejo-runner version {{ forgejo_runner_version }}
   when:
     - not running_in_check_mode
@@ -58,87 +56,6 @@
     mode: "0755"
     items:
       - name: "{{ forgejo_runner_release.binary }}"
-  register: stat_forgejo_deployed
-
-# ----------------------
-
-# - name: detect binary file for forgejo-runner on '{{ forgejo_runner_delegate_to }}'
-#   become: false
-#   delegate_to: "{{ forgejo_runner_delegate_to }}"
-#   run_once: "{{ 'false' if forgejo_runner_direct_download else 'true' }}"
-#   ansible.builtin.stat:
-#     path: "{{ forgejo_runner_local_tmp_directory }}/{{ forgejo_runner_release.binary }}"
-#   register: stat_file_binary
-#
-# - name: fail when binary are missing
-#   ansible.builtin.fail:
-#     msg: "missing binary on ansible controller"
-#   when:
-#     - not stat_file_binary.stat.exists
-#
-# - name: detect installed forgejo-runner binary
-#   ansible.builtin.stat:
-#     path: "{{ forgejo_runner_install_path }}/forgejo-runner"
-#   register: stat_forgejo_runner_binary
-#
-# - name: detect activated forgejo-runner binary
-#   ansible.builtin.stat:
-#     path: "/usr/bin/forgejo-runner"
-#   register: stat_forgejo_runner_activated
-#
-# - name: install and activate forgejo
-#   when:
-#     - (stat_forgejo_runner_binary.stat is defined and not stat_forgejo_runner_binary.stat.exists | default('false')) or
-#       not stat_forgejo_runner_activated.stat | bodsch.core.linked_version(forgejo_runner_install_path, forgejo_runner_version)
-#   block:
-#     - name: propagate files
-#       block:
-#         - name: propagate forgejo-runner binary
-#           ansible.builtin.copy:
-#             src: "{{ forgejo_runner_local_tmp_directory }}/{{ forgejo_runner_release.binary }}"
-#             dest: "{{ forgejo_runner_install_path }}/forgejo-runner"
-#             mode: "0755"
-#             owner: "{{ forgejo_runner_system_user }}"
-#             group: "{{ forgejo_runner_system_group }}"
-#             remote_src: "{{ 'true' if forgejo_runner_direct_download else 'false' }}"
-#
-#         - name: make files executable
-#           ansible.builtin.file:
-#             path: "{{ forgejo_runner_install_path }}/forgejo-runner"
-#             mode: "0755"
-#             owner: "{{ forgejo_runner_system_user }}"
-#             group: "{{ forgejo_runner_system_group }}"
-#
-#         - name: create link to binary
-#           ansible.builtin.file:
-#             src: "{{ forgejo_runner_install_path }}/forgejo-runner"
-#             dest: "/usr/bin/forgejo-runner"
-#             state: link
-#             force: true
-#             follow: false
-#           notify:
-#             - restart forgejo-runner
-#
-#       rescue:
-#         - name: delete install directory
-#           ansible.builtin.file:
-#             path: "{{ forgejo_runner_install_path }}"
-#             state: absent
-#
-#         - name: exit with fail
-#           ansible.builtin.fail:
-#             msg: A serious error occurred during the installation of the binary.
-
-# - name: add user {{ forgejo_runner_system_user }} to groups
-#   ansible.builtin.user:
-#     name: "{{ forgejo_runner_system_user }}"
-#     groups: "{{ item }}"
-#     append: true
-#   loop:
-#     "{{ forgejo_runner_groups | sort | unique }}"
-#   when:
-#     - forgejo_runner_groups is defined
-#     - forgejo_runner_groups | count > 0
 
 - name: systemd
   when:

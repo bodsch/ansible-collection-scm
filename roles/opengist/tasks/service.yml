@@ -1,6 +1,8 @@
 ---
 
 - name: flush handlers
+  when:
+    - not running_in_check_mode
   ansible.builtin.meta: flush_handlers
 
 - name: ensure opengist is enabled on boot

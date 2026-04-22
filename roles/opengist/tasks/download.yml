@@ -1,11 +1,12 @@
 ---
 
 - name: get latest release
+  when:
+    - not running_in_check_mode
+    - opengist_version == "latest"
   delegate_to: localhost
   become: false
   run_once: true
-  when:
-    - opengist_version == "latest"
   block:
     - name: get latest release
       delegate_to: localhost
@@ -23,19 +24,24 @@
         opengist_version: "{{ _latest_release.latest_release }}"
 
 - name: define download information
+  when:
+    - not running_in_check_mode
   ansible.builtin.set_fact:
     opengist_release: "{{ opengist_defaults_release | combine(opengist_release, recursive=True) }}"
 
 - name: define delegate instance for download handling
+  when:
+    - not running_in_check_mode
+    - opengist_direct_download
   ansible.builtin.set_fact:
     opengist_delegate_to: "{{ (ansible_facts | default({})) | bodsch.core.hostname(inventory_hostname=inventory_hostname) }}"
     opengist_local_tmp_directory: "{{
         lookup('env', 'CUSTOM_LOCAL_TMP_DIRECTORY') |
         default('/var/cache/ansible/opengist', true) }}/{{ opengist_version }}"
-  when:
-    - opengist_direct_download
 
 - name: create download directory
+  when:
+    - not running_in_check_mode
   become: false
   delegate_to: "{{ opengist_delegate_to }}"
   run_once: "{{ 'false' if opengist_direct_download else 'true' }}"
@@ -46,6 +52,8 @@
   check_mode: false
 
 - name: detect the downloaded opengist archive
+  when:
+    - not running_in_check_mode
   become: false
   delegate_to: "{{ opengist_delegate_to }}"
   run_once: "{{ 'false' if opengist_direct_download else 'true' }}"
@@ -55,9 +63,9 @@
 
 - name: download
   when:
+    - not running_in_check_mode
     - stat_opengist_archive.stat is defined
     - not stat_opengist_archive.stat.exists | default('false')
-    - not running_in_check_mode
   block:
     - name: checksum
       become: false
@@ -113,6 +121,8 @@
         msg: A serious error occurred when downloading the archive.
 
 - name: detect extracted binary
+  when:
+    - not running_in_check_mode
   become: false
   delegate_to: "{{ opengist_delegate_to }}"
   run_once: "{{ 'false' if opengist_direct_download else 'true' }}"
@@ -121,6 +131,10 @@
   register: stat_opengist_binary
 
 - name: extract opengist archive
+  when:
+    - not running_in_check_mode
+    - stat_opengist_binary.stat is defined
+    - not stat_opengist_binary.stat.exists | default('false')
   become: false
   delegate_to: "{{ opengist_delegate_to }}"
   run_once: "{{ 'false' if opengist_direct_download else 'true' }}"
@@ -130,9 +144,5 @@
     copy: false
     extra_opts:
       - --strip-components=1
-  when:
-    - not running_in_check_mode
-    - stat_opengist_binary.stat is defined
-    - not stat_opengist_binary.stat.exists | default('false')
 
 ...

@@ -29,10 +29,11 @@
     running_in_check_mode: '{{ _check_mode.check_mode }}'
 
 - name: install dependency
+  when:
+    - not running_in_check_mode
+    - opengist_requirements | default([]) | count > 0
   ansible.builtin.package:
     name: "{{ opengist_requirements }}"
     state: present
-  when:
-    - opengist_requirements | default([]) | count > 0
 
 ...

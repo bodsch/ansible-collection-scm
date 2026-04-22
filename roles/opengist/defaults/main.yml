@@ -10,10 +10,6 @@ opengist_user:
 
 opengist_config_dir: /etc/opengist
 
-# opengist_system_user: opengist
-# opengist_system_group: opengist
-# opengist_textfile_dir: /var/lib/opengist
-
 opengist_direct_download: false
 opengist_release: {}
 

@@ -2,6 +2,7 @@
 
 - name: user and group handling
   when:
+    - not running_in_check_mode
     - opengist_user.owner != "root"
   block:
     - name: create opengist group
@@ -30,36 +31,19 @@
         mode: "02775"
 
 - name: add user {{ opengist_user.owner }} to groups
+  when:
+    - not running_in_check_mode
+    - opengist_user.groups | default([]) | count > 0
   ansible.builtin.user:
     name: "{{ opengist_user.owner }}"
     groups: "{{ item }}"
     append: true
   loop:
     "{{ opengist_user.groups | sort | unique }}"
-  when:
-    - opengist_user.groups | default([]) | count > 0
-
-# - name: user and group handling
-#   when:
-#     - opengist_user.user != "root"
-#   block:
-#     - name: create opengist group
-#       ansible.builtin.group:
-#         name: "{{ opengist_user.group }}"
-#         state: present
-#         system: true
-#
-#     - name: create opengist user
-#       ansible.builtin.user:
-#         name: "{{ opengist_user.owner }}"
-#         groups: "{{ opengist_user.group }}"
-#         append: true
-#         shell: /usr/sbin/nologin
-#         system: true
-#         createhome: false
-#         home: "{{ opengist_user.home }}"
 
 - name: create install directory
+  when:
+    - not running_in_check_mode
   ansible.builtin.file:
     path: "{{ opengist_install_path }}"
     state: directory
@@ -67,80 +51,24 @@
     group: "{{ opengist_user.group }}"
     mode: "0755"
 
-- name: detect extracted binary file for opengist on '{{ opengist_delegate_to }}'
-  become: false
-  delegate_to: "{{ opengist_delegate_to }}"
-  run_once: "{{ 'false' if opengist_direct_download else 'true' }}"
-  ansible.builtin.stat:
-    path: "{{ opengist_local_tmp_directory }}/{{ opengist_release.binary }}"
-  register: stat_file_binary
-
-- name: fail when extracted binary are missing
-  ansible.builtin.fail:
-    msg: "missing extracted binary on ansible controller"
+- name: deploy and activate opengist version {{ opengist_version }}
   when:
     - not running_in_check_mode
-    - not stat_file_binary.stat.exists
-
-- name: detect installed opengist binary
-  ansible.builtin.stat:
-    path: "{{ opengist_install_path }}/{{ opengist_release.binary }}"
-  register: stat_opengist_binary
-
-- name: detect activated opengist binary
-  ansible.builtin.stat:
-    path: "/usr/bin/{{ opengist_release.binary }}"
-  register: stat_opengist_activated
-
-- name: install and activate opengist
-  when:
-    - not running_in_check_mode
-    - stat_file_binary.stat.exists
-    - (stat_opengist_binary.stat is defined and not stat_opengist_binary.stat.exists | default('false')) or
-      not stat_opengist_activated.stat | bodsch.core.linked_version(opengist_install_path, opengist_version)
-  block:
-    - name: propagate files
-      block:
-        - name: propagate opengist binary
-          ansible.builtin.copy:
-            src: "{{ opengist_local_tmp_directory }}/{{ opengist_release.binary }}"
-            dest: "{{ opengist_install_path }}/{{ opengist_release.binary }}"
-            mode: "0755"
-            owner: "{{ opengist_user.owner }}"
-            group: "{{ opengist_user.group }}"
-            remote_src: "{{ 'true' if opengist_direct_download else 'false' }}"
-
-        - name: make files executable
-          ansible.builtin.file:
-            path: "{{ opengist_install_path }}/{{ opengist_release.binary }}"
-            mode: "0755"
-            owner: "{{ opengist_user.owner }}"
-            group: "{{ opengist_user.group }}"
-
-        - name: create link to binary
-          ansible.builtin.file:
-            src: "{{ opengist_install_path }}/{{ opengist_release.binary }}"
-            dest: "/usr/bin/{{ opengist_release.binary }}"
-            state: link
-            force: true
-            follow: false
-          notify:
-            - restart opengist
-
-      rescue:
-        - name: delete install directory
-          ansible.builtin.file:
-            path: "{{ opengist_install_path }}"
-            state: absent
-
-        - name: exit with fail
-          ansible.builtin.fail:
-            msg: A serious error occurred during the installation of the binary.
+  bodsch.core.deploy_and_activate:
+    src_dir: "{{ opengist_local_tmp_directory }}"
+    install_dir: "{{ opengist_install_path }}"
+    link_dir: "/usr/bin"
+    remote_src: "{{ ('true' if opengist_direct_download else 'false') | bool }}"
+    owner: "{{ opengist_user.owner }}"
+    group: "{{ opengist_user.group }}"
+    mode: "0755"
+    items:
+      - name: "{{ opengist_release.binary }}"
 
 - name: systemd
   when:
-    - ansible_facts.service_mgr | lower == "systemd"
     - not running_in_check_mode
+    - ansible_facts.service_mgr | lower == "systemd"
   block:
     - name: create opengist run configuration
       ansible.builtin.template:
@@ -166,8 +94,8 @@
 
 - name: openrc
   when:
-    - ansible_facts.service_mgr | lower == "openrc"
     - not running_in_check_mode
+    - ansible_facts.service_mgr | lower == "openrc"
   block:
     - name: create openrc service configuration
       ansible.builtin.template:

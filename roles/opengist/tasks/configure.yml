@@ -1,6 +1,8 @@
 ---
 
 - name: merge opengist configuration between defaults and custom
+  when:
+    - not running_in_check_mode
   ansible.builtin.set_fact:
     opengist_config: "{{ opengist_defaults_config | combine(opengist_config, recursive=True) }}"
     # opengist_tls_server: "{{ opengist_defaults_tls_server | combine(opengist_tls_server, recursive=True) }}"
@@ -9,6 +11,8 @@
     # opengist_collectors: "{{ opengist_defaults_collectors | combine(opengist_collectors, recursive=True) }}"
 
 - name: create opengist configuration directory
+  when:
+    - not running_in_check_mode
   ansible.builtin.file:
     path: "{{ opengist_config_dir }}"
     state: directory
@@ -17,6 +21,8 @@
     mode: "0775"
 
 - name: create opengist configuration
+  when:
+    - not running_in_check_mode
   ansible.builtin.template:
     src: "opengist/config.yml.j2"
     dest: "{{ opengist_config_dir }}/config.yml"
