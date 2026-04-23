@@ -72,6 +72,8 @@ forgejo_log:
 forgejo_security:
   install_lock: true
   internal_token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJuYmYiOjE2ODEyMjMxMjR9.tTmy5Nuv6_p66VZCxASiviwKSZCFk9GXggQ1-naqH7g
+  min_password_length: 8
+  password_complexity: ['digit', 'lower','sclonz']
 
 forgejo_admin_user:
   username: "root"

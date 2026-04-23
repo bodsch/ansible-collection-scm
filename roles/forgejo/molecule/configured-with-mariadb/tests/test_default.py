@@ -4,7 +4,7 @@ from __future__ import annotations, unicode_literals
 import pytest
 from helper.molecule import get_vars, infra_hosts, local_facts
 
-testinfra_hosts = infra_hosts(host_name="all")
+testinfra_hosts = infra_hosts(host_name="instance")
 
 # --- tests -----------------------------------------------------------------
 

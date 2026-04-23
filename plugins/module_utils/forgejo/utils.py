@@ -8,12 +8,18 @@ def validate_users(users: List) -> Tuple[List[dict], List[dict]]:
     invalid_users = []
 
     for user in users:
-        username = user.get("username", "").strip()
-        password = user.get("password", "").strip()
-        email = user.get("email", "").strip()
+
+        username = str(user.get("username", "")).strip()
+        password = str(user.get("password", "")).strip()
+        email = str(user.get("email", "")).strip()
+
+        # pw_validator = ForgejoPasswordValidator(
+        #    PasswordPolicy(min_length=8)  # ggf. aus app.ini lesen
+        # )
 
         # Prüfe Vollständigkeit und Eindeutigkeit
         if username and password and email:
+            # pw_validator.validate_or_raise(password)
             valid_users.append(user)
         else:
             invalid_users.append(user)

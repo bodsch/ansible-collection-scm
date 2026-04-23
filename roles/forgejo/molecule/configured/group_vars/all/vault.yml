@@ -2,7 +2,7 @@
 
 vault__forgejo:
   root: "change-it-ASAP!"
-  foo: "fdlmngksdfng"
-  bodsch: "12345"
+  foo: "f0lmngKsdfng?"
+  bodsch: "12-fdlmng-34-ksdfng-56"
 
 ...

@@ -819,7 +819,7 @@ forgejo_defaults_security:
   disable_git_hooks: ""                           # true
   disable_webhooks: ""                            # false
   only_allow_push_if_forgejo_environment_set: ""    # true
-  password_complexity: []                         # [off]
+  password_complexity: []                         # [off] |lower,upper,digit,spec
   password_hash_algo: ""                          # pbkdf2
   csrf_cookie_http_only: ""                       # true
   password_check_pwn: ""                          # false

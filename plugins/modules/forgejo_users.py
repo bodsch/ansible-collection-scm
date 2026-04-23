@@ -225,7 +225,11 @@ class ForgejoUsers:
                 "state": [],
             }
 
+        self.module.log(f"users: {self.users}")
+
         valid_users, invalid_users = validate_users(users=self.users)
+
+        self.users_api.settings()
 
         if invalid_users:
             state.append(

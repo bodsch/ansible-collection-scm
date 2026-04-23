@@ -28,6 +28,10 @@ class ForgejoApi:
         :param token: Optionaler Admin-Token
         """
         self.module = module
+        # self.module.log(
+        #     f"ForgejoApi::__init__(base_url: {base_url}, username: {username}, password: {password}, token: {token})"
+        # )
+
         self.base_url = base_url.rstrip("/")
         self.session = requests.Session()
 
@@ -85,16 +89,22 @@ class ForgejoApi:
             return []
 
     # --------------------------------------------------------------------------------
+
     def _request(
         self,
         method: str,
         path: str,
         params: Optional[dict] = None,
         json: Optional[dict] = None,
-    ) -> Union[List[dict], dict]:
+    ) -> tuple[int, Union[List[dict], dict, str]]:
+        """ """
+        # self.module.log(
+        #     f"ForgejoApi::_request(method: {method}, path: {path}, params: {params}, json: {json})"
+        # )
 
         url = f"{self.base_url}{path}"
-        result: List[dict] = []
+        result = []
+        status_code = 0
 
         while url:
             resp = self.session.request(
@@ -106,44 +116,36 @@ class ForgejoApi:
                 auth=self.auth,
                 timeout=15,
             )
-            resp.raise_for_status()
 
             status_code = resp.status_code
 
-            # self.module.log(msg=f"{type(resp)}")
-            # self.module.log(msg=f"   data: {resp} ")
-            # self.module.log(msg=f"   text: {resp.text} ")
-
-            data = resp.text
-
             try:
-                # self.module.log(msg=f"   json: {resp.json()} ")
                 data = resp.json()
-            except ValueError as e:
-                error = f"Error parsing the JSON: {e}"
-                self.module.log(error)
-                pass
+            except ValueError:
+                data = resp.text
 
-            if method == "GET":
-                # Pagination nur für GET relevant
-                if isinstance(data, list):
-                    result.extend(data)
-                else:
-                    result.append(data)
+            # Fehler explizit loggen – Forgejo liefert {"message": "..."} bei 4xx
+            if not resp.ok:
+                error_msg = (
+                    data.get("message", data) if isinstance(data, dict) else data
+                )
+                self.module.log(
+                    f"API Error {status_code} on {method} {path}: {error_msg}"
+                )
+                resp.raise_for_status()  # wirft HTTPError mit Details
 
-                # Pagination über Link Header
-                link_header = resp.headers.get("Link")
-                next_url = None
-                if link_header:
-                    match = re.search(r'<([^>]+)>;\s*rel="next"', link_header)
-                    if match:
-                        next_url = match.group(1)
-
-                url = next_url
-                params = None
-            else:
-                # POST/PATCH/DELETE gibt dict zurück
+            if method != "GET":
                 return status_code, data
+
+            if isinstance(data, list):
+                result.extend(data)
+            else:
+                result.append(data)
+
+            link_header = resp.headers.get("Link", "")
+            match = re.search(r'<([^>]+)>;\s*rel="next"', link_header)
+            url = match.group(1) if match else None
+            params = None
 
         return status_code, result
 
