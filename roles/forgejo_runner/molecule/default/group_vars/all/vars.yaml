@@ -9,9 +9,10 @@ forgejo_runner_controller:
   username: "forgejo"
 
 forgejo_runner_register:
+    # "{{ (ansible_facts | default({})) | bodsch.core.hostname(inventory_hostname=ansible_facts['hostname']) }}"
   - name: "{{ ansible_facts.hostname }}"
     tags: []
-    instance: "http://forgejo.molecule.lan"
+    instance: "http://forgejo.molecule.lan:3000"
     secret: "4ef3eb262c04aad5e279511c1c86f7377e28d6b9"
     scope: ""
     labels:
@@ -24,26 +25,19 @@ forgejo_runner_config:
   runner:                                               #
     file: .runner
     capacity: 2
-    envs: {}
+    envs:
+      MOLECULE_DOCKER_HOST: tcp://molecule.matrix.lan:2376
     env_file: .env
     timeout: 3h
     insecure: true
     fetch_timeout: 5s
     fetch_interval: 2s
-    labels: []
-    #   #- "ubuntu-latest:docker://docker.io/ubuntu:latest"
-    #   #- "ubuntu-22.04:docker://docker.io/ubuntu:22.04"
-    #   - label: ubuntu-latest
-    #     type: docker
-    #     container: docker.io/ubuntu:latest
-    #   - label: ubuntu-22.04
-    #     type: docker
-    #     container: docker.io/ubuntu:22.04
-    #   - label: lxc
-    #     type: lxc
-    #     container: debian:bullseye
-    #   # - label: self-hosted
-    #   #   type: host
-    #   #   container: "-self-hosted"
+    labels:
+      - label: self-hosted
+        type: host
+        container: "-self-hosted"
+      # - label: ubuntu-latest
+      #   type: docker
+      #   container: catthehacker/ubuntu:act-latest
 
 ...
