@@ -1,7 +1,7 @@
 namespace: bodsch
 name: scm
 
-version: 1.8.0
+version: 1.9.0
 
 readme: README.md
 
@@ -37,3 +37,9 @@ build_ignore:
   - ".gitignore"
   - ".yamllint"
   - ".github"
+  - ".git"
+  - "hooks"
+  - "Makefile"
+  - ".config"
+  - "tox.ini"
+  - "test-requirements.txt"
