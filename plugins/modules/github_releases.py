@@ -13,6 +13,10 @@ from pathlib import Path
 
 from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.bodsch.scm.plugins.module_utils.github import GitHub
+from ansible_collections.bodsch.scm.plugins.module_utils.release_finder import (
+    ReleaseFinder,
+)
+from packaging.version import InvalidVersion, Version
 
 __metaclass__ = type
 
@@ -148,12 +152,9 @@ class GithubReleases(object):
         self.cache_directory = (
             f"{Path.home()}/.cache/ansible/github/{self.project}/{self.repository}"
         )
-        # self.cache_file_name = f"{self.repository}_releases.json"
 
     def run(self):
         """ """
-        # create_directory(self.cache_directory)
-
         gh_authentication = dict(token=self.github_password)
 
         gh = GitHub(
@@ -165,17 +166,16 @@ class GithubReleases(object):
         gh.architecture(system=self.system, architecture=self.architecture)
         gh.enable_cache(cache_minutes=self.cache_minutes)
 
-        # gh.authentication(username=self.github_username, password=self.github_password, token=self.github_password)
-
         status_code, gh_result, error = gh.get_all_releases(repo_url=self.github_url)
-
-        self.module.log(msg=f"status_code: {status_code}")
 
         if status_code == 419:
             return dict(
                 failed=True,
                 status=419,
-                msg="An internal error has occurred. Probably a GitHub request could not be parsed properly. Please contact the developer.",
+                msg=(
+                    "An internal error has occurred. Probably a GitHub request could "
+                    "not be parsed properly. Please contact the developer."
+                ),
                 stderr=error,
             )
 
@@ -187,51 +187,106 @@ class GithubReleases(object):
                 stderr=error,
             )
 
-        if gh_result:
+        if not gh_result or not isinstance(gh_result, list):
+            return dict(
+                status=500,
+                msg=f"No release information could be found under {self.github_url}.",
+            )
 
-            if isinstance(gh_result, list):
+        # self.module.log(msg=f"  - gh_result entries: {len(gh_result)}")
 
-                download_urls = [
-                    x.get("download_urls")
-                    for x in gh_result
-                    if x.get("name").lstrip("v") == self.version.lstrip("v")
-                ]
+        # Suche nach dem Release, dessen Version (aus name oder tag_name) zur
+        # gewünschten Version passt – robust gegenüber beschreibenden Namen.
+        matching_releases = [
+            x for x in gh_result if self._release_matches_version(x, self.version)
+        ]
 
-                try:
-                    if len(download_urls) > 0:
-                        download_urls = download_urls[0]
+        # self.module.log(msg=f"  - matching_releases: {matching_releases}")
 
-                        matches = [
-                            x
-                            for x in download_urls
-                            if re.search(
-                                rf".*{self.version.lstrip('v')}.*{self.system}.*{self.architecture}.*",
-                                x,
-                            )
-                        ]
+        if not matching_releases:
+            return dict(
+                status=500,
+                msg=(
+                    f"No release matching version '{self.version}' found "
+                    f"under {self.github_url}."
+                ),
+            )
 
-                        # contains_list = any(isinstance(item, list) for item in download_urls)
-                        if matches:
-                            download_url = matches[0]
+        download_urls = matching_releases[0].get("download_urls", [])
 
-                            return dict(
-                                status=200,
-                                urls=download_urls,
-                                download_url=download_url,
-                            )
-                        else:
-                            return dict(
-                                status=500, msg="No matching download URL found."
-                            )
+        # self.module.log(msg=f"  - download_urls: {download_urls}")
 
-                except Exception as e:
-                    self.module.log(msg=f"Error: {e}")
-                    return dict(status=500, msg=e)
+        try:
+            if not download_urls:
+                return dict(status=500, msg="Release found but has no download URLs.")
 
-        return dict(
-            status=500,
-            msg=f"No release information could be found under {self.github_url}.",
-        )
+            matches = [
+                x
+                for x in download_urls
+                if re.search(
+                    rf".*{re.escape(self.version.lstrip('v'))}.*"
+                    rf"{re.escape(self.system)}.*{re.escape(self.architecture)}.*",
+                    x,
+                )
+            ]
+
+            if matches:
+                return dict(
+                    status=200,
+                    urls=download_urls,
+                    download_url=matches[0],
+                )
+            else:
+                return dict(status=500, msg="No matching download URL found.")
+
+        except Exception as e:
+            self.module.log(msg=f"Error: {e}")
+            return dict(status=500, msg=str(e))
+
+    # ------------------------------------------------------------------------------------------
+    # private helpers
+
+    def _release_matches_version(self, release: dict, target_version: str) -> bool:
+        """
+        Prüft robust, ob ein Release-Eintrag zur gesuchten Version gehört.
+
+        Vergleichsreihenfolge pro Feld (name, tag_name):
+          1. Exakter String-Vergleich nach 'v'-Strip
+          2. SemVer-Vergleich nach Versionsextraktion aus beschreibendem Namen
+
+        Beispiele, die alle zu version="2.3.0" passen:
+          name="2.3.0",      tag_name="v2.3.0"
+          name="GLAuth v2.3.0", tag_name="v2.3.0"
+          name="v2.3.0",     tag_name="project-2.3.0"
+        """
+        target_plain = target_version.lstrip("v")
+
+        # SemVer-Objekt für präzisen Vergleich (einmalig, optional)
+        try:
+            target_ver = Version(target_plain)
+        except InvalidVersion:
+            target_ver = None
+
+        for field in ("name", "tag_name"):
+            raw = release.get(field) or ""
+
+            # 1. Exakter Vergleich
+            if raw.lstrip("v") == target_plain:
+                return True
+
+            # 2. Versionsextraktion + SemVer-Vergleich
+            extracted = ReleaseFinder.extract_version_from_string(raw)
+            if extracted:
+                if extracted == target_plain:
+                    return True
+                if target_ver is not None:
+                    try:
+                        if Version(extracted) == target_ver:
+                            return True
+                    except InvalidVersion:
+                        pass
+
+        return False
 
 
 def main():
