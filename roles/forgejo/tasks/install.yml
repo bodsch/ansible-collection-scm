@@ -114,8 +114,8 @@
   when:
     - not running_in_check_mode
     # - stat_forgejo_deployed.activated
-    - stat_forgejo_deployed.changed
-    # - not stat_forgejo_first_run.stat | bodsch.core.linked_version(forgejo_install_path, forgejo_version) | bool
+    # - stat_forgejo_deployed.changed
+    - not stat_forgejo_first_run.stat | bodsch.core.linked_version(forgejo_install_path, forgejo_version) | bool
   block:
     - name: restart forgejo if needed
       ansible.builtin.meta: flush_handlers
