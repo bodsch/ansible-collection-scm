@@ -14,24 +14,13 @@
     - name: create forgejo-runner user
       ansible.builtin.user:
         name: "{{ forgejo_runner_system_user }}"
-        groups: "{{ forgejo_runner_system_group }}"
-        # append: true
+        groups: "{{ forgejo_runner_system_group | bodsch.scm.runner_groups(forgejo_runner_groups) }}"
+        append: true
         shell: /bin/bash
         system: true
         createhome: true
+        update_password: on_create
         home: "{{ forgejo_runner_working_dir }}"
-
-- name: add user {{ forgejo_runner_system_user }} to groups
-  when:
-    - not running_in_check_mode
-    - forgejo_runner_groups is defined
-    - forgejo_runner_groups | count > 0
-  ansible.builtin.user:
-    name: "{{ forgejo_runner_system_user }}"
-    groups: "{{ item }}"
-    append: true
-  loop:
-    "{{ forgejo_runner_groups | sort | unique }}"
 
 - name: create install directory
   when:

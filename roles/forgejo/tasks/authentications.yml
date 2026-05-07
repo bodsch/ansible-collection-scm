@@ -78,7 +78,7 @@
     skip_local_2fa: "{{ forgejo_auths.ldap.skip_local_2fa | default('false') | bool }}"
     bind_dn: "{{ forgejo_auths.ldap.bind_dn | default(omit) }}"
     bind_password: "{{ forgejo_auths.ldap.bind_password | default(omit) }}"
-    attributes_in_bind: "{{ forgejo_auths.ldap.attributes_in_bind | default(omit) }}"
+    attributes_in_bind: "{{ forgejo_auths.ldap.attributes_in_bind | default('false') | bool }}"
     synchronize_users: "{{ forgejo_auths.ldap.synchronize_users | default('false') | bool }}"
     config: "{{ forgejo_config_dir }}/forgejo.ini"
     working_dir: "{{ forgejo_working_dir }}"

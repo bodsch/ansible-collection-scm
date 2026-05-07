@@ -113,9 +113,9 @@
 - name: restart after update following database migration
   when:
     - not running_in_check_mode
-    - stat_forgejo_deployed.activated
+    # - stat_forgejo_deployed.activated
     - stat_forgejo_deployed.changed
-    - stat_forgejo_first_run.stat.existst | default('false') | bool # | bodsch.core.linked_version(forgejo_install_path, forgejo_version)
+    # - not stat_forgejo_first_run.stat | bodsch.core.linked_version(forgejo_install_path, forgejo_version) | bool
   block:
     - name: restart forgejo if needed
       ansible.builtin.meta: flush_handlers
