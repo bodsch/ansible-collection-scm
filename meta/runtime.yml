@@ -3,6 +3,16 @@
 # to galaxy
 requires_ansible: '>=2.9.10'
 
+plugin_routing:
+  modules:
+    forgejo_migrate:
+      deprecation:
+        removal_version: "1.10.0"
+        warning_text: >-
+          forgejo_migrate is deprecated and will be removed in version 1.10.0.
+          Forgejo runs database migrations automatically on startup (AUTO_MIGRATION=true).
+          Remove this task from your playbooks.
+
 # Content that Ansible needs to load from another location or that has
 # been deprecated/removed
 # plugin_routing:

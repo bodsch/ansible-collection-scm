@@ -1,6 +1,6 @@
 ---
 
-forgejo_version: 14.0.0
+forgejo_version: 15.0.1
 
 forgejo_database:
   db_type: sqlite3

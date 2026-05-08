@@ -36,6 +36,15 @@ description:
   - A successful run indicates a changed state, as the migration may modify the database schema.
   - Supports check mode: reports changes without running the migration.
 
+deprecated:
+  removed_in: "1.10.0"
+  why: >
+    forgejo migrate is redundant. Forgejo performs database migrations
+    automatically on startup via AUTO_MIGRATION=true (default).
+  alternative: >
+    Remove this task. Ensure AUTO_MIGRATION=true is set in forgejo.ini
+    (this is the default). Forgejo will migrate on next service start.
+
 options:
   command:
     description:
@@ -153,6 +162,7 @@ class ForgejoMigrate:
             module: The active AnsibleModule instance.
         """
         self.module = module
+        self.module.log("ForgejoMigrate::__init__()")
 
         self.command: Command = cast(Command, module.params.get("command", "migrate"))
         self.parameters: List[str] = self._as_str_list(
@@ -175,6 +185,8 @@ class ForgejoMigrate:
         Returns:
             ModuleResult compatible with `module.exit_json()`.
         """
+        self.module.log("ForgejoMigrate::run()")
+
         self._validate_inputs()
 
         os.chdir(self.working_dir)
@@ -193,6 +205,8 @@ class ForgejoMigrate:
         Returns:
             ModuleResult indicating whether the migration ran successfully.
         """
+        self.module.log("ForgejoMigrate::migrate()")
+
         if self.module.check_mode:
             return {
                 "failed": False,
@@ -203,12 +217,20 @@ class ForgejoMigrate:
         args = self._build_args()
 
         rc, out, err = self._exec(args)
+
         if rc == 0:
-            return {
-                "failed": False,
-                "changed": True,
-                "msg": "Database migration executed successfully.",
-            }
+            if out:
+                return {
+                    "failed": False,
+                    "changed": True,
+                    "msg": "Database migration executed successfully.",
+                }
+            else:
+                return {
+                    "failed": False,
+                    "changed": False,
+                    "msg": "Database migration not needed.",
+                }
 
         return {
             "failed": True,
@@ -232,10 +254,13 @@ class ForgejoMigrate:
             self.working_dir,
             "--config",
             self.config,
+            "--verbose",
             "migrate",
         ]
+
         if self.parameters:
             args += self.parameters
+
         return args
 
     def _validate_inputs(self) -> None:
@@ -274,7 +299,17 @@ class ForgejoMigrate:
         Returns:
             Tuple (rc, stdout, stderr).
         """
+        self.module.log(f"ForgejoMigrate::_exec(commands: {commands})")
+
         rc, out, err = self.module.run_command(list(commands), check_rc=False)
+
+        _out = (out or "").strip().replace("\n", "\\n")
+        _err = (err or "").strip().replace("\n", "\\n")
+
+        self.module.log(f"   - rc : '{rc}'")
+        self.module.log(f"   - out: '{_out}'")
+        self.module.log(f"   - err: '{_err}'")
+
         return int(rc), cast(str, out), cast(str, err)
 
     @staticmethod

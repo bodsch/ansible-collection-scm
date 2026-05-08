@@ -49,6 +49,7 @@
     forgejo_time: "{{ forgejo_defaults_time | combine(forgejo_time, recursive=True) }}"
     forgejo_ui: "{{ forgejo_defaults_ui | combine(forgejo_ui, recursive=True) }}"
     forgejo_webhook: "{{ forgejo_defaults_webhook | combine(forgejo_webhook, recursive=True) }}"
+  no_log: true
 
 - name: create forgejo configuration directory
   when:

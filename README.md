@@ -17,8 +17,8 @@ This collection aims to provide a set of small Ansible modules and helper functi
 
 * Arch Linux
 * Debian based
-    - Debian 11 / 12
-    - Ubuntu 22.04
+    - Debian 11 / 12 / 13
+    - Ubuntu 22.04 / 24.04 / 26.04
 
 
 ## Requirements & Dependencies
@@ -61,15 +61,15 @@ If you want to use something stable, please use a [Tagged Version](https://githu
 
 | Name                      | Description |
 |:--------------------------|:----|
-| [bodsch.scm.github_checksum](./plugins/modules/github_checksum.py) | Fetches a checksum of a GitHub project and returns it. | 
-| [bodsch.scm.github_latest](./plugins/modules/github_latest.py)     | Fetches the latest version of a GitHub project and returns it. | 
+| [bodsch.scm.github_checksum](./plugins/modules/github_checksum.py) | Fetches a checksum of a GitHub project and returns it. |
+| [bodsch.scm.github_latest](./plugins/modules/github_latest.py)     | Fetches the latest version of a GitHub project and returns it. |
 | [bodsch.scm.github_releases](./plugins/modules/github_releases.py) | Fetches the releases version of a GitHub project and returns the download urls. |
-| [bodsch.scm.forgejo_admin_user](./plugins/modules/forgejo_admin_user.py) | Manage Forgejo admin users. | 
-| [bodsch.scm.forgejo_auth](./plugins/modules/forgejo_auth.py)       | Manage Forgejo LDAP authentication entries. | 
-| [bodsch.scm.forgejo_cli](./plugins/modules/forgejo_cli.py)         | Register Forgejo runners using the Forgejo CLI. | 
-| [bodsch.scm.forgejo_migrate](./plugins/modules/forgejo_migrate.py) | Migrate a Forgejo database. | 
-| [bodsch.scm.forgejo_runner](./plugins/modules/forgejo_runner.py)   | Register a Forgejo Runner on a Forgejo Server. | 
-| [bodsch.scm.forgejo_users](./plugins/modules/forgejo_users.py)     | Manage Forgejo users | 
+| [bodsch.scm.forgejo_admin_user](./plugins/modules/forgejo_admin_user.py) | Manage Forgejo admin users. |
+| [bodsch.scm.forgejo_auth](./plugins/modules/forgejo_auth.py)       | Manage Forgejo LDAP authentication entries. |
+| [bodsch.scm.forgejo_cli](./plugins/modules/forgejo_cli.py)         | Register Forgejo runners using the Forgejo CLI. |
+| [bodsch.scm.forgejo_migrate](./plugins/modules/forgejo_migrate.py) | Migrate a Forgejo database. **deprecated**  |
+| [bodsch.scm.forgejo_runner](./plugins/modules/forgejo_runner.py)   | Register a Forgejo Runner on a Forgejo Server. |
+| [bodsch.scm.forgejo_users](./plugins/modules/forgejo_users.py)     | Manage Forgejo users |
 
 
 ## Installing this collection

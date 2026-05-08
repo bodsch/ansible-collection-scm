@@ -10,3 +10,5 @@ roles/**/test-requirements.txt
 hooks
 hooks
 **/*.save
+.ansible
+*.SAVE
