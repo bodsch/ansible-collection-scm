@@ -1,7 +1,70 @@
 #jinja2: trim_blocks: True, lstrip_blocks: True
 # {{ ansible_managed }}
 
+{#
+Seit Runner v12.7.0 (siehe Quelltext internal/pkg/config/config.go) gilt:
+Sobald server.connections in der YAML existiert, ignoriert der Runner alle CLI-Parameter --url/--uuid/--token/--token-url
+und gibt den Fehler aus, den du siehst. Das ist „by design".
+#}
+
 OPTIONS="--config {{ forgejo_runner_config_dir }}/config.yaml"
+
+# OPTIONS=" \
+#   --url https://git.boone-schulz.de/ \
+#   --uuid 34656633-6562-3236-3263-303461616435 \
+#   --token-url file:///var/lib/forgejo-runner/.token
+#
+#
+# "
+
+{#
+forgejo-runner version v12.10.1
+
+[root@git lib]# /usr/bin/forgejo-runner --help
+Run Forgejo Actions locally by specifying the event name (e.g. `push`) or an action name directly.
+
+Usage:
+  forgejo-runner [command]
+
+Available Commands:
+  cache-server       Start a cache server for the cache action
+  create-runner-file Create a runner file using a shared secret used to pre-register the runner on the Forgejo instance (deprecated)
+  daemon             Run as daemon
+  exec               Run workflow locally.
+  generate-config    Generate an example config file
+  help               Help about any command
+  one-job            Run only one job
+  register           Register a runner to the server (deprecated)
+  validate           Validate workflows or actions with a schema
+
+Flags:
+  -c, --config string   Config file path
+  -h, --help            help for forgejo-runner
+  -v, --version         version for forgejo-runner
+
+Use "forgejo-runner [command] --help" for more information about a command.
+
+
+[root@git lib]# /usr/bin/forgejo-runner daemon --help
+Run as daemon
+
+Usage:
+  forgejo-runner daemon [flags]
+
+Flags:
+      --fetch-interval duration   specifies the interval duration for fetching resources.
+  -h, --help                      help for daemon
+      --label stringArray         labels of the runner (repeatable)
+      --token-url string          URL where the runner token can be loaded from
+      --url string                URL of the Forgejo instance to connect to
+      --uuid string               UUID of the runner
+
+Global Flags:
+  -c, --config string   Config file path
+
+
+#}
+
 {#
 # /usr/bin/forgejo-runner --help
 Run Forgejo Actions locally by specifying the event name (e.g. `push`) or an action name directly.
@@ -25,3 +88,4 @@ Flags:
 
 Use "forgejo-runner [command] --help" for more information about a command.
 #}
+

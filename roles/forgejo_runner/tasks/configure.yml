@@ -6,39 +6,48 @@
   ansible.builtin.set_fact:
     forgejo_runner_config: "{{ forgejo_runner_defaults_config | combine(forgejo_runner_config, recursive=True) }}"
 
-- name: create forgejo-runner configuration directory
+- name: create forgejo-runner directories
   when:
     - not running_in_check_mode
-  ansible.builtin.file:
-    path: "{{ forgejo_runner_config_dir }}"
-    state: directory
+  bodsch.core.directories:
     owner: "{{ forgejo_runner_system_user }}"
     group: "{{ forgejo_runner_system_group }}"
     mode: "0750"
+    paths:
+      - path: "{{ forgejo_runner_config_dir }}"
+      - path: "{{ forgejo_runner_working_dir }}"
+        mode: "0770"
+      - path: "{{ forgejo_runner_working_dir }}/.token"
 
-- name: create forgejo-runner working directory
-  when:
-    - not running_in_check_mode
-  ansible.builtin.file:
-    path: "{{ forgejo_runner_working_dir }}"
-    state: directory
-    owner: "{{ forgejo_runner_system_user }}"
-    group: "{{ forgejo_runner_system_group }}"
-    mode: "0770"
-
-- name: create forgejo-runner configuration
-  when:
-    - not running_in_check_mode
-  ansible.builtin.template:
-    force: true
-    src: forgejo-runner/config.yaml.j2
-    dest: "{{ forgejo_runner_config_dir }}/config.yaml"
-    owner: "{{ forgejo_runner_system_user }}"
-    group: "{{ forgejo_runner_system_group }}"
-    mode: "0644"
-  register: forgejo_runner_config
-  notify:
-    - restart forgejo-runner
+# - name: create forgejo-runner configuration directory
+#   when:
+#     - not running_in_check_mode
+#   ansible.builtin.file:
+#     path: "{{ forgejo_runner_config_dir }}"
+#     state: directory
+#     owner: "{{ forgejo_runner_system_user }}"
+#     group: "{{ forgejo_runner_system_group }}"
+#     mode: "0750"
+#
+# - name: create forgejo-runner working directory
+#   when:
+#     - not running_in_check_mode
+#   ansible.builtin.file:
+#     path: "{{ forgejo_runner_working_dir }}"
+#     state: directory
+#     owner: "{{ forgejo_runner_system_user }}"
+#     group: "{{ forgejo_runner_system_group }}"
+#     mode: "0770"
+#
+# - name: create forgejo-runner working directory
+#   when:
+#     - not running_in_check_mode
+#   ansible.builtin.file:
+#     path: "{{ forgejo_runner_working_dir }}/.token"
+#     state: directory
+#     owner: "{{ forgejo_runner_system_user }}"
+#     group: "{{ forgejo_runner_system_group }}"
+#     mode: "0750"
 
 - name: validate runner secret
   when:
@@ -55,6 +64,16 @@
     msg: The runner secret is not a 40-character hex string
     quiet: true
 
+- name: "persist runner secret"
+  ansible.builtin.copy:
+    dest: "{{ forgejo_runner_working_dir }}/.token/{{ item.name }}.token"
+    content: "{{ item.secret }}"
+    owner: "{{ forgejo_runner_system_user }}"
+    group: "{{ forgejo_runner_system_group }}"
+    mode: "0600"
+  loop: "{{ forgejo_runner_register | default([]) }}"
+  no_log: true
+
 - name: "create runner token on '{{ forgejo_runner_controller.hostname }}'"
   when:
     - not running_in_check_mode
@@ -67,32 +86,57 @@
     config: "{{ forgejo_config_dir }}/forgejo.ini"
     working_dir: "{{ forgejo_working_dir }}"
     runners: "{{ forgejo_runner_register | default([]) }}"
+  register: _forgejo_runner_registered
 
-- name: "append runner to '{{ forgejo_runner_controller.hostname }}'"
+- name: d
+  debug:
+    msg:
+      - "{{ _valid_runner_secret }}"
+      - "{{ _forgejo_runner_registered.state }}"
+
+- name: create forgejo-runner configuration
   when:
     - not running_in_check_mode
-  become_user: "{{ forgejo_runner_system_user }}"
-  become: true
-  bodsch.scm.forgejo_runner:
-    command: create_runner
-    working_dir: "{{ forgejo_runner_working_dir }}"
-    runners: "{{ forgejo_runner_register | default([]) }}"
+    # - _forgejo_runner_registered.state.changed | default('false') | bool
+  ansible.builtin.template:
+    force: true
+    src: forgejo-runner/config.yaml.j2
+    dest: "{{ forgejo_runner_config_dir }}/config.yaml"
+    owner: "{{ forgejo_runner_system_user }}"
+    group: "{{ forgejo_runner_system_group }}"
+    mode: "0644"
+  register: forgejo_runner_config
   notify:
+    - remove dot-runner
     - restart forgejo-runner
 
-- name: restart forgejo-runner if needed
-  when:
-    - not running_in_check_mode
-  ansible.builtin.meta: flush_handlers
-
-- name: check if forgejo-runner are available
-  when:
-    - not running_in_check_mode
-  ansible.builtin.wait_for:
-    path: /run/forgejo-runner/forgejo-runner.pid
-    state: present
-    delay: 2
-    msg: "Timeout to find /run/forgejo-runner/forgejo-runner.pid"
-  ignore_errors: false
+# - name: "append runner to '{{ forgejo_runner_controller.hostname }}'"
+#   when:
+#     - not running_in_check_mode
+#     - forgejo_runner_config.state.changed | default('false') | bool
+#     # depends on runner version
+#   become_user: "{{ forgejo_runner_system_user }}"
+#   become: true
+#   bodsch.scm.forgejo_runner:
+#     command: create_runner
+#     working_dir: "{{ forgejo_runner_working_dir }}"
+#     runners: "{{ forgejo_runner_register | default([]) }}"
+#   notify:
+#     - restart forgejo-runner
+#
+# - name: restart forgejo-runner if needed
+#   when:
+#     - not running_in_check_mode
+#   ansible.builtin.meta: flush_handlers
+#
+# - name: check if forgejo-runner are available
+#   when:
+#     - not running_in_check_mode
+#   ansible.builtin.wait_for:
+#     path: /run/forgejo-runner/forgejo-runner.pid
+#     state: present
+#     delay: 2
+#     msg: "Timeout to find /run/forgejo-runner/forgejo-runner.pid"
+#   ignore_errors: false
 
 ...

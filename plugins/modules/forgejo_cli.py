@@ -253,11 +253,11 @@ class ForgejoCli:
 
         created_runners = self.list_runners()
 
-        self.module.log(f"  created runners: {created_runners}")
+        # self.module.log(f"  created runners: {created_runners}")
 
         for runner_spec, parse_error in self._parse_runner_specs(self.runners_raw):
             """ """
-            self.module.log(f"  - runner name: {runner_spec.name}")
+            # self.module.log(f"  - runner name: {runner_spec.name}")
 
             if parse_error is not None:
                 state.append(parse_error)
@@ -269,12 +269,19 @@ class ForgejoCli:
             ]
 
             if len(runner_exists) > 0:
+                _uuid = {
+                    "uuid": v.get("uuid")
+                    for k, v in created_runners.items()
+                    if k == runner_spec.name
+                }
+
                 state.append(
                     {
                         "name": runner_spec.name,
                         "changed": False,
                         "failed": False,
                         "msg": f"Runner '{runner_spec.name}' already registered.",
+                        "uuid": _uuid.get("uuid"),
                     }
                 )
                 continue
@@ -300,6 +307,7 @@ class ForgejoCli:
                         "changed": True,
                         "failed": False,
                         "msg": f"Runner '{runner_spec.name}' successfully registered.",
+                        "uuid": out.strip(),
                     }
                 )
                 any_changed = True
@@ -376,6 +384,14 @@ class ForgejoCli:
             """ """
             return {}
 
+        db_path: str | None = None
+        db_host: str | None = None
+        db_port: int | None = None
+        db_name: str | None = None
+        db_user: str | None = None
+        db_pass: str | None = None
+        db_charset: str | None = None
+
         db_type = _forgejo_config.get("database", {}).get("DB_TYPE", None)
 
         if db_type == "sqlite3":
@@ -387,27 +403,51 @@ class ForgejoCli:
             if not is_absolute_path(db_path):
                 db_path = os.path.join(work_path, db_path)
 
+        elif db_type in ["mariadb", "mysql"]:
+            """ """
+            db_hostname = _forgejo_config.get("database", {}).get("HOST", None)
+
+            if ":" in db_hostname:
+                db_host = db_hostname.split(":")[0]
+                db_port = int(db_hostname.split(":")[1])
+
+            db_name = _forgejo_config.get("database", {}).get("NAME", None)
+            db_user = _forgejo_config.get("database", {}).get("USER", None)
+            db_pass = _forgejo_config.get("database", {}).get("PASSWD", None)
+            db_charset = "utf8mb4"
+
         config = DatabaseConfig(
             db_type=db_type,
             # SQLite
             sqlite_path=db_path if db_path else "",
             # # MariaDB
-            # host: MariaDB host.
-            # port: MariaDB port.
-            # user: MariaDB username.
-            # password: MariaDB password.
-            # database: MariaDB database name.
-            # charset: Connection charset (default: utf8mb4).
+            host=(
+                db_host if (db_type in ["mariadb", "mysql"] and db_host) else ""
+            ),  # MariaDB host.
+            port=(
+                db_port if (db_type in ["mariadb", "mysql"] and db_port) else ""
+            ),  # MariaDB port.
+            user=(
+                db_user if (db_type in ["mariadb", "mysql"] and db_user) else ""
+            ),  # MariaDB username.
+            password=(
+                db_pass if (db_type in ["mariadb", "mysql"] and db_pass) else ""
+            ),  # MariaDB password.
+            database=(
+                db_name if (db_type in ["mariadb", "mysql"] and db_name) else ""
+            ),  # MariaDB database name.
+            charset=(
+                db_charset if (db_type in ["mariadb", "mysql"] and db_charset) else ""
+            ),  # Connection charset (default: utf8mb4).
         )
 
         _runner = ForgejoRunner(self.module)
 
+        # return {}
+
         _runner_infos: RunnerSnapshot = _runner.get_runner_snapshot(
             db=config, mask_token_salt=False
         )
-
-        # self.module.log(f" runner_infos  : {_runner_infos}")
-        # self.module.log(f"   runners     : {_runner_infos.runners}")
 
         if _runner_infos.runners:
             return _runner_infos.runners

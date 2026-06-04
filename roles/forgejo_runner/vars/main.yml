@@ -25,10 +25,10 @@ forgejo_runner_defaults_config:
     job_level: info                                     # trace, debug, info, warn, error, fatal
 
   runner:                                               #
-    file: .runner
+    # file: .runner
     capacity: 1
     envs: {}
-    env_file: .env
+    # env_file: .env
     timeout: 3h
     shutdown_timeout: 3h
     insecure: false

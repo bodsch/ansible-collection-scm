@@ -41,10 +41,10 @@ log:
 {# .. #}
 runner:
   {% set v = forgejo_runner_config.runner -%}
-  {{ print_value('file', value=v.file) -}}
+  # {{ print_value('file', value=v.file) -}}
   {{ print_value('capacity', value=v.capacity) -}}
   {{ print_value('envs', value=v.envs) -}}
-  {{ print_value('env_file', value=v.env_file) -}}
+  # {{ print_value('env_file', value=v.env_file) -}}
   {{ print_value('timeout', value=v.timeout) -}}
   {{ print_value('shutdown_timeout', value=v.shutdown_timeout) -}}
   {{ print_value('insecure', value=v.insecure) -}}
@@ -80,7 +80,7 @@ container:
     {% else %}
   {{- print_value('docker_host', value=v.docker_host) }}
     {% endif %}
-  {% endif %}
+  {% endif -%}
   {{- print_value('force_pull', value=v.force_pull) -}}
   {{- print_value('force_rebuild', value=v.force_rebuild) -}}
 
@@ -89,6 +89,25 @@ host:
   {% set v = forgejo_runner_config.host -%}
   {{ print_value('workdir_parent', value=v.workdir_parent) -}}
 {# .. #}
+
+{# ... #}
+server:
+  {% set server_connections = forgejo_runner_register | bodsch.scm.add_runner_uuid(_forgejo_runner_registered.state) %}
+  connections:
+  {% for runner in server_connections %}
+    {{ runner.name }}:
+      url: {{ runner.instance }}
+      token_url: file://{{ forgejo_runner_working_dir }}/.token/{{ runner.name }}.token
+      uuid: {{ runner.uuid | default('') }}
+    {% if forgejo_runner_config.runner.labels is defined and
+          forgejo_runner_config.runner.labels | default({}) | length > 0 %}
+      labels:
+      {% set runner_labels = forgejo_runner_config.runner.labels | bodsch.scm.runner_labels() %}
+      {% for _label in runner_labels %}
+        - {{ _label }}
+      {% endfor %}
+    {% endif %}
+  {% endfor %}
 
 {#
 forgejo-runner generate-config
@@ -286,5 +305,44 @@ host:
   # The parent directory of a job's working directory.
   # If it's empty, $HOME/.cache/act/ will be used.
   workdir_parent:
+
+
+server:
+  # A map of connections to one or more Forgejo instances. Example:
+  #
+  # ```
+  # connections:
+  #   example:
+  #     url: https://example.com/
+  #     uuid: c9e50be9-a7c3-4aee-ba35-624c4ff8c519
+  #     token: 6634bb58be0db23cc013a2e72dd1828ae0257cf
+  #     fetch_interval: 30s
+  #   codeberg:
+  #     url: https://codeberg.org/
+  #     uuid: f543b661-cb02-4ba2-9820-108df62808b5
+  #     token_url: file:$CREDENTIALS_DIRECTORY/token.txt
+  #     labels:
+  #       - debian:docker://docker.io/library/node:lts-trixie
+  # ```
+  #
+  # The map's keys (`example`, and `codeberg` above) serve as the connections'
+  # names.
+  #
+  # The runner token can either be specified inline using `token` or be loaded
+  # from a file using `token_url`. The methods are mutually exclusive.
+  # `token_url` supports a single placeholder: `$CREDENTIALS_DIRECTORY`. If the
+  # environment variable `CREDENTIALS_DIRECTORY` exists, the placeholder is
+  # replaced with the value of `CREDENTIALS_DIRECTORY`. Otherwise, it is
+  # retained.
+  #
+  # Labels defined on a connection are limited to that particular connection.
+  # If a connection defines no labels, the labels declared by `runner.labels`
+  # are used instead.
+  #
+  # `fetch_interval` specifies how often Forgejo Runner should ask Forgejo for
+  # pending jobs. If `fetch_interval` is not defined on a connection,
+  # `runner.fetch_interval` is used. Note that Forgejo Runner might enforce a
+  # minimum value for certain instances like Codeberg.
+  connections:
 
 #}

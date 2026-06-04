@@ -297,6 +297,7 @@ class ForgejoRunner:
             base_result["msg"] = "Runner file would be created/updated (check mode)."
             return base_result
 
+        # obsolete since version ???
         rc, out, err = self._create_runner_file(
             entry=entry, runner_name=selected_name, runner_file=runner_file_path
         )
@@ -534,6 +535,7 @@ class ForgejoRunner:
         except OSError as exc:
             return 1, "", f"Failed to change directory to '{self.working_dir}': {exc}"
 
+        # obsolete since version ???
         base_args: List[str] = [
             self.forgejo_runner_bin,
             "create-runner-file",
