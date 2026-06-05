@@ -197,7 +197,7 @@ class ForgejoCli:
             module: The active AnsibleModule instance.
         """
         self.module = module
-        self.module.log("ForgejoCli::__init__()")
+        # self.module.log("ForgejoCli::__init__()")
 
         self.command: Command = cast(Command, module.params.get("command", "register"))
         self.parameters: List[str] = self._as_str_list(
@@ -222,7 +222,7 @@ class ForgejoCli:
         Returns:
             A module result containing aggregated status and per-runner state.
         """
-        self.module.log("ForgejoCli::run()")
+        # self.module.log("ForgejoCli::run()")
 
         self._validate_paths()
 
@@ -245,7 +245,7 @@ class ForgejoCli:
         Returns:
             Aggregated module result with one state entry per runner.
         """
-        self.module.log("ForgejoCli::register()")
+        # self.module.log("ForgejoCli::register()")
 
         state: List[RunnerResult] = []
         any_changed = False
@@ -253,12 +253,8 @@ class ForgejoCli:
 
         created_runners = self.list_runners()
 
-        # self.module.log(f"  created runners: {created_runners}")
-
         for runner_spec, parse_error in self._parse_runner_specs(self.runners_raw):
             """ """
-            # self.module.log(f"  - runner name: {runner_spec.name}")
-
             if parse_error is not None:
                 state.append(parse_error)
                 any_failed = True
@@ -341,7 +337,7 @@ class ForgejoCli:
         Returns:
             Tuple of (rc, stdout, stderr).
         """
-        self.module.log(f"ForgejoCli::register_runner(runner: {runner})")
+        # self.module.log(f"ForgejoCli::register_runner(runner: {runner})")
 
         args: List[str] = [
             self.forgejo_bin,
@@ -372,7 +368,7 @@ class ForgejoCli:
     # -----
     def list_runners(self):
         """ """
-        self.module.log("ForgejoCli::list_runners()")
+        # self.module.log("ForgejoCli::list_runners()")
 
         _config = ForgejoIni(self.module, path=self.config)
 
@@ -556,7 +552,7 @@ class ForgejoCli:
         Returns:
             Tuple of (rc, stdout, stderr).
         """
-        self.module.log(f"ForgejoCli::_exec(args: {args})")
+        # self.module.log(f"ForgejoCli::_exec(args: {args})")
 
         # Never log secrets: redact before any debug output.
         redacted = self._redact_args(args)

@@ -74,6 +74,11 @@
   loop: "{{ forgejo_runner_register | default([]) }}"
   no_log: true
 
+- name: d
+  debug:
+    msg:
+      - "{{ forgejo_runner_controller }}"
+
 - name: "create runner token on '{{ forgejo_runner_controller.hostname }}'"
   when:
     - not running_in_check_mode
@@ -81,18 +86,13 @@
   become_user: "{{ forgejo_runner_controller.username }}"
   become: true
   delegate_to: "{{ forgejo_runner_controller.hostname }}"
+  run_once: true
   bodsch.scm.forgejo_cli:
     command: register
     config: "{{ forgejo_config_dir }}/forgejo.ini"
     working_dir: "{{ forgejo_working_dir }}"
     runners: "{{ forgejo_runner_register | default([]) }}"
   register: _forgejo_runner_registered
-
-- name: d
-  debug:
-    msg:
-      - "{{ _valid_runner_secret }}"
-      - "{{ _forgejo_runner_registered.state }}"
 
 - name: create forgejo-runner configuration
   when:
@@ -110,33 +110,33 @@
     - remove dot-runner
     - restart forgejo-runner
 
-# - name: "append runner to '{{ forgejo_runner_controller.hostname }}'"
-#   when:
-#     - not running_in_check_mode
-#     - forgejo_runner_config.state.changed | default('false') | bool
-#     # depends on runner version
-#   become_user: "{{ forgejo_runner_system_user }}"
-#   become: true
-#   bodsch.scm.forgejo_runner:
-#     command: create_runner
-#     working_dir: "{{ forgejo_runner_working_dir }}"
-#     runners: "{{ forgejo_runner_register | default([]) }}"
-#   notify:
-#     - restart forgejo-runner
-#
-# - name: restart forgejo-runner if needed
-#   when:
-#     - not running_in_check_mode
-#   ansible.builtin.meta: flush_handlers
-#
-# - name: check if forgejo-runner are available
-#   when:
-#     - not running_in_check_mode
-#   ansible.builtin.wait_for:
-#     path: /run/forgejo-runner/forgejo-runner.pid
-#     state: present
-#     delay: 2
-#     msg: "Timeout to find /run/forgejo-runner/forgejo-runner.pid"
-#   ignore_errors: false
+- name: "append runner to '{{ forgejo_runner_controller.hostname }}'"
+  when:
+    - not running_in_check_mode
+    # - forgejo_runner_config.state.changed | default('false') | bool
+    # depends on runner version
+  become_user: "{{ forgejo_runner_system_user }}"
+  become: true
+  bodsch.scm.forgejo_runner:
+    command: create_runner
+    working_dir: "{{ forgejo_runner_working_dir }}"
+    runners: "{{ forgejo_runner_register | default([]) }}"
+  notify:
+    - restart forgejo-runner
+
+- name: restart forgejo-runner if needed
+  when:
+    - not running_in_check_mode
+  ansible.builtin.meta: flush_handlers
+
+- name: check if forgejo-runner are available
+  when:
+    - not running_in_check_mode
+  ansible.builtin.wait_for:
+    path: /run/forgejo-runner/forgejo-runner.pid
+    state: present
+    delay: 2
+    msg: "Timeout to find /run/forgejo-runner/forgejo-runner.pid"
+  ignore_errors: false
 
 ...

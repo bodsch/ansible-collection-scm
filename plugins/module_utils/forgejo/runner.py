@@ -196,7 +196,7 @@ class ForgejoRunner:
             module: Ansible module (used for logging and consistent error behavior).
         """
         self.module = module
-        self.module.log("ForgejoRunner::__init__()")
+        # self.module.log("ForgejoRunner::__init__()")
 
     # -------------------------
     # Public API
@@ -228,10 +228,10 @@ class ForgejoRunner:
             ValueError: Invalid configuration or missing table.
             RuntimeError: Database access errors.
         """
-        self.module.log(
-            f"ForgejoRunner::get_runner_snapshot("
-            f"db: {db}, online_seconds: {online_seconds}, active_seconds: {active_seconds}, mask_token_salt: {mask_token_salt})"
-        )
+        # self.module.log(
+        #     f"ForgejoRunner::get_runner_snapshot("
+        #     f"db: {db}, online_seconds: {online_seconds}, active_seconds: {active_seconds}, mask_token_salt: {mask_token_salt})"
+        # )
 
         db.validate()
 
@@ -244,6 +244,7 @@ class ForgejoRunner:
             try:
                 table = self._detect_runner_table_sqlite(conn)
                 rows = self._fetch_runner_rows_sqlite(conn, table)
+
             finally:
                 conn.close()
 
@@ -294,9 +295,6 @@ class ForgejoRunner:
             try:
                 table = "action_runner"  # self._detect_runner_table_mariadb(conn)
                 rows = self._fetch_runner_rows_mariadb(conn, table)
-
-                self.module.log(msg=f"table : {table}")
-                self.module.log(msg=f"rows  : {rows}")
 
             finally:
                 conn.close()
@@ -380,7 +378,7 @@ class ForgejoRunner:
         Raises:
             ValueError: If no supported table is found.
         """
-        self.module.log("ForgejoRunner::_detect_runner_table_sqlite(conn)")
+        # self.module.log("ForgejoRunner::_detect_runner_table_sqlite(conn)")
 
         cur = conn.execute(
             "SELECT name FROM sqlite_master WHERE type='table' AND name IN (?, ?)",
@@ -405,7 +403,7 @@ class ForgejoRunner:
         Raises:
             ValueError: If no supported table is found.
         """
-        self.module.log("ForgejoRunner::_detect_runner_table_mariadb(conn)")
+        # self.module.log("ForgejoRunner::_detect_runner_table_mariadb(conn)")
 
         # [forgejo]> select * from action_runner
         with conn.cursor() as cur:
@@ -438,16 +436,16 @@ class ForgejoRunner:
         Returns:
             Rows containing (id, name, token_salt, agent_labels, last_online, last_active).
         """
-        self.module.log(
-            f"ForgejoRunner::_fetch_runner_rows_sqlite(conn, table: {table})"
-        )
+        # self.module.log(
+        #     f"ForgejoRunner::_fetch_runner_rows_sqlite(conn, table: {table})"
+        # )
 
         if table not in _ALLOWED_TABLES:
             raise ValueError("Invalid table name")
 
         where_not_deleted = "(deleted IS NULL OR deleted = 0)"
         query = (
-            f"SELECT id, uuid, name, token_salt, agent_labels, last_online, last_active "
+            f"SELECT id, name, uuid, token_salt, agent_labels, last_online, last_active "
             f"FROM {table} WHERE {where_not_deleted}"
         )
         return conn.execute(query).fetchall()
@@ -465,9 +463,9 @@ class ForgejoRunner:
         Returns:
             Rows containing (id, name, token_salt, agent_labels, last_online, last_active).
         """
-        self.module.log(
-            f"ForgejoRunner::_fetch_runner_rows_mariadb(conn, table: {table})"
-        )
+        # self.module.log(
+        #     f"ForgejoRunner::_fetch_runner_rows_mariadb(conn, table: {table})"
+        # )
 
         if table not in _ALLOWED_TABLES:
             raise ValueError("Invalid table name")
@@ -477,8 +475,6 @@ class ForgejoRunner:
             f"SELECT id, name, uuid, token_salt, agent_labels, last_online, last_active "
             f"FROM {table} WHERE {where_not_deleted}"
         )
-
-        self.module.log(f"  - query: {query}")
 
         with conn.cursor() as cur:
             cur.execute(query)

@@ -25,27 +25,27 @@ forgejo_runner_defaults_config:
     job_level: info                                     # trace, debug, info, warn, error, fatal
 
   runner:                                               #
-    # file: .runner
-    capacity: 1
-    envs: {}
-    # env_file: .env
-    timeout: 3h
-    shutdown_timeout: 3h
-    insecure: false
-    fetch_timeout: 5s
-    fetch_interval: 2s
-    report_interval: 1s
-    labels: []
+    file: ""                                            # .runner
+    capacity: 1                                         #
+    envs: {}                                            #
+    env_file: ""                                        # .env
+    timeout: 3h                                         #
+    shutdown_timeout: 3h                                #
+    insecure: false                                     #
+    fetch_timeout: 5s                                   #
+    fetch_interval: 2s                                  #
+    report_interval: 1s                                 #
+    labels: []                                          #
 
   cache:                                                #
-    enabled: true
-    dir: ""
-    host: ""
-    port: 0
-    external_server: ""
-    secret: ""
-    proxy_port: 0
-    actions_cache_url_override: ""
+    enabled: false                                      #
+    dir: ""                                             #
+    host: ""                                            #
+    port: ""                                            #
+    external_server: ""                                 #
+    secret: ""                                          #
+    proxy_port: ""                                      #
+    actions_cache_url_override: ""                      #
 
   container:                                            #
     network: ""

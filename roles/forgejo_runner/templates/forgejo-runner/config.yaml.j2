@@ -9,6 +9,7 @@
 {# .... #}
   {# # print_value(key='{{key-}}', value='{{value-}}' / type: {{ value | bodsch.core.type }}, join_list='{{ join_list }}', default='{{default-}}', valid_values='{{valid_values-}}') #}
   {% if value is defined %}
+    {# list #}
     {% if value | bodsch.core.type == "list" and
           value | count > 0 %}
       {% if join_list %}
@@ -20,6 +21,15 @@
         {% endfor %}
       {% endif %}
     {% endif %}
+    {# dict #}
+    {% if value | bodsch.core.type == "dict" and
+          value | count > 0 %}
+  {{ key -}}:
+      {% for k, v in value.items() %}
+    {{ k }}: {{ v }}
+      {% endfor %}
+    {% endif %}
+    {# str, bool, int #}
     {% if value | bodsch.core.type in ["str", "string", "bool", "int"] and
             value | string | length > 0 %}
       {% if valid_values %}
@@ -30,21 +40,24 @@
   {{ key -}}: {{ value | bodsch.core.config_bool(true_as='true', false_as='false') }}
       {% endif %}
     {% endif %}
+    {# --- #}
   {% endif %}
 {# .... #}
 {%- endmacro -%}
+
 log:
   {% set v = forgejo_runner_config.log -%}
   {{ print_value('level', value=v.level, valid_values=["trace", "debug", "info", "warn", "error", "fatal"]) -}}
   {{ print_value('job_level', value=v.job_level, valid_values=["trace", "debug", "info", "warn", "error", "fatal"]) -}}
 
 {# .. #}
+
 runner:
-  {% set v = forgejo_runner_config.runner -%}
-  # {{ print_value('file', value=v.file) -}}
+  {% set v = forgejo_runner_config.runner | bodsch.core.remove_empty_values -%}
+  {{ print_value('file', value=v.file) -}}
   {{ print_value('capacity', value=v.capacity) -}}
   {{ print_value('envs', value=v.envs) -}}
-  # {{ print_value('env_file', value=v.env_file) -}}
+  {{ print_value('env_file', value=v.env_file) -}}
   {{ print_value('timeout', value=v.timeout) -}}
   {{ print_value('shutdown_timeout', value=v.shutdown_timeout) -}}
   {{ print_value('insecure', value=v.insecure) -}}
@@ -54,8 +67,9 @@ runner:
   {{ print_value('labels', value=v.labels | bodsch.scm.runner_labels()) -}}
 
 {# .. #}
+
 cache:
-  {% set v = forgejo_runner_config.cache -%}
+  {% set v = forgejo_runner_config.cache | bodsch.core.remove_empty_values -%}
   {{ print_value('enabled', value=v.enabled) -}}
   {{ print_value('dir', value=v.dir) -}}
   {{ print_value('host', value=v.host) -}}
@@ -66,8 +80,9 @@ cache:
   {{ print_value('actions_cache_url_override', value=v.actions_cache_url_override) -}}
 
 {# .. #}
+
 container:
-  {% set v = forgejo_runner_config.container -%}
+  {% set v = forgejo_runner_config.container | bodsch.core.remove_empty_values -%}
   {{ print_value('network', value=v.network) -}}
   {{ print_value('enable_ipv6', value=v.enable_ipv6) -}}
   {{ print_value('privileged', value=v.privileged) -}}
@@ -85,12 +100,13 @@ container:
   {{- print_value('force_rebuild', value=v.force_rebuild) -}}
 
 {# .. #}
+
 host:
-  {% set v = forgejo_runner_config.host -%}
-  {{ print_value('workdir_parent', value=v.workdir_parent) -}}
-{# .. #}
+  {% set v = forgejo_runner_config.host | bodsch.core.remove_empty_values -%}
+  {{ print_value('workdir_parent', value=v.workdir_parent, default="") -}}
 
 {# ... #}
+
 server:
   {% set server_connections = forgejo_runner_register | bodsch.scm.add_runner_uuid(_forgejo_runner_registered.state) %}
   connections:

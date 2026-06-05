@@ -223,7 +223,7 @@ class ForgejoRunner:
             module: The active AnsibleModule instance.
         """
         self.module = module
-        self.module.log("ForgejoRunner::__init__()")
+        # self.module.log("ForgejoRunner::__init__()")
 
         self.command: Command = cast(
             Command, module.params.get("command", "create_runner")
@@ -257,7 +257,7 @@ class ForgejoRunner:
         Returns:
             ModuleResult compatible with `module.exit_json()`.
         """
-        self.module.log("ForgejoRunner::run()")
+        # self.module.log("ForgejoRunner::run()")
 
         if not self.module.check_mode:
             create_directory(directory=self.cache_dir, mode="0750")
@@ -331,7 +331,7 @@ class ForgejoRunner:
         Raises:
             module.fail_json on validation errors.
         """
-        self.module.log("ForgejoRunner::_validate_inputs()")
+        # self.module.log("ForgejoRunner::_validate_inputs()")
 
         wd = Path(self.working_dir)
         if not wd.exists() or not wd.is_dir():
@@ -390,7 +390,7 @@ class ForgejoRunner:
         Returns:
             Runner selection name.
         """
-        self.module.log("ForgejoRunner::_select_runner_name()")
+        # self.module.log("ForgejoRunner::_select_runner_name()")
 
         if self.runner_name_override and self.runner_name_override.strip():
             return self.runner_name_override.strip()
@@ -419,9 +419,9 @@ class ForgejoRunner:
         Raises:
             module.fail_json if no match is found.
         """
-        self.module.log(
-            f"ForgejoRunner::_find_runner_entry(selected_name: {selected_name})"
-        )
+        # self.module.log(
+        #     f"ForgejoRunner::_find_runner_entry(selected_name: {selected_name})"
+        # )
 
         candidates: List[str] = [selected_name]
         if not (self.runner_name_override and self.runner_name_override.strip()):
@@ -463,9 +463,9 @@ class ForgejoRunner:
         Returns:
             Hex-encoded SHA-256 checksum.
         """
-        self.module.log(
-            f"ForgejoRunner::_desired_checksum(entry: {entry}, runner_name: {runner_name}, runner_file: {runner_file})"
-        )
+        # self.module.log(
+        #     f"ForgejoRunner::_desired_checksum(entry: {entry}, runner_name: {runner_name}, runner_file: {runner_file})"
+        # )
 
         payload = {
             "runner_name": runner_name,
@@ -485,7 +485,7 @@ class ForgejoRunner:
         Returns:
             Stored checksum string or None.
         """
-        self.module.log("ForgejoRunner::_read_checksum()")
+        # self.module.log("ForgejoRunner::_read_checksum()")
 
         try:
             if self.checksum_file.exists():
@@ -501,7 +501,7 @@ class ForgejoRunner:
         Args:
             value: Checksum string.
         """
-        self.module.log(f"ForgejoRunner::_write_checksum(value: {value})")
+        # self.module.log(f"ForgejoRunner::_write_checksum(value: {value})")
 
         cache_path = Path(self.cache_dir)
         cache_path.mkdir(parents=True, exist_ok=True)
@@ -526,9 +526,9 @@ class ForgejoRunner:
         Returns:
             Tuple of (rc, stdout, stderr).
         """
-        self.module.log(
-            f"ForgejoRunner::_create_runner_file(entry: {entry}, runner_name: {runner_name}, runner_file: {runner_file})"
-        )
+        # self.module.log(
+        #     f"ForgejoRunner::_create_runner_file(entry: {entry}, runner_name: {runner_name}, runner_file: {runner_file})"
+        # )
 
         try:
             os.chdir(self.working_dir)
@@ -587,16 +587,17 @@ class ForgejoRunner:
         Returns:
             Tuple (rc, stdout, stderr).
         """
-        self.module.log(
-            f"ForgejoRunner::_exec(args: {args}, redact_secret: {redact_secret})"
-        )
+        # self.module.log(
+        #     f"ForgejoRunner::_exec(args: {args}, redact_secret: {redact_secret})"
+        # )
 
         log_args = list(args)
         if redact_secret:
             for i in range(len(log_args) - 1):
                 if log_args[i] == "--secret":
                     log_args[i + 1] = "***"
-        self.module.log(msg=f"cmd: {log_args}")
+
+        # self.module.log(msg=f"cmd: {log_args}")
 
         rc, out, err = self.module.run_command(list(args), check_rc=False)
         return int(rc), cast(str, out), cast(str, err)

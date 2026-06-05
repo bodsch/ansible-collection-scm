@@ -3,19 +3,12 @@
 
 {#
 Seit Runner v12.7.0 (siehe Quelltext internal/pkg/config/config.go) gilt:
-Sobald server.connections in der YAML existiert, ignoriert der Runner alle CLI-Parameter --url/--uuid/--token/--token-url
+Sobald server.connections in der YAML existiert,
+ignoriert der Runner alle CLI-Parameter --url/--uuid/--token/--token-url
 und gibt den Fehler aus, den du siehst. Das ist „by design".
 #}
 
 OPTIONS="--config {{ forgejo_runner_config_dir }}/config.yaml"
-
-# OPTIONS=" \
-#   --url https://git.boone-schulz.de/ \
-#   --uuid 34656633-6562-3236-3263-303461616435 \
-#   --token-url file:///var/lib/forgejo-runner/.token
-#
-#
-# "
 
 {#
 forgejo-runner version v12.10.1
