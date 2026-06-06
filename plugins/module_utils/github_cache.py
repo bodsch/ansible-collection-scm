@@ -43,12 +43,8 @@ import json
 from pathlib import Path
 from typing import Dict, List, Optional, Union
 
-from ansible_collections.bodsch.core.plugins.module_utils.cache.cache_valid import (
-    cache_valid,
-)
-from ansible_collections.bodsch.core.plugins.module_utils.directory import (
-    create_directory,
-)
+from ansible_collections.bodsch.core.plugins.module_utils.cache.cache_valid import cache_valid
+from ansible_collections.bodsch.core.plugins.module_utils.directory import create_directory
 
 
 class GitHubCache:

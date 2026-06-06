@@ -40,9 +40,7 @@ from typing import Dict, List, Optional, Tuple, Union
 
 import requests
 from ansible_collections.bodsch.scm.plugins.module_utils.github_cache import GitHubCache
-from ansible_collections.bodsch.scm.plugins.module_utils.release_finder import (
-    ReleaseFinder,
-)
+from ansible_collections.bodsch.scm.plugins.module_utils.release_finder import ReleaseFinder
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 
@@ -532,6 +530,53 @@ class GitHub:
             return (cached_data, checksum)
 
         return ([], None)
+
+    def get_release_assets(self, tag):
+        # type: (str) -> "Tuple[int, List[Dict], Optional[str]]"
+        """
+        Return all downloadable assets for the release identified by *tag*.
+
+        Thin public wrapper around the existing private :meth:`_release_assets`.
+        Results are cached in ``release_artefacts_<tag>.json`` (handled by
+        :meth:`_release_assets`). Each entry has the shape::
+
+            {"name": str, "url": str, "size": int}
+
+        :param tag: Exact Git tag name (with or without a leading ``"v"``, as
+                    published by the repository) used to look up the release via the
+                    ``/releases/tags/<tag>`` endpoint.
+        :returns:   ``(status_code, assets, error)`` where *assets* is a list of
+                    asset dicts and *error* is ``None`` on success.
+        """
+        return self._release_assets(tag)
+
+    def get_text(self, url):
+        # type: (str) -> "Tuple[int, Optional[str], Optional[str]]"
+        """
+        Fetch the raw text body of *url* (e.g. a checksum file).
+
+        Uses the resilient :meth:`_get_request` transport (retries, rate-limit
+        detection, authentication headers) with ``expect_json=False`` and
+        ``stream=False`` so the decoded response text is returned directly.
+
+        .. note::
+            Release asset download URLs are served from
+            ``objects.githubusercontent.com`` and do **not** count against the
+            GitHub REST API rate limit, so this method is intentionally not cached.
+
+        :param url: Direct download URL of a text resource.
+        :returns:   ``(status_code, text, error)`` where *text* is the decoded body
+                    on success (``None`` on failure) and *error* is ``None`` on
+                    success.
+        """
+        status_code, content, error = self._get_request(
+            url, stream=False, paginate=False, expect_json=False
+        )
+
+        if status_code != 200:
+            return (status_code, None, error)
+
+        return (200, content, None)
 
     # ------------------------------------------------------------------------------------------
     # Private API
