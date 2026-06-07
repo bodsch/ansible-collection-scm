@@ -111,8 +111,15 @@ def runner_labels(data: List[Union[Dict[str, Any], str]]) -> List[str]:
     for entry in data:
         label = entry.get("label")
         type_ = entry.get("type", "docker")
-        container = entry.get("container")
-        result.append(f"{label}:{type_}://{container}")
+        # version 12:
+        #    - self-hosted:host://-self-hosted
+        # version 15:
+        #    - self-hosted:host
+        if type_ == "host":
+            result.append(f"{label}:host")
+        else:
+            container = entry.get("container")
+            result.append(f"{label}:{type_}://{container}")
 
     display.vv(f"  = {result}")
 
