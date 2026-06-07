@@ -4,6 +4,10 @@
 
 # You don't have to copy this file to your instance,
 # just run `./act_runner generate-config > config.yaml` to generate a config file.
+#
+# forgejo_version: {{ forgejo_version | default('') }}
+# forgejo_runner_version: {{ forgejo_runner_version }}
+#
 {% set print = self %}
 {%- macro print_value(key, value, join_list=False, default=None, valid_values=None) -%}
 {# .... #}
@@ -52,9 +56,13 @@ log:
 
 {# .. #}
 
+{% set v = forgejo_runner_config.runner | bodsch.core.remove_empty_values %}
 runner:
-  {% set v = forgejo_runner_config.runner | bodsch.core.remove_empty_values -%}
-  {{ print_value('file', value=v.file) -}}
+{% if forgejo_runner_version is version_compare('10', '<') %}
+  {{ print_value('file', value=v.file) }}
+
+{% endif -%}
+
   {{ print_value('capacity', value=v.capacity) -}}
   {{ print_value('envs', value=v.envs) -}}
   {{ print_value('env_file', value=v.env_file) -}}

@@ -107,12 +107,21 @@
     mode: "0644"
   register: forgejo_runner_config
   notify:
-    - remove dot-runner
+    # - remove dot-runner
     - restart forgejo-runner
+
+- name: remove dot-runner
+  when:
+    - forgejo_runner_config.changed | default('false') | bool
+  become: true
+  ansible.builtin.file:
+    path: "{{ forgejo_runner_working_dir }}/.runner"
+    state: absent
 
 - name: "append runner to '{{ forgejo_runner_controller.hostname }}'"
   when:
     - not running_in_check_mode
+    - forgejo_runner_version is version_compare('10', '<')
     # - forgejo_runner_config.state.changed | default('false') | bool
     # depends on runner version
   become_user: "{{ forgejo_runner_system_user }}"
