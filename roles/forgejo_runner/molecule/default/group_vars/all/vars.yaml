@@ -35,7 +35,7 @@ forgejo_runner_config:
     labels:
       - label: self-hosted
         type: host
-        container: "-self-hosted"
+        # container: "self-hosted"
       # - label: ubuntu-latest
       #   type: docker
       #   container: catthehacker/ubuntu:act-latest

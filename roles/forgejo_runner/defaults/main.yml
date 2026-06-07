@@ -1,6 +1,6 @@
 ---
 
-forgejo_runner_version: 5.0.3
+forgejo_runner_version: 12.10.2
 
 forgejo_runner_system_user: forgejo-runner
 forgejo_runner_system_group: forgejo-runner
