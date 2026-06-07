@@ -102,7 +102,9 @@ class RunnerGroupBuilder:
     """
 
     @staticmethod
-    def build(primary_group: str, additional_groups: list[str] | None = None) -> list[str]:
+    def build(
+        primary_group: str, additional_groups: list[str] | None = None
+    ) -> list[str]:
         """
         Build a normalized and deterministic group list.
 

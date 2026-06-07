@@ -1,0 +1,26 @@
+---
+
+forgejo_version: 14.0.0
+
+forgejo_database:
+  log_sql: true
+
+forgejo_admin_user:
+  username: "Administrator"
+  password: "Testpassword"
+  email: "admin@git02.lan"
+
+forgejo_server:
+  # domain: forgejo.molecule.lan
+  # protocol: http
+  # http_addr: "127.0.0.1"
+  http_port: 3000
+  root_url: "http://forgejo.molecule.lan:3000"
+
+forgejo_log:
+  mode: console
+  level: debug
+  root_path: /var/lib/forgejo/log
+  # router: console
+
+...

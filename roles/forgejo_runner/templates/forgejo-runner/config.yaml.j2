@@ -9,6 +9,7 @@
 {# .... #}
   {# # print_value(key='{{key-}}', value='{{value-}}' / type: {{ value | bodsch.core.type }}, join_list='{{ join_list }}', default='{{default-}}', valid_values='{{valid_values-}}') #}
   {% if value is defined %}
+    {# list #}
     {% if value | bodsch.core.type == "list" and
           value | count > 0 %}
       {% if join_list %}
@@ -20,6 +21,15 @@
         {% endfor %}
       {% endif %}
     {% endif %}
+    {# dict #}
+    {% if value | bodsch.core.type == "dict" and
+          value | count > 0 %}
+  {{ key -}}:
+      {% for k, v in value.items() %}
+    {{ k }}: {{ v }}
+      {% endfor %}
+    {% endif %}
+    {# str, bool, int #}
     {% if value | bodsch.core.type in ["str", "string", "bool", "int"] and
             value | string | length > 0 %}
       {% if valid_values %}
@@ -30,17 +40,20 @@
   {{ key -}}: {{ value | bodsch.core.config_bool(true_as='true', false_as='false') }}
       {% endif %}
     {% endif %}
+    {# --- #}
   {% endif %}
 {# .... #}
 {%- endmacro -%}
+
 log:
   {% set v = forgejo_runner_config.log -%}
   {{ print_value('level', value=v.level, valid_values=["trace", "debug", "info", "warn", "error", "fatal"]) -}}
   {{ print_value('job_level', value=v.job_level, valid_values=["trace", "debug", "info", "warn", "error", "fatal"]) -}}
 
 {# .. #}
+
 runner:
-  {% set v = forgejo_runner_config.runner -%}
+  {% set v = forgejo_runner_config.runner | bodsch.core.remove_empty_values -%}
   {{ print_value('file', value=v.file) -}}
   {{ print_value('capacity', value=v.capacity) -}}
   {{ print_value('envs', value=v.envs) -}}
@@ -54,8 +67,9 @@ runner:
   {{ print_value('labels', value=v.labels | bodsch.scm.runner_labels()) -}}
 
 {# .. #}
+
 cache:
-  {% set v = forgejo_runner_config.cache -%}
+  {% set v = forgejo_runner_config.cache | bodsch.core.remove_empty_values -%}
   {{ print_value('enabled', value=v.enabled) -}}
   {{ print_value('dir', value=v.dir) -}}
   {{ print_value('host', value=v.host) -}}
@@ -66,8 +80,9 @@ cache:
   {{ print_value('actions_cache_url_override', value=v.actions_cache_url_override) -}}
 
 {# .. #}
+
 container:
-  {% set v = forgejo_runner_config.container -%}
+  {% set v = forgejo_runner_config.container | bodsch.core.remove_empty_values -%}
   {{ print_value('network', value=v.network) -}}
   {{ print_value('enable_ipv6', value=v.enable_ipv6) -}}
   {{ print_value('privileged', value=v.privileged) -}}
@@ -80,15 +95,35 @@ container:
     {% else %}
   {{- print_value('docker_host', value=v.docker_host) }}
     {% endif %}
-  {% endif %}
+  {% endif -%}
   {{- print_value('force_pull', value=v.force_pull) -}}
   {{- print_value('force_rebuild', value=v.force_rebuild) -}}
 
 {# .. #}
+
 host:
-  {% set v = forgejo_runner_config.host -%}
-  {{ print_value('workdir_parent', value=v.workdir_parent) -}}
-{# .. #}
+  {% set v = forgejo_runner_config.host | bodsch.core.remove_empty_values -%}
+  {{ print_value('workdir_parent', value=v.workdir_parent, default="") -}}
+
+{# ... #}
+
+server:
+  {% set server_connections = forgejo_runner_register | bodsch.scm.add_runner_uuid(_forgejo_runner_registered.state) %}
+  connections:
+  {% for runner in server_connections %}
+    {{ runner.name }}:
+      url: {{ runner.instance }}
+      token_url: file://{{ forgejo_runner_working_dir }}/.token/{{ runner.name }}.token
+      uuid: {{ runner.uuid | default('') }}
+    {% if forgejo_runner_config.runner.labels is defined and
+          forgejo_runner_config.runner.labels | default({}) | length > 0 %}
+      labels:
+      {% set runner_labels = forgejo_runner_config.runner.labels | bodsch.scm.runner_labels() %}
+      {% for _label in runner_labels %}
+        - {{ _label }}
+      {% endfor %}
+    {% endif %}
+  {% endfor %}
 
 {#
 forgejo-runner generate-config
@@ -286,5 +321,44 @@ host:
   # The parent directory of a job's working directory.
   # If it's empty, $HOME/.cache/act/ will be used.
   workdir_parent:
+
+
+server:
+  # A map of connections to one or more Forgejo instances. Example:
+  #
+  # ```
+  # connections:
+  #   example:
+  #     url: https://example.com/
+  #     uuid: c9e50be9-a7c3-4aee-ba35-624c4ff8c519
+  #     token: 6634bb58be0db23cc013a2e72dd1828ae0257cf
+  #     fetch_interval: 30s
+  #   codeberg:
+  #     url: https://codeberg.org/
+  #     uuid: f543b661-cb02-4ba2-9820-108df62808b5
+  #     token_url: file:$CREDENTIALS_DIRECTORY/token.txt
+  #     labels:
+  #       - debian:docker://docker.io/library/node:lts-trixie
+  # ```
+  #
+  # The map's keys (`example`, and `codeberg` above) serve as the connections'
+  # names.
+  #
+  # The runner token can either be specified inline using `token` or be loaded
+  # from a file using `token_url`. The methods are mutually exclusive.
+  # `token_url` supports a single placeholder: `$CREDENTIALS_DIRECTORY`. If the
+  # environment variable `CREDENTIALS_DIRECTORY` exists, the placeholder is
+  # replaced with the value of `CREDENTIALS_DIRECTORY`. Otherwise, it is
+  # retained.
+  #
+  # Labels defined on a connection are limited to that particular connection.
+  # If a connection defines no labels, the labels declared by `runner.labels`
+  # are used instead.
+  #
+  # `fetch_interval` specifies how often Forgejo Runner should ask Forgejo for
+  # pending jobs. If `fetch_interval` is not defined on a connection,
+  # `runner.fetch_interval` is used. Note that Forgejo Runner might enforce a
+  # minimum value for certain instances like Codeberg.
+  connections:
 
 #}

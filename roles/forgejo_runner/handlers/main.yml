@@ -12,6 +12,12 @@
     name: forgejo-runner
     state: reloaded
 
+- name: remove dot-runner
+  become: true
+  ansible.builtin.file:
+    path: "{{ forgejo_runner_working_dir }}/.runner"
+    state: absent
+
 - name: daemon-reload
   become: true
   ansible.builtin.systemd:
