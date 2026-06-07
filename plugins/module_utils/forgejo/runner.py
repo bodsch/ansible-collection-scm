@@ -15,6 +15,7 @@ class RunnerInfo(TypedDict):
     """Normalized runner information for external consumers."""
 
     id: int
+    uuid: str
     token_salt: str
     agent_labels: List[str]
     state: RunnerState
@@ -154,7 +155,7 @@ class DatabaseConfig:
                 raise ValueError("sqlite_path is required for db_type='sqlite'")
             return
 
-        if self.db_type == "mariadb":
+        if self.db_type in ["mariadb", "mysql"]:
             missing = [
                 k
                 for k, v in {
@@ -195,7 +196,7 @@ class ForgejoRunner:
             module: Ansible module (used for logging and consistent error behavior).
         """
         self.module = module
-        self.module.log("ForgejoRunner::__init__()")
+        # self.module.log("ForgejoRunner::__init__()")
 
     # -------------------------
     # Public API
@@ -227,10 +228,10 @@ class ForgejoRunner:
             ValueError: Invalid configuration or missing table.
             RuntimeError: Database access errors.
         """
-        self.module.log(
-            f"ForgejoRunner::get_runner_snapshot("
-            f"db: {db}, online_seconds: {online_seconds}, active_seconds: {active_seconds}, mask_token_salt: {mask_token_salt})"
-        )
+        # self.module.log(
+        #     f"ForgejoRunner::get_runner_snapshot("
+        #     f"db: {db}, online_seconds: {online_seconds}, active_seconds: {active_seconds}, mask_token_salt: {mask_token_salt})"
+        # )
 
         db.validate()
 
@@ -243,24 +244,58 @@ class ForgejoRunner:
             try:
                 table = self._detect_runner_table_sqlite(conn)
                 rows = self._fetch_runner_rows_sqlite(conn, table)
+
             finally:
                 conn.close()
 
-        elif db.db_type == "mariadb":
-            import pymysql  # local import to keep optional dependency
+        elif db.db_type in ["mariadb", "mysql"]:
+            from ansible.module_utils.mysql import mysql_driver, mysql_driver_fail_msg
 
-            conn = pymysql.connect(
-                host=db.host,
-                port=db.port,
-                user=db.user,
-                password=db.password,
-                database=db.database,
-                charset=db.charset,
-                autocommit=True,
-            )
+            config = {}
+
+            # If dba_user or dba_password are given, they should override the
+            # config file
+            if db.user is not None:
+                config["user"] = db.user
+
+            if db.password is not None:
+                config["passwd"] = db.password
+
+            if db.host is not None:
+                config["host"] = db.host
+
+            if db.port is not None:
+                config["port"] = db.port
+
+            if db.database is not None:
+                config["db"] = db.database
+
+            self.module.log(msg=f"config : {config}")
+
+            if mysql_driver is None:
+                self.module.fail_json(msg=mysql_driver_fail_msg)
+
             try:
-                table = self._detect_runner_table_mariadb(conn)
+                db_connection = mysql_driver.connect(**config)
+
+            except Exception as e:
+                message = "unable to connect to database. "
+                message += (
+                    "check login_host, login_user and login_password are correct "
+                )
+                message += f"Exception message: {str(e)}"
+
+                self.module.log(msg=message)
+
+                return (None, None, True, message)
+
+            # cursor = db_connection.cursor()
+            conn = db_connection
+
+            try:
+                table = "action_runner"  # self._detect_runner_table_mariadb(conn)
                 rows = self._fetch_runner_rows_mariadb(conn, table)
+
             finally:
                 conn.close()
         else:
@@ -275,6 +310,7 @@ class ForgejoRunner:
         for (
             runner_id,
             name,
+            uuid,
             token_salt,
             agent_labels_json,
             last_online,
@@ -306,6 +342,7 @@ class ForgejoRunner:
 
             runners[str(name)] = {
                 "id": int(runner_id),
+                "uuid": uuid.strip(),
                 "token_salt": "" if mask_token_salt else str(token_salt or ""),
                 "agent_labels": labels,
                 "state": state,
@@ -341,7 +378,7 @@ class ForgejoRunner:
         Raises:
             ValueError: If no supported table is found.
         """
-        self.module.log("ForgejoRunner::_detect_runner_table_sqlite(conn)")
+        # self.module.log("ForgejoRunner::_detect_runner_table_sqlite(conn)")
 
         cur = conn.execute(
             "SELECT name FROM sqlite_master WHERE type='table' AND name IN (?, ?)",
@@ -366,8 +403,9 @@ class ForgejoRunner:
         Raises:
             ValueError: If no supported table is found.
         """
-        self.module.log("ForgejoRunner::_detect_runner_table_mariadb(conn)")
+        # self.module.log("ForgejoRunner::_detect_runner_table_mariadb(conn)")
 
+        # [forgejo]> select * from action_runner
         with conn.cursor() as cur:
             cur.execute(
                 """
@@ -379,9 +417,12 @@ class ForgejoRunner:
                 _ALLOWED_TABLES,
             )
             names = {row[0] for row in cur.fetchall()}
+
         for candidate in _ALLOWED_TABLES:
             if candidate in names:
                 return candidate
+
+        # raise ist hier böse!
         raise ValueError(f"No runner table found. Tried: {_ALLOWED_TABLES}")
 
     def _fetch_runner_rows_sqlite(self, conn: Any, table: str) -> List[Tuple[Any, ...]]:
@@ -395,16 +436,16 @@ class ForgejoRunner:
         Returns:
             Rows containing (id, name, token_salt, agent_labels, last_online, last_active).
         """
-        self.module.log(
-            f"ForgejoRunner::_fetch_runner_rows_sqlite(conn, table: {table})"
-        )
+        # self.module.log(
+        #     f"ForgejoRunner::_fetch_runner_rows_sqlite(conn, table: {table})"
+        # )
 
         if table not in _ALLOWED_TABLES:
             raise ValueError("Invalid table name")
 
         where_not_deleted = "(deleted IS NULL OR deleted = 0)"
         query = (
-            f"SELECT id, name, token_salt, agent_labels, last_online, last_active "
+            f"SELECT id, name, uuid, token_salt, agent_labels, last_online, last_active "
             f"FROM {table} WHERE {where_not_deleted}"
         )
         return conn.execute(query).fetchall()
@@ -422,16 +463,16 @@ class ForgejoRunner:
         Returns:
             Rows containing (id, name, token_salt, agent_labels, last_online, last_active).
         """
-        self.module.log(
-            f"ForgejoRunner::_fetch_runner_rows_mariadb(conn, table: {table})"
-        )
+        # self.module.log(
+        #     f"ForgejoRunner::_fetch_runner_rows_mariadb(conn, table: {table})"
+        # )
 
         if table not in _ALLOWED_TABLES:
             raise ValueError("Invalid table name")
 
         where_not_deleted = "(deleted IS NULL OR deleted = 0)"
         query = (
-            f"SELECT id, name, token_salt, agent_labels, last_online, last_active "
+            f"SELECT id, name, uuid, token_salt, agent_labels, last_online, last_active "
             f"FROM {table} WHERE {where_not_deleted}"
         )
 
@@ -457,6 +498,8 @@ class ForgejoRunner:
             parsed = json.loads(agent_labels_json)
             if isinstance(parsed, list):
                 return [str(x) for x in parsed]
+
             return []
+
         except (json.JSONDecodeError, TypeError, ValueError):
             return []
