@@ -143,7 +143,7 @@ options:
     required: false
   cache:
     description:
-      - Validity of cached release metadata in seconds. Prevents unnecessary
+      - Validity of cached release metadata in minutes. Prevents unnecessary
         repeated GitHub API calls.
     type: int
     required: false
@@ -293,7 +293,7 @@ class GithubRelease:
         self.cache_minutes = int(module.params.get("cache"))
 
         # Retained for parity with the other modules; the cache directory itself
-        # is created by GitHubCache via GitHub.enable_cache().
+        # is created by ScmCache via GitHub.enable_cache().
         self.cache_directory = (
             f"{Path.home()}/.cache/ansible/github/{self.project}/{self.repository}"
         )

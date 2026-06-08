@@ -1,12 +1,13 @@
 """
-github_cache.py
-===============
+scm_cache.py
+============
 
-File-system cache helper for GitHub API responses used within Ansible
+File-system cache helper for SCM provider API responses used within Ansible
 module utilities.
 
-Responses from the GitHub REST API are serialised as JSON and stored in a
-per-repository directory under ``~/.cache/ansible/github/<owner>/<repo>/``.
+Responses from a provider's REST API (GitHub, Forgejo/Gitea, …) are serialised
+as JSON and stored in a per-repository directory under
+``~/.cache/ansible/<provider>/<host>/<owner>/<repo>/``.
 Each logical dataset (releases list, tag list, individual release assets, …)
 gets its own cache file.  A configurable TTL (in minutes) controls how long
 a cached file is considered valid before a live API call is triggered.
@@ -20,9 +21,9 @@ Typical usage
 -------------
 ::
 
-    from github_cache import GitHubCache
+    from scm_cache import ScmCache
 
-    cache = GitHubCache(
+    cache = ScmCache(
         module=ansible_module,
         cache_dir="/home/user/.cache/ansible/github/prometheus/alertmanager",
         cache_file=None,          # individual callers choose their filenames
@@ -47,9 +48,9 @@ from ansible_collections.bodsch.core.plugins.module_utils.cache.cache_valid impo
 from ansible_collections.bodsch.core.plugins.module_utils.directory import create_directory
 
 
-class GitHubCache:
+class ScmCache:
     """
-    Thin file-system cache layer for GitHub API JSON responses.
+    Thin file-system cache layer for SCM provider API JSON responses.
 
     Each instance is bound to a single cache directory and a TTL value.
     The directory is created automatically on instantiation if it does not

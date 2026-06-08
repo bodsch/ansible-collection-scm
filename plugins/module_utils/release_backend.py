@@ -44,7 +44,7 @@ from typing import Any, Callable, Dict, List, Optional, Protocol, Tuple
 from urllib.parse import urlparse
 
 import requests
-from ansible_collections.bodsch.scm.plugins.module_utils.github_cache import GitHubCache
+from ansible_collections.bodsch.scm.plugins.module_utils.scm_cache import ScmCache
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 
@@ -129,7 +129,7 @@ class BaseHTTPBackend:
         Root URL of the provider's REST API (without trailing slash).
     headers : dict
         Default HTTP headers sent with every request.
-    cache : GitHubCache
+    cache : ScmCache
         On-disk cache helper.
     """
 
@@ -170,7 +170,7 @@ class BaseHTTPBackend:
         cache_dir = (
             f"{Path.home()}/.cache/ansible/{provider}/{host}/{owner}/{repository}"
         )
-        self.cache = GitHubCache(
+        self.cache = ScmCache(
             module=module,
             cache_dir=cache_dir,
             cache_file=None,
