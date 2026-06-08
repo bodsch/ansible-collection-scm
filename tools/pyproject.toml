@@ -1,0 +1,25 @@
+[project]
+name = "forgejo-tools"
+version = "0.1.0"
+description = "Tools zur Analyse und Verarbeitung von Forgejo-Konfigurationsdateien."
+readme = "README.md"
+requires-python = ">=3.9"
+dependencies = [
+    "GitPython>=3.1",
+    "packaging>=21.0",
+]
+
+[project.scripts]
+forgejo-tools = "forgejo_tools.cli:main"
+
+[dependency-groups]
+dev = [
+    "pytest>=8.0",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/forgejo_tools"]
