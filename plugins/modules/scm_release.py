@@ -140,7 +140,7 @@ options:
     required: false
   cache:
     description:
-      - Validity of cached release metadata in seconds.
+      - Validity of cached release metadata in minutes.
     type: int
     required: false
     default: 60

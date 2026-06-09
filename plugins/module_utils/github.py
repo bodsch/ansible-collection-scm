@@ -26,7 +26,7 @@ Dependencies
 ------------
 - ``requests`` / ``urllib3`` — HTTP layer with retry support
 - ``packaging``              — SemVer comparison (``packaging.version``)
-- ``GitHubCache``            — file-system cache helper (module_utils)
+- ``ScmCache``               — file-system cache helper (module_utils)
 - ``ReleaseFinder``          — latest-release detection helper (module_utils)
 
 :author:  Bodo Schulz <bodo@boone-schulz.de>
@@ -39,7 +39,7 @@ from pathlib import Path
 from typing import Dict, List, Optional, Tuple, Union
 
 import requests
-from ansible_collections.bodsch.scm.plugins.module_utils.github_cache import GitHubCache
+from ansible_collections.bodsch.scm.plugins.module_utils.scm_cache import ScmCache
 from ansible_collections.bodsch.scm.plugins.module_utils.release_finder import ReleaseFinder
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
@@ -54,7 +54,7 @@ class GitHub:
     handles automatic pagination, exponential-backoff retries, and rate-limit
     detection.
 
-    Results are optionally cached on disk via :class:`GitHubCache` to avoid
+    Results are optionally cached on disk via :class:`ScmCache` to avoid
     exhausting the unauthenticated rate limit (60 req/h) during repeated
     Ansible runs.
 
@@ -77,7 +77,7 @@ class GitHub:
     architecture : str
         Target CPU architecture, set via :meth:`architecture`
         (e.g. ``"amd64"``).
-    gh_cache : GitHubCache
+    gh_cache : ScmCache
         Cache helper instance, initialised by :meth:`enable_cache`.
     """
 
@@ -145,7 +145,7 @@ class GitHub:
         Activate file-system caching for API responses.
 
         Must be called before any ``get_*`` method.  Creates a
-        :class:`GitHubCache` instance pointing to::
+        :class:`ScmCache` instance pointing to::
 
             ~/.cache/ansible/github/<owner>/<repository>/
 
@@ -161,7 +161,7 @@ class GitHub:
         )
         self.cache_file = cache_file
 
-        self.gh_cache = GitHubCache(
+        self.gh_cache = ScmCache(
             module=self.module,
             cache_dir=cache_directory,
             cache_file=cache_file,
@@ -431,7 +431,7 @@ class GitHub:
         Download a plain-text checksum file and persist it as a JSON cache.
 
         The file is fetched as plain text (not streamed) and stored line-by-line
-        as a JSON array via :class:`GitHubCache`.  This format is expected by
+        as a JSON array via :class:`ScmCache`.  This format is expected by
         :meth:`checksum`.
 
         :param url:      Direct download URL of the checksum file.
@@ -805,7 +805,7 @@ class GitHub:
         * **stream=True** (binary) — response body is written in 8 KiB chunks
           to *dest_path* in binary mode.  Suitable for large artefacts.
         * **stream=False** (text) — response body is split into non-empty
-          lines and written as a JSON array via :class:`GitHubCache`.
+          lines and written as a JSON array via :class:`ScmCache`.
           Required for checksum files consumed by :meth:`checksum`.
 
         :param url:       Direct download URL.

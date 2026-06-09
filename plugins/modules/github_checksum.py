@@ -81,7 +81,7 @@ options:
     type: str
   cache:
     description:
-      - Validity of cached metadata in seconds.
+      - Validity of cached metadata in minutes.
       - Prevents unnecessary repeated GitHub API calls.
     required: false
     type: int
