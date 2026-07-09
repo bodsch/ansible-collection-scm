@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/bin/python
 # -*- coding: utf-8 -*-
 
 """
@@ -78,7 +78,7 @@ notes:
   - Only updates the configuration file if relevant changes are detected.
   - Ignores automatic Forgejo-generated values such as INTERNAL_TOKEN
     in C(security) and JWT_SECRET in C(oauth2).
-  - Supports check mode: changes are reported, no files are written.
+  - "Supports check mode: changes are reported, no files are written."
 """
 
 EXAMPLES = r"""

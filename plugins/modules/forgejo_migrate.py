@@ -34,7 +34,7 @@ description:
   - This module runs the C(forgejo migrate) command to perform a database migration.
   - It must be executed as the Forgejo service user to have access to the working directory and configuration.
   - A successful run indicates a changed state, as the migration may modify the database schema.
-  - Supports check mode: reports changes without running the migration.
+  - "Supports check mode: reports changes without running the migration."
 
 deprecated:
   removed_in: "1.10.0"

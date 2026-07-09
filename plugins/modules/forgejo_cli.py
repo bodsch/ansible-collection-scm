@@ -80,7 +80,7 @@ options:
     description:
       - List of runners to register.
       - Each runner must contain C(name) and C(secret).
-      - Optional keys: C(scope), C(labels) (list of labels).
+      - "Optional keys: C(scope), C(labels) (list of labels)."
     required: true
     type: list
     elements: dict

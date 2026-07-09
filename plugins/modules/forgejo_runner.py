@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/bin/python
 # -*- coding: utf-8 -*-
 
 """
@@ -59,7 +59,7 @@ description:
     the C(forgejo-runner create-runner-file) command.
   - It selects the runner definition matching the current host name (or an
     explicit I(runner_name)).
-  - It is designed for Infrastructure-as-Code "offline registration":
+  - It is designed for Infrastructure-as-Code '"offline registration":'
     you generate a shared secret, register it on the Forgejo server side, and
     create the runner file on the runner host.
 
@@ -121,7 +121,7 @@ options:
 notes:
   - The shared secret must be a 40-character hex string.
   - The module never logs secrets and does not return them.
-  - Supports check mode: reports changes without writing files.
+  - "Supports check mode: reports changes without writing files."
 """
 
 EXAMPLES = r"""
