@@ -103,15 +103,24 @@ def validate_passwords(
         ``{"failed": True, "result": {username: {"errors": [...]}}}`` on failure,
         ``{"failed": False}`` when all passwords pass.
     """
-    display.vv(f"bodsch.scm.validate_passwords(data: {data}, config: {config})")
+    display.vv(f"bodsch.scm.validate_passwords(data, config: {config})")
 
     raw_complexity: List[str] = config.get("password_complexity", [])
+    raw_min_password_length = config.get("min_password_length", 8)
+
+    # display.vv(f"  raw complexity rules   : {raw_complexity}")
+    # display.vv(f"  raw min password length: {raw_min_password_length}")
+
     complexity = [c for c in raw_complexity if c in _VALID_COMPLEXITY]
 
-    display.vv(f"  effective complexity rules: {complexity}")
+    if isinstance(raw_min_password_length, str) and len(raw_min_password_length) == 0:
+        password_length = 8
+
+    # display.vv(f"  effective complexity rules: {complexity}")
+    # display.vv(f"  effective password length : {password_length}")
 
     policy = PasswordPolicy(
-        min_length=config.get("min_password_length", 8),
+        min_length=int(password_length),
         complexity=complexity,
     )
     validator = ForgejoPasswordValidator(policy)

@@ -10,7 +10,7 @@ driver:
 
 platforms:
   - name: instance
-    image: "ghcr.io/bodsch/docker-ansible/ansible-${DISTRIBUTION:-debian:12}"
+    image: "ghcr.io/bodsch/docker-ansible/ansible-${DISTRIBUTION:-debian:13}"
     command: ${MOLECULE_DOCKER_COMMAND:-""}
     docker_host: "${DOCKER_HOST:-unix://run/docker.sock}"
     privileged: true
@@ -37,33 +37,8 @@ platforms:
       - name: forgejo
         ipv4_address: "10.16.0.11"
 
-  # - name: database
-  #   image: "ghcr.io/bodsch/docker-ansible/ansible-debian:11"
-  #   command: ${MOLECULE_DOCKER_COMMAND:-""}
-  #   docker_host: "${DOCKER_HOST:-unix://run/docker.sock}"
-  #   privileged: true
-  #   pre_build_image: true
-  #   cgroupns_mode: host
-  #   volumes:
-  #     - /sys/fs/cgroup:/sys/fs/cgroup:rw
-  #     - /var/lib/containerd
-  #   capabilities:
-  #     - SYS_ADMIN
-  #   tmpfs:
-  #     - /run
-  #     - /tmp
-  #   published_ports:
-  #     - 3306:3306
-  #   labels:
-  #     service-discovery: "true"
-  #     service-discover: "true"
-  #
-  #   networks:
-  #     - name: forgejo
-  #       ipv4_address: "10.16.0.10"
-
   - name: auth
-    image: "ghcr.io/bodsch/docker-ansible/ansible-${DISTRIBUTION:-debian:12}"
+    image: "ghcr.io/bodsch/docker-ansible/ansible-debian:13"
     command: ${MOLECULE_DOCKER_COMMAND:-""}
     docker_host: "${DOCKER_HOST:-unix://run/docker.sock}"
     privileged: true

@@ -61,24 +61,9 @@
   roles:
     - role: glauth
 
-# - name: prepare database
-#   hosts: database
-#   gather_facts: true
-#
-#   roles:
-#     - role: syslog-ng
-#     - role: mariadb
-#     - role: redis
-
 - name: prepare nginx
   hosts: instance
   gather_facts: true
-
-  # pre_tasks:
-  #   - name: do facts module to get latest information
-  #     ansible.builtin.setup:
-  #       gather_subset:
-  #         - 'all'
 
   roles:
     - role: bodsch.certs.snakeoil
