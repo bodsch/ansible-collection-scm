@@ -115,6 +115,8 @@ def validate_passwords(
 
     if isinstance(raw_min_password_length, str) and len(raw_min_password_length) == 0:
         password_length = 8
+    else:
+        password_length = int(raw_min_password_length)
 
     # display.vv(f"  effective complexity rules: {complexity}")
     # display.vv(f"  effective password length : {password_length}")
