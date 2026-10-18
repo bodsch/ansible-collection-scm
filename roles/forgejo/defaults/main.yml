@@ -1,6 +1,6 @@
 ---
 
-forgejo_version: 12.0.0
+forgejo_version: 16.0.0
 
 forgejo_system_user: forgejo
 forgejo_remote_user: forgejo

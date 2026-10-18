@@ -136,7 +136,7 @@ class ReleaseFinder:
         :returns:    The winning release dict, or ``None`` if no valid
                      candidates remain after filtering.
         """
-        self.module.log(msg=f"ReleaseFinder::find_latest(mode={mode})")
+        # self.module.log(msg=f"ReleaseFinder::find_latest(mode={mode})")
 
         candidates = (
             self._get_candidate(r) for r in self.releases if not self._is_excluded(r)

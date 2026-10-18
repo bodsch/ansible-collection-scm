@@ -293,6 +293,9 @@ class ReleaseResolver:
         """
         self.module = module
 
+        # self.module.log(f"ReleaseResolver::__init__(
+        # backend: {backend}, system: {system}, architecture: {architecture}, asset: {asset}, asset_regex: {asset_regex}, ...)")
+
         if backend is None and github is not None:
             # Backwards-compatible path for the original GitHub-only callers
             # (e.g. the github_release module). The legacy GitHub client is no
@@ -342,6 +345,8 @@ class ReleaseResolver:
         :raises ResolverError: When the repository, release, or artefact cannot
                                be resolved (a missing checksum does not raise).
         """
+        # self.module.log(f"ReleaseResolver::resolve(version: {version})")
+
         release = self._resolve_release(version)
         tag = release.get("tag_name") or ""
         resolved_version = (
@@ -354,6 +359,13 @@ class ReleaseResolver:
         if status != 200:
             raise ResolverError(
                 f"Could not fetch assets for tag '{tag}': {error}", status=status
+            )
+
+        if not assets:
+            raise ResolverError(
+                f"Release '{tag}' of {self.backend.owner}/{self.backend.repository} "
+                "has no downloadable assets.",
+                status=404,
             )
 
         asset_names = [a.get("name", "") for a in assets]
@@ -394,6 +406,8 @@ class ReleaseResolver:
         :returns:              The matching release dict (with ``tag_name``).
         :raises ResolverError: When no releases exist or none match *version*.
         """
+        # self.module.log(f"ReleaseResolver::_resolve_release(version: {version})")
+
         repo = f"{self.backend.owner}/{self.backend.repository}"
         status, releases, error = self.backend.get_releases()
 
@@ -427,6 +441,8 @@ class ReleaseResolver:
         :param releases: List of normalised release dicts.
         :returns:        The winning release dict, or ``None``.
         """
+        # self.module.log(f"ReleaseResolver::_latest(releases: {releases})")
+
         finder = ReleaseFinder(module=self.module, releases=releases)
         finder.set_exclude_keywords(keywords=self.exclude_keywords)
         return finder.find_latest(mode="version")
@@ -486,6 +502,8 @@ class ReleaseResolver:
         :returns:              The selected artefact asset dict.
         :raises ResolverError: On zero or ambiguous matches.
         """
+        # self.module.log(f"ReleaseResolver::_select_asset(assets: {assets}, version: {version}, tag: {tag})")
+
         all_names = [a.get("name", "") for a in assets]
 
         if self.asset_regex:
@@ -507,8 +525,16 @@ class ReleaseResolver:
         ]
 
         if not candidates:
+            if self.asset_regex:
+                criterion = f"asset_regex '{self.asset_regex}'"
+            elif self._asset_template:
+                criterion = f"asset '{self._render_asset_template(version, tag)}'"
+            else:
+                criterion = (
+                    f"system '{self.system}' / architecture '{self.architecture}'"
+                )
             raise ResolverError(
-                "No artefact asset matched the requested system/architecture.",
+                f"No artefact asset matched {criterion}.",
                 candidates=all_names,
             )
 
@@ -534,6 +560,8 @@ class ReleaseResolver:
         :returns:              The rendered filename.
         :raises ResolverError: On an unknown placeholder.
         """
+        # self.module.log(f"ReleaseResolver::_render_asset_template(version: {version}, tag: {tag})")
+
         try:
             return self._asset_template.format(
                 version=version,
@@ -555,6 +583,8 @@ class ReleaseResolver:
         :param assets: List of asset dicts.
         :returns:      Matching asset dicts (possibly empty).
         """
+        self.module.log(f"ReleaseResolver::_heuristic_candidates(assets: {assets})")
+
         sys_tokens = SYSTEM_SYNONYMS.get(
             self.system, [self.system] if self.system else []
         )
@@ -581,6 +611,8 @@ class ReleaseResolver:
         :param candidates: List of candidate asset dicts.
         :returns:          The reduced (or unchanged) candidate list.
         """
+        # self.module.log(f"ReleaseResolver::_prefer_by_extension(candidates: {candidates})")
+
         for ext in self.extensions:
             matched = [
                 a for a in candidates if a.get("name", "").lower().endswith(ext.lower())
@@ -616,6 +648,8 @@ class ReleaseResolver:
         :returns:        ``(checksum_url, source)`` with *source* in
                          ``per_artifact`` / ``aggregate`` / ``none``.
         """
+        # self.module.log(f"ReleaseResolver::_find_checksum(artefact: {artefact}, assets: {assets})")
+
         artefact_name = artefact.get("name", "")
         by_name = {a.get("name", ""): a for a in assets}
 
@@ -663,6 +697,8 @@ class ReleaseResolver:
         :param source:        ``"per_artifact"`` or ``"aggregate"``.
         :returns:             ``(hash, algorithm)`` or ``(None, None)``.
         """
+        # self.module.log(f"ReleaseResolver::_extract_hash(text: {text}, artefact_name: {artefact_name}, source: {source})")
+
         entries = self._parse_checksum_text(text)
 
         if source == "per_artifact":

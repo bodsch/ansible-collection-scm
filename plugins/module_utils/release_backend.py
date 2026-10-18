@@ -158,6 +158,9 @@ class BaseHTTPBackend:
                               (e.g. ``"forgejo"``).
         """
         self.module = module
+
+        # self.module.log("BaseHTTPBackend::__init__()")
+
         self.owner = owner
         self.repository = repository
         self.api_url = api_url.rstrip("/")
@@ -218,6 +221,8 @@ class BaseHTTPBackend:
         :param url: Direct download URL of a text resource.
         :returns:   ``(status_code, text, error)``; *text* is ``None`` on error.
         """
+        # self.module.log(f"BaseHTTPBackend::get_text(url: {url})")
+
         headers = dict(self.headers)
         headers["Accept"] = "*/*"
 
@@ -250,6 +255,9 @@ class BaseHTTPBackend:
                                list.
         :returns:              ``(status_code, normalised, error)``.
         """
+        # self.module.log(f"BaseHTTPBackend::_cached_json(
+        # cache_filename: {cache_filename}, url: {url}, params: {params}, paginate: {paginate}, normalise: {normalise})")
+
         cache_path = self.cache.cache_path(cache_filename)
         cached = self.cache.cached_data(cache_path)
         if cached is not None:
@@ -263,7 +271,10 @@ class BaseHTTPBackend:
             return (status, [], error)
 
         normalised = normalise(raw)
-        self.cache.write_cache(cache_path, normalised)
+        # Never cache empty results: a release whose assets are still being
+        # uploaded would otherwise stay "empty" for the whole cache TTL.
+        if normalised:
+            self.cache.write_cache(cache_path, normalised)
         return (200, normalised, None)
 
     def _request(
@@ -292,6 +303,9 @@ class BaseHTTPBackend:
                             list (JSON) or str (text); status ``419`` indicates
                             a transport/parse error.
         """
+        # self.module.log(f"BaseHTTPBackend::_request(
+        # url: {url}, headers: {headers}, params: {params}, expect_json: {expect_json}, paginate: {paginate})")
+
         session = requests.Session()
         retry = Retry(
             total=3,
@@ -309,7 +323,7 @@ class BaseHTTPBackend:
                 response = session.get(
                     url, headers=headers, params=params, timeout=15
                 )
-                self.module.log(msg=f"- response: {response.status_code} {url}")
+                # self.module.log(msg=f"- response: {response.status_code} {url}")
 
                 if (
                     response.status_code == 403
