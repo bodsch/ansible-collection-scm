@@ -25,7 +25,7 @@ forgejo_runner_config:
   cache:                                                #
     enabled: true
     dir: /var/cache/forgejo-runner
-    host: "10.16.0.20"
+    host: "10.16.0.10"
     port: "8088"
     secret: "EFAA98E6E43689B070F8E154AB24B05D09A01853"
     # external_server: ""
