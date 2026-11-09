@@ -1,7 +1,5 @@
 ---
 
-role_name_check: 1
-
 dependency:
   name: galaxy
 
@@ -62,7 +60,7 @@ provisioner:
   name: ansible
   ansible_args:
     - --diff
-    - -v
+    - -vv
   config_options:
     defaults:
       deprecation_warnings: true

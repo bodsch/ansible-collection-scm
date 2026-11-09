@@ -1,6 +1,6 @@
 ---
 
-forgejo_version: 14.0.0
+forgejo_version: 16.0.6
 
 forgejo_database:
   log_sql: true

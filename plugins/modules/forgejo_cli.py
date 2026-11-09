@@ -16,6 +16,7 @@ The module is designed to be safe and predictable:
 from __future__ import annotations
 
 import os
+import re
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, List, Literal, Optional, Sequence, Tuple, TypedDict, cast
@@ -222,7 +223,7 @@ class ForgejoCli:
         Returns:
             A module result containing aggregated status and per-runner state.
         """
-        # self.module.log("ForgejoCli::run()")
+        self.module.log("ForgejoCli::run()")
 
         self._validate_paths()
 
@@ -245,13 +246,15 @@ class ForgejoCli:
         Returns:
             Aggregated module result with one state entry per runner.
         """
-        # self.module.log("ForgejoCli::register()")
+        self.module.log("ForgejoCli::register()")
 
         state: List[RunnerResult] = []
         any_changed = False
         any_failed = False
 
         created_runners = self.list_runners()
+
+        self.module.log(f"  - created_runners: {created_runners}")
 
         for runner_spec, parse_error in self._parse_runner_specs(self.runners_raw):
             """ """
@@ -297,13 +300,20 @@ class ForgejoCli:
             rc, out, err = self.register_runner(runner_spec)
 
             if rc == 0:
+                """
+                    mit aktivierten debug log, bzw. log_sql wird nicht nur der token ausgegeben.
+                    beide ausgaben landen auf stdout und sind hart vermischt.
+                    die uuid muss also via regex extrahiert werden.
+                """
+                token = re.search(r'[0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{12}', out.strip()).group(0)
+
                 state.append(
                     {
                         "name": runner_spec.name,
                         "changed": True,
                         "failed": False,
                         "msg": f"Runner '{runner_spec.name}' successfully registered.",
-                        "uuid": out.strip(),
+                        "uuid": token,
                     }
                 )
                 any_changed = True
@@ -337,7 +347,7 @@ class ForgejoCli:
         Returns:
             Tuple of (rc, stdout, stderr).
         """
-        # self.module.log(f"ForgejoCli::register_runner(runner: {runner})")
+        self.module.log(f"ForgejoCli::register_runner(runner: {runner})")
 
         args: List[str] = [
             self.forgejo_bin,
@@ -363,12 +373,14 @@ class ForgejoCli:
         if self.parameters:
             args += self.parameters
 
+        self.module.log(f"  - args: {args}")
+
         return self._exec(args)
 
     # -----
     def list_runners(self):
         """ """
-        # self.module.log("ForgejoCli::list_runners()")
+        self.module.log("ForgejoCli::list_runners()")
 
         _config = ForgejoIni(self.module, path=self.config)
 
@@ -457,6 +469,8 @@ class ForgejoCli:
         Raises:
             Calls module.fail_json on invalid paths.
         """
+        self.module.log("ForgejoCli::_validate_paths()")
+
         wd = Path(self.working_dir)
         if not wd.exists() or not wd.is_dir():
             self.module.fail_json(msg=f"missing directory '{self.working_dir}'")
@@ -477,6 +491,8 @@ class ForgejoCli:
         Returns:
             List of tuples: (RunnerSpec or None, RunnerResult error or None).
         """
+        self.module.log(f"ForgejoCli::_parse_runner_specs(raw_runners: {raw_runners})")
+
         parsed: List[Tuple[Optional[RunnerSpec], Optional[RunnerResult]]] = []
 
         for idx, r in enumerate(raw_runners):
@@ -512,6 +528,24 @@ class ForgejoCli:
                     )
                 )
                 continue
+            else:
+                # the secret must be exactly 40 characters long
+                if len(secret) < 40:
+                    parsed.append(
+                        (
+                            None,
+                            {
+                                "name": name,
+                                "changed": False,
+                                "failed": True,
+                                "msg": f"the secret must be exactly 40 characters long, not {len(secret)}.",
+                            },
+                        )
+                    )
+                    continue
+                else:
+                    # the secret must be an hexadecimal string:
+                    pass
 
             labels = self._as_str_tuple(labels_raw)
             if labels is None:
@@ -634,6 +668,7 @@ def main() -> None:
 
     manager = ForgejoCli(module)
     result = manager.run()
+
     module.exit_json(**result)
 
 

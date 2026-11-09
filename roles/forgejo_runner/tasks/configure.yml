@@ -94,6 +94,14 @@
     runners: "{{ forgejo_runner_register | default([]) }}"
   register: _forgejo_runner_registered
 
+- name: d
+  debug:
+    msg: "{{ _forgejo_runner_registered }}"
+
+# - name: exit with fail
+#   ansible.builtin.fail:
+#     msg: A serious error occurred when downloading the archive.
+
 - name: create forgejo-runner configuration
   when:
     - not running_in_check_mode
