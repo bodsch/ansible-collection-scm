@@ -1,6 +1,6 @@
 ---
 
-forgejo_runner_version: 12.5.2
+forgejo_runner_version: 13.0.0
 
 forgejo_runner_controller:
   hostname: "forgejo"
@@ -23,11 +23,11 @@ forgejo_runner_config:
   log:                                                  #
     level: debug                                        # trace, debug, info, warn, error, fatal
   cache:                                                #
-    enabled: false
+    enabled: true
     dir: /var/cache/forgejo-runner
-    # host: molecule.matrix.lan
-    port: 0
-    secret: "dnsdkfnsndfknsdfkjnsdf"
+    host: "10.16.0.10"
+    port: "8088"
+    secret: "EFAA98E6E43689B070F8E154AB24B05D09A01853"
     # external_server: ""
   runner:                                               #
     file: .runner

@@ -12,3 +12,5 @@ hooks
 **/*.save
 .ansible
 *.SAVE
+.venv
+.pytest_cache

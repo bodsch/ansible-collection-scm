@@ -177,17 +177,55 @@ def test_cache_section(config):
 
     assert isinstance(cache_enabled, bool)
 
-    if cache_enabled:
-        assert isinstance(cache.get("dir"), str) and cache["dir"].startswith("/"), (
+    if not cache_enabled:
+        return
+
+    if "dir" in cache:
+        assert isinstance(cache["dir"], str) and cache["dir"].startswith("/"), (
             "cache.dir must be an absolute path"
         )
-        for key in ("port", "proxy_port"):
-            assert isinstance(cache.get(key), int) and 0 <= cache[key] <= 65535, (
+
+    # port / proxy_port are optional (runner default: 0 = random port)
+    for key in ("port", "proxy_port"):
+        if key in cache:
+            assert isinstance(cache[key], int) and 0 <= cache[key] <= 65535, (
                 f"cache.{key} must be 0..65535, got {cache.get(key)!r}"
             )
-        assert isinstance(cache.get("secret"), str) and len(cache["secret"]) > 0, (
-            "cache.secret must be a non-empty string"
+
+    secret = cache.get("secret")
+
+    if cache.get("external_server"):
+        assert secret, "cache.secret is required when cache.external_server is set"
+
+    if secret is not None:
+        assert isinstance(secret, str), (
+            f"cache.secret must be a string, got {type(secret).__name__}"
         )
+        assert re.match(r"^[0-9a-fA-F]{40}$", secret), (
+            "cache.secret must be a 40-character hex string"
+        )
+
+
+def test_cache_directory(host, config, get_vars):
+    """
+    The internal cache server stores its data in cache.dir.
+    The directory must exist and be writable only by the runner user.
+    """
+    cache = config["cache"]
+
+    if not cache.get("enabled") or cache.get("external_server") or not cache.get("dir"):
+        pytest.skip("no local cache directory configured")
+
+    user = get_vars.get("forgejo_runner_system_user", "forgejo-runner")
+    group = get_vars.get("forgejo_runner_system_group", "forgejo-runner")
+
+    d = host.file(cache["dir"])
+
+    assert d.exists, f"cache directory missing: {cache['dir']}"
+    assert d.is_directory, f"cache path is not a directory: {cache['dir']}"
+    assert d.user == user, f"cache directory owner is {d.user!r}, expected {user!r}"
+    assert d.group == group, f"cache directory group is {d.group!r}, expected {group!r}"
+    assert d.mode == 0o750, f"cache directory mode is {oct(d.mode)}, expected 0o750"
 
 
 # --- container section -----------------------------------------------------

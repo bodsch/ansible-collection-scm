@@ -1,7 +1,7 @@
 #
 export COLLECTION_ROLE      ?=
 export COLLECTION_SCENARIO  ?= default
-export TOX_ANSIBLE          ?= ansible_9.5
+export TOX_ANSIBLE          ?= ansible_13.0
 export TOX_SILENCE          ?= true
 # --------------------------------------------------------
 
@@ -31,13 +31,13 @@ hooks-ready:
 	fi
 
 fetch-hooks:
-	@if [ -d "$(CACHE_DIR)/.git" ]; then
-		git -C "$(CACHE_DIR)" fetch --depth=1 --prune origin
-		def=$$(git -C "$(CACHE_DIR)" remote show origin | awk '/HEAD branch/ {print "origin/"$$NF}')
-		git -C "$(CACHE_DIR)" reset --hard "$$def"
-	else
-		mkdir -p "$(dir $(CACHE_DIR))"
-		GIT_TERMINAL_PROMPT=0 git clone --depth 1 "$(TEMP_REPO_URL)" "$(CACHE_DIR)"
+	@if [ -d "$(CACHE_DIR)/.git" ]; then \
+		git -C "$(CACHE_DIR)" fetch --depth=1 --prune origin; \
+		def=$$(git -C "$(CACHE_DIR)" remote show origin | awk '/HEAD branch/ {print "origin/"$$NF}'); \
+		git -C "$(CACHE_DIR)" reset --hard "$$def"; \
+	else \
+		mkdir -p "$(dir $(CACHE_DIR))"; \
+		GIT_TERMINAL_PROMPT=0 git clone --depth 1 "$(TEMP_REPO_URL)" "$(CACHE_DIR)"; \
 	fi
 	@mkdir -p "$(TARGET_DIR)"
 	@rsync -a --delete "$(CACHE_DIR)/$(TEMP_REPO_PATH)/" "$(TARGET_DIR)/"
