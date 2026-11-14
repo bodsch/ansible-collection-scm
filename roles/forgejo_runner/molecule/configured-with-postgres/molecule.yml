@@ -84,7 +84,7 @@ provisioner:
   name: ansible
   ansible_args:
     - --diff
-    - -vv
+    - -vvv
   config_options:
     defaults:
       deprecation_warnings: true

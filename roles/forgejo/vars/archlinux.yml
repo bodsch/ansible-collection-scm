@@ -5,4 +5,8 @@ forgejo_requirements:
   - python-requests
   - git
 
+forgejo_database_packages:
+  - python-psycopg
+  - python-mysqlclient
+
 ...

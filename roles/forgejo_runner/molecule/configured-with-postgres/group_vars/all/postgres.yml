@@ -39,7 +39,7 @@ postgresql_hba_entries:
   - type: host
     database: forgejo
     user: forgejo
-    address: '10.16.0.11/32'
+    address: '10.16.0.0/24'
     auth_method: "{{ postgresql_config_authentication.password_encryption }}"
 
 ...

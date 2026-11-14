@@ -302,6 +302,7 @@ class ForgejoRunner:
 
             finally:
                 conn.close()
+
         elif db.db_type == "postgres":
             pg_driver = self._import_postgres_driver()
 

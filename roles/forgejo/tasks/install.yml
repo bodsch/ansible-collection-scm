@@ -54,6 +54,20 @@
     - restart forgejo
     - "wait for '/run/forgejo/forgejo.pid'"
 
+- name: database packages
+  block:
+    - name: define database packages
+      ansible.builtin.set_fact:
+        forgejo_database_packages: "{{ forgejo_database.db_type | default('sqlite3') | bodsch.scm.forgejo_database_packages(forgejo_database_packages) }}"
+
+    - name: install database packages
+      ansible.builtin.package:
+        name: "{{ forgejo_database_packages }}"
+        state: present
+      when:
+        - forgejo_database_packages is defined
+        - forgejo_database_packages | count > 0
+
 - name: systemd
   when:
     - not running_in_check_mode

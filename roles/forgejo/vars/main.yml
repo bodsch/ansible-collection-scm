@@ -19,6 +19,10 @@ forgejo_requirements:
   - python3-requests
   - git
 
+forgejo_database_packages:
+  - python3-psycopg
+  - python3-mysqlclient
+
 forgejo_defaults_actions:
   enabled: true                                   #
   default_actions_url: ""                         #
