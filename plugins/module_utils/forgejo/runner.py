@@ -323,8 +323,10 @@ class ForgejoRunner:
             if db.ssl_mode:
                 config["sslmode"] = db.ssl_mode
 
-            if db.schema:
-                config["options"] = f"-c search_path={db.schema}"
+            # Forgejo (xorm) uses 'public' when SCHEMA is unset and does not
+            # follow the server's search_path ("$user", public). Pin it, so a
+            # schema named like the DB user cannot shadow Forgejo's tables.
+            config["options"] = f"-c search_path={db.schema or 'public'}"
 
             try:
                 conn = pg_driver.connect(**config)
@@ -496,7 +498,7 @@ class ForgejoRunner:
         """
         Detect the runner table name in PostgreSQL.
 
-        Respects the active search_path (Forgejo `SCHEMA` setting).
+        Looks up the schema pinned via search_path (Forgejo `SCHEMA`, default 'public').
 
         Args:
             conn: psycopg / psycopg2 connection.
@@ -507,23 +509,43 @@ class ForgejoRunner:
         Raises:
             ValueError: If no supported table is found.
         """
+        # pg_catalog instead of information_schema: the latter hides tables
+        # the connecting role has no privileges on.
         with conn.cursor() as cur:
             cur.execute(
                 """
-                SELECT table_name
-                FROM information_schema.tables
-                WHERE table_schema = current_schema()
-                  AND table_name IN (%s, %s)
+                SELECT n.nspname, c.relname
+                FROM pg_catalog.pg_class c
+                JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace
+                WHERE c.relkind IN ('r', 'p')
+                  AND c.relname IN (%s, %s)
                 """,
                 _ALLOWED_TABLES,
             )
-            names = {row[0] for row in cur.fetchall()}
+            found = cur.fetchall()
+
+            cur.execute("SELECT current_schema(), current_database()")
+            current_schema, current_database = cur.fetchone()
+
+        names = {table for schema, table in found if schema == current_schema}
 
         for candidate in _ALLOWED_TABLES:
             if candidate in names:
                 return candidate
 
-        raise ValueError(f"No runner table found. Tried: {_ALLOWED_TABLES}")
+        other = sorted({f"{schema}.{table}" for schema, table in found})
+        if other:
+            raise ValueError(
+                f"Runner table not found in schema '{current_schema}' of database "
+                f"'{current_database}', but exists as: {', '.join(other)}. "
+                "Check the Forgejo database SCHEMA setting."
+            )
+
+        raise ValueError(
+            f"No runner table found in database '{current_database}' "
+            f"(schema '{current_schema}'). Tried: {_ALLOWED_TABLES}. "
+            "Has Forgejo been started against this database to run its migrations?"
+        )
 
     def _fetch_runner_rows_sqlite(self, conn: Any, table: str) -> List[Tuple[Any, ...]]:
         """
