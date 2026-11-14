@@ -174,9 +174,7 @@ class DatabaseConfig:
                 if not v
             ]
             if missing:
-                raise ValueError(
-                    f"Missing {self.db_type} fields: {', '.join(missing)}"
-                )
+                raise ValueError(f"Missing {self.db_type} fields: {', '.join(missing)}")
             return
 
         raise ValueError(f"Unsupported db_type: {self.db_type}")
@@ -279,7 +277,7 @@ class ForgejoRunner:
             if db.database is not None:
                 config["db"] = db.database
 
-            self.module.log(msg=f"config : { {**config, 'passwd': '***'} }")
+            self.module.log(msg=f"config : {config}")
 
             if mysql_driver is None:
                 self.module.fail_json(msg=mysql_driver_fail_msg)
