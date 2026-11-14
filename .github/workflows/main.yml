@@ -54,7 +54,6 @@ jobs:
         image:
           - archlinux:latest
         ansible-version:
-          - '9.5'
           - '10.7'
           - '11.13'
           - '12.3'
