@@ -318,6 +318,9 @@ class ForgejoRunner:
                 "user": db.user,
                 "password": db.password,
                 "dbname": db.database,
+                # With a SQL_ASCII database, psycopg (v3) returns text columns
+                # as bytes. Forcing UTF8 on the client side makes it decode them.
+                "client_encoding": "UTF8",
             }
 
             if db.ssl_mode:
@@ -383,12 +386,12 @@ class ForgejoRunner:
             elif is_idle:
                 state = "idle"
 
-            labels = self._parse_agent_labels(agent_labels_json)
+            labels = self._parse_agent_labels(self._as_text(agent_labels_json))
 
-            runners[str(name)] = {
+            runners[self._as_text(name)] = {
                 "id": int(runner_id),
-                "uuid": uuid.strip(),
-                "token_salt": "" if mask_token_salt else str(token_salt or ""),
+                "uuid": self._as_text(uuid).strip(),
+                "token_salt": "" if mask_token_salt else self._as_text(token_salt),
                 "agent_labels": labels,
                 "state": state,
                 "last_online": lo,
@@ -522,10 +525,15 @@ class ForgejoRunner:
                 """,
                 _ALLOWED_TABLES,
             )
-            found = cur.fetchall()
+            found = [
+                (self._as_text(schema), self._as_text(table))
+                for schema, table in cur.fetchall()
+            ]
 
             cur.execute("SELECT current_schema(), current_database()")
-            current_schema, current_database = cur.fetchone()
+            current_schema, current_database = (
+                self._as_text(v) for v in cur.fetchone()
+            )
 
         names = {table for schema, table in found if schema == current_schema}
 
@@ -603,6 +611,26 @@ class ForgejoRunner:
         with conn.cursor() as cur:
             cur.execute(query)
             return list(cur.fetchall())
+
+    @staticmethod
+    def _as_text(value: Any) -> str:
+        """
+        Normalize a DB value to str.
+
+        Some drivers return text columns as bytes (e.g. psycopg with a
+        SQL_ASCII database, or binary collations in MariaDB).
+
+        Args:
+            value: Value from DB (str, bytes or NULL).
+
+        Returns:
+            The value as str ('' for NULL).
+        """
+        if value is None:
+            return ""
+        if isinstance(value, (bytes, bytearray, memoryview)):
+            return bytes(value).decode("utf-8", errors="replace")
+        return str(value)
 
     @staticmethod
     def _parse_agent_labels(agent_labels_json: Any) -> List[str]:
