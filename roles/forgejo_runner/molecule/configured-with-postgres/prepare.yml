@@ -62,18 +62,18 @@
     - role: bodsch.database.postgresql
     - role: bodsch.database.postgresql_databases
 
-# - name: prepare nginx
-#   hosts: instance
-#   gather_facts: true
-#
-#   roles:
-#     - role: bodsch.certs.snakeoil
-#     - role: bodsch.nginx
-#
-# - name: prepare forgejo
-#   hosts: forgejo
-#   any_errors_fatal: false
-#   become: false
-#
-#   roles:
-#     - role: bodsch.scm.forgejo
+- name: prepare nginx
+  hosts: instance
+  gather_facts: true
+
+  roles:
+    - role: bodsch.certs.snakeoil
+    - role: bodsch.nginx
+
+- name: prepare forgejo
+  hosts: forgejo
+  any_errors_fatal: false
+  become: false
+
+  roles:
+    - role: bodsch.scm.forgejo

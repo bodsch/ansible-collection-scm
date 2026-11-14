@@ -318,8 +318,8 @@ class ForgejoRunner:
                 "user": db.user,
                 "password": db.password,
                 "dbname": db.database,
-                # With a SQL_ASCII database, psycopg (v3) returns text columns
-                # as bytes. Forcing UTF8 on the client side makes it decode them.
+                # Text columns were observed coming back as bytes (b'public').
+                # Pin the client encoding; _as_text() handles any remaining bytes.
                 "client_encoding": "UTF8",
             }
 
