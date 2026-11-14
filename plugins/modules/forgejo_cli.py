@@ -17,7 +17,7 @@ from __future__ import annotations
 
 import os
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Dict, List, Literal, Optional, Sequence, Tuple, TypedDict, cast
 
@@ -144,6 +144,16 @@ Scope = Literal[
 ]  # Forgejo supports more; keep permissive at runtime.
 
 
+# Runner UUID as printed by `forgejo forgejo-cli actions register`.
+# Only a leading boundary is enforced: the CLI prints the UUID without a
+# trailing newline, so a log line may directly follow it.
+_UUID_RE = re.compile(
+    r"(?<![0-9A-Fa-f-])"
+    r"[0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{12}"
+)
+_UUID_LINE_START_RE = re.compile(r"^\s*(" + _UUID_RE.pattern + r")", re.MULTILINE)
+
+
 class RunnerResult(TypedDict, total=False):
     """Result structure for a single runner."""
 
@@ -177,7 +187,7 @@ class RunnerSpec:
     """
 
     name: str
-    secret: str
+    secret: str = field(repr=False)
     scope: Optional[str] = None
     labels: Tuple[str, ...] = ()
 
@@ -299,14 +309,29 @@ class ForgejoCli:
 
             rc, out, err = self.register_runner(runner_spec)
 
-            if rc == 0:
-                """
-                    mit aktivierten debug log, bzw. log_sql wird nicht nur der token ausgegeben.
-                    beide ausgaben landen auf stdout und sind hart vermischt.
-                    die uuid muss also via regex extrahiert werden.
-                """
-                token = re.search(r'[0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{12}', out.strip()).group(0)
+            # With debug logging or LOG_SQL enabled, Forgejo writes its log output
+            # to stdout as well, interleaved with the runner UUID. The UUID
+            # therefore has to be extracted from the mixed output.
+            token = self._extract_runner_uuid(out) if rc == 0 else None
 
+            if rc == 0 and token is None:
+                state.append(
+                    {
+                        "name": runner_spec.name,
+                        "changed": True,
+                        "failed": True,
+                        "msg": (
+                            f"Runner '{runner_spec.name}' was registered, but no unique "
+                            "runner UUID could be found in the CLI output."
+                        ),
+                        "rc": rc,
+                        "stdout": (out or "").strip(),
+                        "stderr": (err or "").strip(),
+                    }
+                )
+                any_changed = True
+                any_failed = True
+            elif rc == 0:
                 state.append(
                     {
                         "name": runner_spec.name,
@@ -373,9 +398,36 @@ class ForgejoCli:
         if self.parameters:
             args += self.parameters
 
-        self.module.log(f"  - args: {args}")
-
         return self._exec(args)
+
+    @staticmethod
+    def _extract_runner_uuid(out: Optional[str]) -> Optional[str]:
+        """
+        Extract the runner UUID from `actions register` stdout.
+
+        stdout may contain Forgejo log lines (debug / LOG_SQL), which can carry
+        further UUIDs. Resolution order:
+        1. The last UUID at the start of a line (log lines start with a timestamp).
+        2. Otherwise the UUID, if exactly one distinct UUID occurs in the output.
+
+        Args:
+            out: Raw stdout of the CLI call.
+
+        Returns:
+            The runner UUID (lowercase), or None if none or several candidates exist.
+        """
+        if not out:
+            return None
+
+        line_start = _UUID_LINE_START_RE.findall(out)
+        if line_start:
+            return line_start[-1].lower()
+
+        candidates = {m.lower() for m in _UUID_RE.findall(out)}
+        if len(candidates) == 1:
+            return candidates.pop()
+
+        return None
 
     # -----
     def list_runners(self):
