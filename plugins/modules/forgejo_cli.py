@@ -17,7 +17,7 @@ from __future__ import annotations
 
 import os
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Dict, List, Literal, Optional, Sequence, Tuple, TypedDict, cast
 
@@ -144,6 +144,16 @@ Scope = Literal[
 ]  # Forgejo supports more; keep permissive at runtime.
 
 
+# Runner UUID as printed by `forgejo forgejo-cli actions register`.
+# Only a leading boundary is enforced: the CLI prints the UUID without a
+# trailing newline, so a log line may directly follow it.
+_UUID_RE = re.compile(
+    r"(?<![0-9A-Fa-f-])"
+    r"[0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{12}"
+)
+_UUID_LINE_START_RE = re.compile(r"^\s*(" + _UUID_RE.pattern + r")", re.MULTILINE)
+
+
 class RunnerResult(TypedDict, total=False):
     """Result structure for a single runner."""
 
@@ -177,7 +187,7 @@ class RunnerSpec:
     """
 
     name: str
-    secret: str
+    secret: str = field(repr=False)
     scope: Optional[str] = None
     labels: Tuple[str, ...] = ()
 
@@ -299,14 +309,29 @@ class ForgejoCli:
 
             rc, out, err = self.register_runner(runner_spec)
 
-            if rc == 0:
-                """
-                    mit aktivierten debug log, bzw. log_sql wird nicht nur der token ausgegeben.
-                    beide ausgaben landen auf stdout und sind hart vermischt.
-                    die uuid muss also via regex extrahiert werden.
-                """
-                token = re.search(r'[0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{12}', out.strip()).group(0)
+            # With debug logging or LOG_SQL enabled, Forgejo writes its log output
+            # to stdout as well, interleaved with the runner UUID. The UUID
+            # therefore has to be extracted from the mixed output.
+            token = self._extract_runner_uuid(out) if rc == 0 else None
 
+            if rc == 0 and token is None:
+                state.append(
+                    {
+                        "name": runner_spec.name,
+                        "changed": True,
+                        "failed": True,
+                        "msg": (
+                            f"Runner '{runner_spec.name}' was registered, but no unique "
+                            "runner UUID could be found in the CLI output."
+                        ),
+                        "rc": rc,
+                        "stdout": (out or "").strip(),
+                        "stderr": (err or "").strip(),
+                    }
+                )
+                any_changed = True
+                any_failed = True
+            elif rc == 0:
                 state.append(
                     {
                         "name": runner_spec.name,
@@ -373,9 +398,36 @@ class ForgejoCli:
         if self.parameters:
             args += self.parameters
 
-        self.module.log(f"  - args: {args}")
-
         return self._exec(args)
+
+    @staticmethod
+    def _extract_runner_uuid(out: Optional[str]) -> Optional[str]:
+        """
+        Extract the runner UUID from `actions register` stdout.
+
+        stdout may contain Forgejo log lines (debug / LOG_SQL), which can carry
+        further UUIDs. Resolution order:
+        1. The last UUID at the start of a line (log lines start with a timestamp).
+        2. Otherwise the UUID, if exactly one distinct UUID occurs in the output.
+
+        Args:
+            out: Raw stdout of the CLI call.
+
+        Returns:
+            The runner UUID (lowercase), or None if none or several candidates exist.
+        """
+        if not out:
+            return None
+
+        line_start = _UUID_LINE_START_RE.findall(out)
+        if line_start:
+            return line_start[-1].lower()
+
+        candidates = {m.lower() for m in _UUID_RE.findall(out)}
+        if len(candidates) == 1:
+            return candidates.pop()
+
+        return None
 
     # -----
     def list_runners(self):
@@ -399,6 +451,8 @@ class ForgejoCli:
         db_user: str | None = None
         db_pass: str | None = None
         db_charset: str | None = None
+        db_schema: str | None = None
+        db_ssl_mode: str | None = None
 
         db_type = _forgejo_config.get("database", {}).get("DB_TYPE", None)
 
@@ -411,18 +465,23 @@ class ForgejoCli:
             if not is_absolute_path(db_path):
                 db_path = os.path.join(work_path, db_path)
 
-        elif db_type in ["mariadb", "mysql"]:
+        elif db_type in ["mariadb", "mysql", "postgres"]:
             """ """
             db_hostname = _forgejo_config.get("database", {}).get("HOST", None)
 
-            if ":" in db_hostname:
+            if db_hostname and ":" in db_hostname:
                 db_host = db_hostname.split(":")[0]
                 db_port = int(db_hostname.split(":")[1])
+            else:
+                db_host = db_hostname
+                db_port = 5432 if db_type == "postgres" else 3306
 
             db_name = _forgejo_config.get("database", {}).get("NAME", None)
             db_user = _forgejo_config.get("database", {}).get("USER", None)
             db_pass = _forgejo_config.get("database", {}).get("PASSWD", None)
             db_charset = "utf8mb4"
+            db_schema = _forgejo_config.get("database", {}).get("SCHEMA", None)
+            db_ssl_mode = _forgejo_config.get("database", {}).get("SSL_MODE", None)
 
         config = DatabaseConfig(
             db_type=db_type,
@@ -430,32 +489,47 @@ class ForgejoCli:
             sqlite_path=db_path if db_path else "",
             # # MariaDB
             host=(
-                db_host if (db_type in ["mariadb", "mysql"] and db_host) else ""
+                db_host
+                if (db_type in ["mariadb", "mysql", "postgres"] and db_host)
+                else ""
             ),  # MariaDB host.
             port=(
-                db_port if (db_type in ["mariadb", "mysql"] and db_port) else ""
+                db_port
+                if (db_type in ["mariadb", "mysql", "postgres"] and db_port)
+                else ""
             ),  # MariaDB port.
             user=(
-                db_user if (db_type in ["mariadb", "mysql"] and db_user) else ""
+                db_user
+                if (db_type in ["mariadb", "mysql", "postgres"] and db_user)
+                else ""
             ),  # MariaDB username.
             password=(
-                db_pass if (db_type in ["mariadb", "mysql"] and db_pass) else ""
+                db_pass
+                if (db_type in ["mariadb", "mysql", "postgres"] and db_pass)
+                else ""
             ),  # MariaDB password.
             database=(
-                db_name if (db_type in ["mariadb", "mysql"] and db_name) else ""
+                db_name
+                if (db_type in ["mariadb", "mysql", "postgres"] and db_name)
+                else ""
             ),  # MariaDB database name.
             charset=(
-                db_charset if (db_type in ["mariadb", "mysql"] and db_charset) else ""
+                db_charset
+                if (db_type in ["mariadb", "mysql", "postgres"] and db_charset)
+                else ""
             ),  # Connection charset (default: utf8mb4).
+            # PostgreSQL
+            schema=db_schema if (db_type == "postgres" and db_schema) else None,
+            ssl_mode=db_ssl_mode if (db_type == "postgres" and db_ssl_mode) else None,
         )
 
         _runner = ForgejoRunner(self.module)
 
-        # return {}
-
         _runner_infos: RunnerSnapshot = _runner.get_runner_snapshot(
             db=config, mask_token_salt=False
         )
+
+        self.module.log("  - _runner_infos: {_runner_infos}")
 
         if _runner_infos.runners:
             return _runner_infos.runners

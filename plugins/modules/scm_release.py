@@ -8,11 +8,11 @@
 from __future__ import absolute_import, print_function
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.bodsch.scm.plugins.module_utils.github_backend import (
-    GitHubBackend,
-)
 from ansible_collections.bodsch.scm.plugins.module_utils.forgejo_backend import (
     ForgejoBackend,
+)
+from ansible_collections.bodsch.scm.plugins.module_utils.github_backend import (
+    GitHubBackend,
 )
 from ansible_collections.bodsch.scm.plugins.module_utils.release_resolver import (
     ReleaseResolver,

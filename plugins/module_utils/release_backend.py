@@ -264,7 +264,10 @@ class BaseHTTPBackend:
             return (200, cached, None)
 
         status, raw, error = self._request(
-            url, headers=self.headers, params=params, expect_json=True,
+            url,
+            headers=self.headers,
+            params=params,
+            expect_json=True,
             paginate=paginate,
         )
         if status != 200:
@@ -320,9 +323,7 @@ class BaseHTTPBackend:
 
         while url:
             try:
-                response = session.get(
-                    url, headers=headers, params=params, timeout=15
-                )
+                response = session.get(url, headers=headers, params=params, timeout=15)
                 # self.module.log(msg=f"- response: {response.status_code} {url}")
 
                 if (
@@ -386,9 +387,7 @@ class BaseHTTPBackend:
     # with a different shape (e.g. GitLab) supply their own normalisers.
 
     @staticmethod
-    def _normalise_releases_default(
-        raw: List[Dict[str, Any]]
-    ) -> List[Dict[str, Any]]:
+    def _normalise_releases_default(raw: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         """
         Map raw GitHub/Gitea/Forgejo release objects to the normalised shape.
 
@@ -413,9 +412,7 @@ class BaseHTTPBackend:
         return out
 
     @staticmethod
-    def _normalise_assets_default(
-        raw: List[Dict[str, Any]]
-    ) -> List[Dict[str, Any]]:
+    def _normalise_assets_default(raw: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         """
         Map a raw GitHub/Gitea/Forgejo release object to the normalised asset
         list.

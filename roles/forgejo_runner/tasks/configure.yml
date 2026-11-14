@@ -51,36 +51,6 @@
     group: "{{ forgejo_runner_system_group }}"
     mode: "0750"
 
-# - name: create forgejo-runner configuration directory
-#   when:
-#     - not running_in_check_mode
-#   ansible.builtin.file:
-#     path: "{{ forgejo_runner_config_dir }}"
-#     state: directory
-#     owner: "{{ forgejo_runner_system_user }}"
-#     group: "{{ forgejo_runner_system_group }}"
-#     mode: "0750"
-#
-# - name: create forgejo-runner working directory
-#   when:
-#     - not running_in_check_mode
-#   ansible.builtin.file:
-#     path: "{{ forgejo_runner_working_dir }}"
-#     state: directory
-#     owner: "{{ forgejo_runner_system_user }}"
-#     group: "{{ forgejo_runner_system_group }}"
-#     mode: "0770"
-#
-# - name: create forgejo-runner working directory
-#   when:
-#     - not running_in_check_mode
-#   ansible.builtin.file:
-#     path: "{{ forgejo_runner_working_dir }}/.token"
-#     state: directory
-#     owner: "{{ forgejo_runner_system_user }}"
-#     group: "{{ forgejo_runner_system_group }}"
-#     mode: "0750"
-
 - name: validate runner secret
   when:
     - not running_in_check_mode
@@ -106,10 +76,10 @@
   loop: "{{ forgejo_runner_register | default([]) }}"
   no_log: true
 
-- name: d
-  debug:
-    msg:
-      - "{{ forgejo_runner_controller }}"
+# - name: d
+#   debug:
+#     msg:
+#       - "{{ forgejo_runner_controller }}"
 
 - name: "create runner token on '{{ forgejo_runner_controller.hostname }}'"
   when:
@@ -126,9 +96,9 @@
     runners: "{{ forgejo_runner_register | default([]) }}"
   register: _forgejo_runner_registered
 
-- name: d
-  debug:
-    msg: "{{ _forgejo_runner_registered }}"
+# - name: d
+#   debug:
+#     msg: "{{ _forgejo_runner_registered }}"
 
 # - name: exit with fail
 #   ansible.builtin.fail:

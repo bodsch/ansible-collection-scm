@@ -57,7 +57,7 @@ jobs:
         image:
           - debian:13
         ansible-version:
-          - '9.5'
+          - '13.0'
         python_version:
           - '3.13'
         scenario:
@@ -116,7 +116,7 @@ jobs:
           - ubuntu:24.04
           - ubuntu:26.04
         ansible-version:
-          - '9.5'
+          - '13.0'
         python_version:
           - '3.13'
         scenario:
@@ -173,12 +173,13 @@ jobs:
         image:
           - debian:13
         ansible-version:
-          - '9.5'
+          - '13.0'
         python_version:
           - '3.13'
         scenario:
           - configured
           - configured-with-mariadb
+          - configured-with-postgre
           - configured-with-ldap
           - configured-with-local-users
           - custom-config-directory

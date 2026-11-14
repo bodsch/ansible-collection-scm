@@ -7,7 +7,7 @@ from typing import Any, Dict, List, Literal, Optional, Tuple, TypedDict
 
 _ALLOWED_TABLES: Tuple[str, ...] = ("action_runner", "act_runner")
 
-DbType = Literal["sqlite", "mariadb"]
+DbType = Literal["sqlite3", "mariadb", "mysql", "postgres"]
 RunnerState = Literal["active", "idle", "offline"]
 
 
@@ -67,13 +67,13 @@ class DatabaseConfig:
     Database configuration for Forgejo runner queries.
 
     This dataclass supports both SQLite and MariaDB. Use the factory methods
-    `DatabaseConfig.sqlite(...)` or `DatabaseConfig.mariadb(...)`.
+    `DatabaseConfig.sqlite3(...)` or `DatabaseConfig.mariadb(...)`.
 
     Attributes:
         db_type: Database type ('sqlite3' or 'mariadb').
 
         # SQLite
-        sqlite_path: Path to SQLite DB file (required for db_type='sqlite').
+        sqlite_path: Path to SQLite DB file (required for db_type='sqlite3').
 
         # MariaDB
         host: MariaDB host.
@@ -82,6 +82,10 @@ class DatabaseConfig:
         password: MariaDB password.
         database: MariaDB database name.
         charset: Connection charset (default: utf8mb4).
+
+        # PostgreSQL (uses host/port/user/password/database as well)
+        schema: Optional schema (Forgejo `SCHEMA`), applied via search_path.
+        ssl_mode: Optional sslmode (Forgejo `SSL_MODE`, e.g. disable/require/verify-full).
     """
 
     db_type: DbType
@@ -95,6 +99,9 @@ class DatabaseConfig:
     database: Optional[str] = None
     charset: str = "utf8mb4"
 
+    schema: Optional[str] = None
+    ssl_mode: Optional[str] = None
+
     @classmethod
     def sqlite3(cls, path: str) -> "DatabaseConfig":
         """
@@ -106,7 +113,7 @@ class DatabaseConfig:
         Returns:
             DatabaseConfig configured for SQLite.
         """
-        return cls(db_type="sqlite", sqlite_path=path)
+        return cls(db_type="sqlite3", sqlite_path=path)
 
     @classmethod
     def mariadb(
@@ -152,10 +159,10 @@ class DatabaseConfig:
         """
         if self.db_type == "sqlite3":
             if not self.sqlite_path:
-                raise ValueError("sqlite_path is required for db_type='sqlite'")
+                raise ValueError("sqlite_path is required for db_type='sqlite3'")
             return
 
-        if self.db_type in ["mariadb", "mysql"]:
+        if self.db_type in ["mariadb", "mysql", "postgres"]:
             missing = [
                 k
                 for k, v in {
@@ -167,7 +174,7 @@ class DatabaseConfig:
                 if not v
             ]
             if missing:
-                raise ValueError(f"Missing MariaDB fields: {', '.join(missing)}")
+                raise ValueError(f"Missing {self.db_type} fields: {', '.join(missing)}")
             return
 
         raise ValueError(f"Unsupported db_type: {self.db_type}")
@@ -279,21 +286,60 @@ class ForgejoRunner:
                 db_connection = mysql_driver.connect(**config)
 
             except Exception as e:
-                message = "unable to connect to database. "
-                message += (
-                    "check login_host, login_user and login_password are correct "
+                self.module.fail_json(
+                    msg=f"unable to connect to {db.db_type} database '{db.database}' "
+                    f"on {db.host}:{db.port}. Exception message: {str(e)}"
                 )
-                message += f"Exception message: {str(e)}"
-
-                self.module.log(msg=message)
-
-                return (None, None, True, message)
 
             # cursor = db_connection.cursor()
             conn = db_connection
 
             try:
                 table = "action_runner"  # self._detect_runner_table_mariadb(conn)
+                rows = self._fetch_runner_rows_mariadb(conn, table)
+
+            finally:
+                conn.close()
+
+        elif db.db_type == "postgres":
+            pg_driver = self._import_postgres_driver()
+
+            if pg_driver is None:
+                self.module.fail_json(
+                    msg="A PostgreSQL driver is required: install 'psycopg' (v3) or 'psycopg2' "
+                    "(e.g. python3-psycopg2) on the Forgejo host."
+                )
+
+            config = {
+                "host": db.host,
+                "port": int(db.port or 5432),
+                "user": db.user,
+                "password": db.password,
+                "dbname": db.database,
+                # Text columns were observed coming back as bytes (b'public').
+                # Pin the client encoding; _as_text() handles any remaining bytes.
+                "client_encoding": "UTF8",
+            }
+
+            if db.ssl_mode:
+                config["sslmode"] = db.ssl_mode
+
+            # Forgejo (xorm) uses 'public' when SCHEMA is unset and does not
+            # follow the server's search_path ("$user", public). Pin it, so a
+            # schema named like the DB user cannot shadow Forgejo's tables.
+            config["options"] = f"-c search_path={db.schema or 'public'}"
+
+            try:
+                conn = pg_driver.connect(**config)
+
+            except Exception as e:
+                self.module.fail_json(
+                    msg=f"unable to connect to postgres database '{db.database}' "
+                    f"on {db.host}:{db.port}. Exception message: {str(e)}"
+                )
+
+            try:
+                table = self._detect_runner_table_postgres(conn)
                 rows = self._fetch_runner_rows_mariadb(conn, table)
 
             finally:
@@ -338,12 +384,12 @@ class ForgejoRunner:
             elif is_idle:
                 state = "idle"
 
-            labels = self._parse_agent_labels(agent_labels_json)
+            labels = self._parse_agent_labels(self._as_text(agent_labels_json))
 
-            runners[str(name)] = {
+            runners[self._as_text(name)] = {
                 "id": int(runner_id),
-                "uuid": uuid.strip(),
-                "token_salt": "" if mask_token_salt else str(token_salt or ""),
+                "uuid": self._as_text(uuid).strip(),
+                "token_salt": "" if mask_token_salt else self._as_text(token_salt),
                 "agent_labels": labels,
                 "state": state,
                 "last_online": lo,
@@ -425,6 +471,88 @@ class ForgejoRunner:
         # raise ist hier böse!
         raise ValueError(f"No runner table found. Tried: {_ALLOWED_TABLES}")
 
+    @staticmethod
+    def _import_postgres_driver() -> Any:
+        """
+        Import a PostgreSQL DB-API driver.
+
+        Prefers psycopg (v3) and falls back to psycopg2.
+
+        Returns:
+            The driver module, or None if no driver is installed.
+        """
+        try:
+            import psycopg  # type: ignore[import-not-found]
+
+            return psycopg
+        except ImportError:
+            pass
+
+        try:
+            import psycopg2  # type: ignore[import-not-found]
+
+            return psycopg2
+        except ImportError:
+            return None
+
+    def _detect_runner_table_postgres(self, conn: Any) -> str:
+        """
+        Detect the runner table name in PostgreSQL.
+
+        Looks up the schema pinned via search_path (Forgejo `SCHEMA`, default 'public').
+
+        Args:
+            conn: psycopg / psycopg2 connection.
+
+        Returns:
+            The detected table name.
+
+        Raises:
+            ValueError: If no supported table is found.
+        """
+        # pg_catalog instead of information_schema: the latter hides tables
+        # the connecting role has no privileges on.
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                SELECT n.nspname, c.relname
+                FROM pg_catalog.pg_class c
+                JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace
+                WHERE c.relkind IN ('r', 'p')
+                  AND c.relname IN (%s, %s)
+                """,
+                _ALLOWED_TABLES,
+            )
+            found = [
+                (self._as_text(schema), self._as_text(table))
+                for schema, table in cur.fetchall()
+            ]
+
+            cur.execute("SELECT current_schema(), current_database()")
+            current_schema, current_database = (
+                self._as_text(v) for v in cur.fetchone()
+            )
+
+        names = {table for schema, table in found if schema == current_schema}
+
+        for candidate in _ALLOWED_TABLES:
+            if candidate in names:
+                return candidate
+
+        other = sorted({f"{schema}.{table}" for schema, table in found})
+        if other:
+            raise ValueError(
+                f"Runner table not found in schema '{current_schema}' of database "
+                f"'{current_database}', but exists as: {', '.join(other)}. "
+                "Check the Forgejo database SCHEMA setting."
+            )
+
+        raise ValueError(
+            f"No runner table found in database '{current_database}' "
+            f"(schema '{current_schema}'). Tried: {_ALLOWED_TABLES}. "
+            "Has Forgejo been started against this database to run its migrations?"
+        )
+
     def _fetch_runner_rows_sqlite(self, conn: Any, table: str) -> List[Tuple[Any, ...]]:
         """
         Fetch runner rows from SQLite.
@@ -454,10 +582,12 @@ class ForgejoRunner:
         self, conn: Any, table: str
     ) -> List[Tuple[Any, ...]]:
         """
-        Fetch runner rows from MariaDB.
+        Fetch runner rows from MariaDB or PostgreSQL.
+
+        Both drivers implement DB-API 2.0 cursors, so the query is shared.
 
         Args:
-            conn: pymysql connection.
+            conn: pymysql or psycopg / psycopg2 connection.
             table: Runner table name.
 
         Returns:
@@ -479,6 +609,26 @@ class ForgejoRunner:
         with conn.cursor() as cur:
             cur.execute(query)
             return list(cur.fetchall())
+
+    @staticmethod
+    def _as_text(value: Any) -> str:
+        """
+        Normalize a DB value to str.
+
+        Some drivers return text columns as bytes (e.g. psycopg with a
+        SQL_ASCII database, or binary collations in MariaDB).
+
+        Args:
+            value: Value from DB (str, bytes or NULL).
+
+        Returns:
+            The value as str ('' for NULL).
+        """
+        if value is None:
+            return ""
+        if isinstance(value, (bytes, bytearray, memoryview)):
+            return bytes(value).decode("utf-8", errors="replace")
+        return str(value)
 
     @staticmethod
     def _parse_agent_labels(agent_labels_json: Any) -> List[str]:

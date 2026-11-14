@@ -122,7 +122,9 @@ def validate_runner_secrets(
     Returns:
         True if every secret is a valid 40-character hex string, False otherwise.
     """
-    display.vv(f"bodsch.scm.validate_runner_secrets(data: {data}, allow_empty: {allow_empty})")
+    display.vv(
+        f"bodsch.scm.validate_runner_secrets(data: {data}, allow_empty: {allow_empty})"
+    )
 
     if isinstance(data, (str, dict)):
         data = [data]

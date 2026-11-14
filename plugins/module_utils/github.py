@@ -39,8 +39,10 @@ from pathlib import Path
 from typing import Dict, List, Optional, Tuple, Union
 
 import requests
+from ansible_collections.bodsch.scm.plugins.module_utils.release_finder import (
+    ReleaseFinder,
+)
 from ansible_collections.bodsch.scm.plugins.module_utils.scm_cache import ScmCache
-from ansible_collections.bodsch.scm.plugins.module_utils.release_finder import ReleaseFinder
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 

@@ -46,7 +46,9 @@ import re
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional, Tuple
 
-from ansible_collections.bodsch.scm.plugins.module_utils.release_finder import ReleaseFinder
+from ansible_collections.bodsch.scm.plugins.module_utils.release_finder import (
+    ReleaseFinder,
+)
 from packaging.version import InvalidVersion, Version
 
 __metaclass__ = type
@@ -302,8 +304,9 @@ class ReleaseResolver:
             # longer wrapped; instead a native GitHubBackend is reconstructed
             # from its owner/repository/token/cache settings, so existing
             # callers keep working while routing through the new transport.
-            from ansible_collections.bodsch.scm.plugins.module_utils.github_backend import \
-                GitHubBackend  # noqa: E501
+            from ansible_collections.bodsch.scm.plugins.module_utils.github_backend import (
+                GitHubBackend,
+            )  # noqa: E501
 
             backend = GitHubBackend(
                 module=module,

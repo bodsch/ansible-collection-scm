@@ -25,8 +25,10 @@ from __future__ import annotations
 
 from typing import Any
 
-from ansible_collections.bodsch.scm.plugins.module_utils.release_backend import (BaseHTTPBackend,
-                                                                                 JsonResult)
+from ansible_collections.bodsch.scm.plugins.module_utils.release_backend import (
+    BaseHTTPBackend,
+    JsonResult,
+)
 
 __metaclass__ = type
 
