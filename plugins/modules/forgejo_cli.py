@@ -411,7 +411,7 @@ class ForgejoCli:
             if not is_absolute_path(db_path):
                 db_path = os.path.join(work_path, db_path)
 
-        elif db_type in ["mariadb", "mysql"]:
+        elif db_type in ["mariadb", "mysql", "postgres"]:
             """ """
             db_hostname = _forgejo_config.get("database", {}).get("HOST", None)
 
@@ -430,32 +430,35 @@ class ForgejoCli:
             sqlite_path=db_path if db_path else "",
             # # MariaDB
             host=(
-                db_host if (db_type in ["mariadb", "mysql"] and db_host) else ""
+                db_host if (db_type in ["mariadb", "mysql", "postgres"] and db_host) else ""
             ),  # MariaDB host.
             port=(
-                db_port if (db_type in ["mariadb", "mysql"] and db_port) else ""
+                db_port if (db_type in ["mariadb", "mysql", "postgres"] and db_port) else ""
             ),  # MariaDB port.
             user=(
-                db_user if (db_type in ["mariadb", "mysql"] and db_user) else ""
+                db_user if (db_type in ["mariadb", "mysql", "postgres"] and db_user) else ""
             ),  # MariaDB username.
             password=(
-                db_pass if (db_type in ["mariadb", "mysql"] and db_pass) else ""
+                db_pass if (db_type in ["mariadb", "mysql", "postgres"] and db_pass) else ""
             ),  # MariaDB password.
             database=(
-                db_name if (db_type in ["mariadb", "mysql"] and db_name) else ""
+                db_name if (db_type in ["mariadb", "mysql", "postgres"] and db_name) else ""
             ),  # MariaDB database name.
             charset=(
-                db_charset if (db_type in ["mariadb", "mysql"] and db_charset) else ""
+                db_charset if (db_type in ["mariadb", "mysql", "postgres"] and db_charset) else ""
             ),  # Connection charset (default: utf8mb4).
         )
 
         _runner = ForgejoRunner(self.module)
 
         # return {}
-
+        # TODO
+        #  -  postgresql support
         _runner_infos: RunnerSnapshot = _runner.get_runner_snapshot(
             db=config, mask_token_salt=False
         )
+
+        self.module.log("  - _runner_infos: {_runner_infos}")
 
         if _runner_infos.runners:
             return _runner_infos.runners

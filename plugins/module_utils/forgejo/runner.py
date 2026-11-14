@@ -155,7 +155,7 @@ class DatabaseConfig:
                 raise ValueError("sqlite_path is required for db_type='sqlite'")
             return
 
-        if self.db_type in ["mariadb", "mysql"]:
+        if self.db_type in ["mariadb", "mysql", "postgres"]:
             missing = [
                 k
                 for k, v in {
@@ -298,6 +298,17 @@ class ForgejoRunner:
 
             finally:
                 conn.close()
+        elif db.db_type == "postgres":
+            """
+                WIP
+            """
+            self.module.log("postgresql support ... WIP")
+
+            config = {}
+
+            self.module.log(msg=f"config : {config}")
+
+            pass
         else:
             raise ValueError(f"Unsupported db_type: {db.db_type}")
 

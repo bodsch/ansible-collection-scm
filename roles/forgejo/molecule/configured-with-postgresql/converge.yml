@@ -1,0 +1,21 @@
+---
+- name: prepare database
+  hosts: database
+  gather_facts: true
+
+  roles:
+    # - role: bodsch.database.postgresql
+    - role: bodsch.database.postgresql_databases
+
+- name: converge
+  hosts: instance
+  any_errors_fatal: false
+  become: false
+  gather_facts: true
+
+  pre_tasks:
+    - name: do facts module to get latest information
+      ansible.builtin.setup:
+
+  roles:
+    - role: bodsch.scm.forgejo

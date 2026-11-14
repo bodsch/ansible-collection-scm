@@ -1,0 +1,12 @@
+---
+
+vault__ldap:
+  admin: xxx
+
+vault__database:
+  forgejo: forgejo
+
+vault__forgejo:
+  root: "change-it-ASAP!"
+
+...

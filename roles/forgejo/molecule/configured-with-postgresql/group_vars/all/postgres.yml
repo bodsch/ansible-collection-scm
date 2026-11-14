@@ -1,0 +1,45 @@
+---
+
+postgresql_config_connections:
+  listen_addresses:
+    - "0.0.0.0"
+  port: "5432"
+  max_connections: "10"
+  unix:
+    socket:
+      directories:
+        - /run/postgresql
+      group: ""
+      permissions: "0755"
+
+postgresql_config_reporting:
+  logging_collector: true
+  log_directory: /var/log/postgresql
+
+postgresql_hba_entries:
+  - type: local
+    database: all
+    user: postgres
+    auth_method: peer
+  - type: local
+    database: all
+    user: all
+    auth_method: peer
+  - type: host
+    database: all
+    user: all
+    address: '127.0.0.1/32'
+    auth_method: "{{ postgresql_config_authentication.password_encryption }}"
+  - type: host
+    database: all
+    user: all
+    address: '::1/128'
+    auth_method: "{{ postgresql_config_authentication.password_encryption }}"
+  #
+  - type: host
+    database: forgejo
+    user: forgejo
+    address: '10.16.0.11/32'
+    auth_method: "{{ postgresql_config_authentication.password_encryption }}"
+
+...
