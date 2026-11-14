@@ -1,0 +1,50 @@
+---
+
+forgejo_runner_version: 13.0.0
+
+forgejo_runner_controller:
+  hostname: "forgejo"
+  username: "forgejo"
+
+forgejo_config_dir: /etc/forgejo
+forgejo_working_dir: /var/lib/forgejo
+
+forgejo_runner_register:
+    # "{{ (ansible_facts | default({})) | bodsch.core.hostname(inventory_hostname=ansible_facts['hostname']) }}"
+  - name: "{{ ansible_facts.hostname }}"
+    tags: []
+    instance: "http://forgejo.molecule.lan:3000"
+    secret: "4ef3eb262c04aad5e279511c1c86f7377e28d6b9"
+    scope: ""
+    labels:
+      - self-hosted
+
+forgejo_runner_config:
+  log:                                                  #
+    level: debug                                        # trace, debug, info, warn, error, fatal
+  cache:                                                #
+    enabled: true
+    dir: /var/cache/forgejo-runner
+    host: "10.16.0.10"
+    port: "8088"
+    secret: "EFAA98E6E43689B070F8E154AB24B05D09A01853"
+    # external_server: ""
+  runner:                                               #
+    file: .runner
+    capacity: 2
+    # envs:
+    #   DOCKER_HOST: tcp://molecule.matrix.lan:2376
+    env_file: .env
+    timeout: 3h
+    insecure: true
+    fetch_timeout: 15s
+    fetch_interval: 2s
+    labels: []
+      # - label: ubuntu-latest
+      #   type: docker
+      #   container: catthehacker/ubuntu:act-latest
+      # - label: ci-runner
+      #   type: docker
+      #   container: catthehacker/ubuntu:act-latest
+
+...

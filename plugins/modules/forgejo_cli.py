@@ -399,6 +399,8 @@ class ForgejoCli:
         db_user: str | None = None
         db_pass: str | None = None
         db_charset: str | None = None
+        db_schema: str | None = None
+        db_ssl_mode: str | None = None
 
         db_type = _forgejo_config.get("database", {}).get("DB_TYPE", None)
 
@@ -415,14 +417,19 @@ class ForgejoCli:
             """ """
             db_hostname = _forgejo_config.get("database", {}).get("HOST", None)
 
-            if ":" in db_hostname:
+            if db_hostname and ":" in db_hostname:
                 db_host = db_hostname.split(":")[0]
                 db_port = int(db_hostname.split(":")[1])
+            else:
+                db_host = db_hostname
+                db_port = 5432 if db_type == "postgres" else 3306
 
             db_name = _forgejo_config.get("database", {}).get("NAME", None)
             db_user = _forgejo_config.get("database", {}).get("USER", None)
             db_pass = _forgejo_config.get("database", {}).get("PASSWD", None)
             db_charset = "utf8mb4"
+            db_schema = _forgejo_config.get("database", {}).get("SCHEMA", None)
+            db_ssl_mode = _forgejo_config.get("database", {}).get("SSL_MODE", None)
 
         config = DatabaseConfig(
             db_type=db_type,
@@ -447,13 +454,13 @@ class ForgejoCli:
             charset=(
                 db_charset if (db_type in ["mariadb", "mysql", "postgres"] and db_charset) else ""
             ),  # Connection charset (default: utf8mb4).
+            # PostgreSQL
+            schema=db_schema if (db_type == "postgres" and db_schema) else None,
+            ssl_mode=db_ssl_mode if (db_type == "postgres" and db_ssl_mode) else None,
         )
 
         _runner = ForgejoRunner(self.module)
 
-        # return {}
-        # TODO
-        #  -  postgresql support
         _runner_infos: RunnerSnapshot = _runner.get_runner_snapshot(
             db=config, mask_token_salt=False
         )

@@ -7,7 +7,7 @@ from typing import Any, Dict, List, Literal, Optional, Tuple, TypedDict
 
 _ALLOWED_TABLES: Tuple[str, ...] = ("action_runner", "act_runner")
 
-DbType = Literal["sqlite", "mariadb"]
+DbType = Literal["sqlite3", "mariadb", "mysql", "postgres"]
 RunnerState = Literal["active", "idle", "offline"]
 
 
@@ -67,13 +67,13 @@ class DatabaseConfig:
     Database configuration for Forgejo runner queries.
 
     This dataclass supports both SQLite and MariaDB. Use the factory methods
-    `DatabaseConfig.sqlite(...)` or `DatabaseConfig.mariadb(...)`.
+    `DatabaseConfig.sqlite3(...)` or `DatabaseConfig.mariadb(...)`.
 
     Attributes:
         db_type: Database type ('sqlite3' or 'mariadb').
 
         # SQLite
-        sqlite_path: Path to SQLite DB file (required for db_type='sqlite').
+        sqlite_path: Path to SQLite DB file (required for db_type='sqlite3').
 
         # MariaDB
         host: MariaDB host.
@@ -82,6 +82,10 @@ class DatabaseConfig:
         password: MariaDB password.
         database: MariaDB database name.
         charset: Connection charset (default: utf8mb4).
+
+        # PostgreSQL (uses host/port/user/password/database as well)
+        schema: Optional schema (Forgejo `SCHEMA`), applied via search_path.
+        ssl_mode: Optional sslmode (Forgejo `SSL_MODE`, e.g. disable/require/verify-full).
     """
 
     db_type: DbType
@@ -95,6 +99,9 @@ class DatabaseConfig:
     database: Optional[str] = None
     charset: str = "utf8mb4"
 
+    schema: Optional[str] = None
+    ssl_mode: Optional[str] = None
+
     @classmethod
     def sqlite3(cls, path: str) -> "DatabaseConfig":
         """
@@ -106,7 +113,7 @@ class DatabaseConfig:
         Returns:
             DatabaseConfig configured for SQLite.
         """
-        return cls(db_type="sqlite", sqlite_path=path)
+        return cls(db_type="sqlite3", sqlite_path=path)
 
     @classmethod
     def mariadb(
@@ -152,7 +159,7 @@ class DatabaseConfig:
         """
         if self.db_type == "sqlite3":
             if not self.sqlite_path:
-                raise ValueError("sqlite_path is required for db_type='sqlite'")
+                raise ValueError("sqlite_path is required for db_type='sqlite3'")
             return
 
         if self.db_type in ["mariadb", "mysql", "postgres"]:
@@ -167,7 +174,9 @@ class DatabaseConfig:
                 if not v
             ]
             if missing:
-                raise ValueError(f"Missing MariaDB fields: {', '.join(missing)}")
+                raise ValueError(
+                    f"Missing {self.db_type} fields: {', '.join(missing)}"
+                )
             return
 
         raise ValueError(f"Unsupported db_type: {self.db_type}")
@@ -270,7 +279,7 @@ class ForgejoRunner:
             if db.database is not None:
                 config["db"] = db.database
 
-            self.module.log(msg=f"config : {config}")
+            self.module.log(msg=f"config : { {**config, 'passwd': '***'} }")
 
             if mysql_driver is None:
                 self.module.fail_json(msg=mysql_driver_fail_msg)
@@ -279,15 +288,10 @@ class ForgejoRunner:
                 db_connection = mysql_driver.connect(**config)
 
             except Exception as e:
-                message = "unable to connect to database. "
-                message += (
-                    "check login_host, login_user and login_password are correct "
+                self.module.fail_json(
+                    msg=f"unable to connect to {db.db_type} database '{db.database}' "
+                    f"on {db.host}:{db.port}. Exception message: {str(e)}"
                 )
-                message += f"Exception message: {str(e)}"
-
-                self.module.log(msg=message)
-
-                return (None, None, True, message)
 
             # cursor = db_connection.cursor()
             conn = db_connection
@@ -299,16 +303,43 @@ class ForgejoRunner:
             finally:
                 conn.close()
         elif db.db_type == "postgres":
-            """
-                WIP
-            """
-            self.module.log("postgresql support ... WIP")
+            pg_driver = self._import_postgres_driver()
 
-            config = {}
+            if pg_driver is None:
+                self.module.fail_json(
+                    msg="A PostgreSQL driver is required: install 'psycopg' (v3) or 'psycopg2' "
+                    "(e.g. python3-psycopg2) on the Forgejo host."
+                )
 
-            self.module.log(msg=f"config : {config}")
+            config = {
+                "host": db.host,
+                "port": int(db.port or 5432),
+                "user": db.user,
+                "password": db.password,
+                "dbname": db.database,
+            }
 
-            pass
+            if db.ssl_mode:
+                config["sslmode"] = db.ssl_mode
+
+            if db.schema:
+                config["options"] = f"-c search_path={db.schema}"
+
+            try:
+                conn = pg_driver.connect(**config)
+
+            except Exception as e:
+                self.module.fail_json(
+                    msg=f"unable to connect to postgres database '{db.database}' "
+                    f"on {db.host}:{db.port}. Exception message: {str(e)}"
+                )
+
+            try:
+                table = self._detect_runner_table_postgres(conn)
+                rows = self._fetch_runner_rows_mariadb(conn, table)
+
+            finally:
+                conn.close()
         else:
             raise ValueError(f"Unsupported db_type: {db.db_type}")
 
@@ -436,6 +467,63 @@ class ForgejoRunner:
         # raise ist hier böse!
         raise ValueError(f"No runner table found. Tried: {_ALLOWED_TABLES}")
 
+    @staticmethod
+    def _import_postgres_driver() -> Any:
+        """
+        Import a PostgreSQL DB-API driver.
+
+        Prefers psycopg (v3) and falls back to psycopg2.
+
+        Returns:
+            The driver module, or None if no driver is installed.
+        """
+        try:
+            import psycopg  # type: ignore[import-not-found]
+
+            return psycopg
+        except ImportError:
+            pass
+
+        try:
+            import psycopg2  # type: ignore[import-not-found]
+
+            return psycopg2
+        except ImportError:
+            return None
+
+    def _detect_runner_table_postgres(self, conn: Any) -> str:
+        """
+        Detect the runner table name in PostgreSQL.
+
+        Respects the active search_path (Forgejo `SCHEMA` setting).
+
+        Args:
+            conn: psycopg / psycopg2 connection.
+
+        Returns:
+            The detected table name.
+
+        Raises:
+            ValueError: If no supported table is found.
+        """
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                SELECT table_name
+                FROM information_schema.tables
+                WHERE table_schema = current_schema()
+                  AND table_name IN (%s, %s)
+                """,
+                _ALLOWED_TABLES,
+            )
+            names = {row[0] for row in cur.fetchall()}
+
+        for candidate in _ALLOWED_TABLES:
+            if candidate in names:
+                return candidate
+
+        raise ValueError(f"No runner table found. Tried: {_ALLOWED_TABLES}")
+
     def _fetch_runner_rows_sqlite(self, conn: Any, table: str) -> List[Tuple[Any, ...]]:
         """
         Fetch runner rows from SQLite.
@@ -465,10 +553,12 @@ class ForgejoRunner:
         self, conn: Any, table: str
     ) -> List[Tuple[Any, ...]]:
         """
-        Fetch runner rows from MariaDB.
+        Fetch runner rows from MariaDB or PostgreSQL.
+
+        Both drivers implement DB-API 2.0 cursors, so the query is shared.
 
         Args:
-            conn: pymysql connection.
+            conn: pymysql or psycopg / psycopg2 connection.
             table: Runner table name.
 
         Returns:

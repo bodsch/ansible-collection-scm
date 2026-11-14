@@ -1,0 +1,9 @@
+---
+
+collections:
+  - name: bodsch.certs
+  - name: bodsch.database
+    version: "=>2.1"    
+  # - name: https://github.com/bodsch/ansible-collection-certs.git
+  #   type: git
+  #   version: main
