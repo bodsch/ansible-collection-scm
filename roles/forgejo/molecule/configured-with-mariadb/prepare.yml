@@ -60,7 +60,7 @@
 
   roles:
     - role: bodsch.core.syslog_ng
-    - role: mariadb
+    - role: bodsch.database.mariadb
     # - role: redis
 
 - name: prepare nginx

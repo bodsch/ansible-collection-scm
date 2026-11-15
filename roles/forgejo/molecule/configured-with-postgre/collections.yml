@@ -2,5 +2,6 @@
 
 collections:
   - name: bodsch.certs
+    version: ">=1.3"
   - name: bodsch.database
     version: ">=2.1"

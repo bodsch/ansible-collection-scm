@@ -7,6 +7,6 @@ forgejo_requirements:
 
 forgejo_database_packages:
   - python-psycopg
-  - python-mysqlclient
+  - python-pymysql
 
 ...

@@ -21,7 +21,8 @@ forgejo_requirements:
 
 forgejo_database_packages:
   - python3-psycopg
-  - python3-mysqlclient
+  # Veraltet ist der mysqlclient-Connector — auf Debian entspricht das typischerweise `python3-mysqldb.
+  - python3-pymysql
 
 forgejo_defaults_actions:
   enabled: true                                   #
