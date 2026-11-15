@@ -11,8 +11,8 @@ Type              = simple
 Environment       = "GOMAXPROCS={{ ansible_facts.processor_vcpus | default(ansible_facts.processor_count) }}"
 EnvironmentFile   = {{ opengist_defaults_directory }}/opengist
 
-User              = {{ opengist_user.owner }}
-Group             = {{ opengist_user.group }}
+User              = {{ opengist_system_user.owner }}
+Group             = {{ opengist_system_user.group }}
 
 ExecReload        = /bin/kill -HUP $MAINPID
 ExecStart         = /usr/bin/{{ opengist_release.binary }} $OPTIONS

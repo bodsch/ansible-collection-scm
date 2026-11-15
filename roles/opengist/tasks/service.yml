@@ -11,7 +11,8 @@
     - not running_in_check_mode
   ansible.builtin.service:
     name: opengist
-    enabled: true
-    state: started
+    state: "{{ opengist_system_service.state | default('started') }}"
+    enabled: "{{ opengist_system_service.enabled | default(true) | bool }}"
+
 
 ...

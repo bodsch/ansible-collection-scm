@@ -1,24 +1,38 @@
 ---
 
-opengist_version: 1.10.0
+opengist_version: 1.15.3
 
-opengist_user:
+# opengist_state: installed
+
+opengist_system_user:
   owner: opengist
   group: opengist
   groups: []
   home: /opt/opengist
 
+opengist_system_service:
+  state: started
+  enabled: true
+
 opengist_config_dir: /etc/opengist
 
 opengist_direct_download: false
-opengist_release: {}
+
+opengist_release:
+  provider: github
+  host: https://github.com
+  project:  thomiceli
+  repository: opengist
+  file: "opengist{{ opengist_version }}-{{ ansible_facts.system | lower }}-{{ system_architecture }}.tar.gz"
+  binary: opengist
 
 opengist_service:
   log:
     level: warn
-  web:
-    listen_address: "0.0.0.0:9100"
-    telemetry_path: "/metrics"
+  http:
+    host: "127.0.0.1"
+    port: 6157
+    git_enabled: true
 
 opengist_config: {}
 

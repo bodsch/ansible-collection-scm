@@ -1,27 +1,29 @@
 ---
 
 - name: daemon-reload
+  when:
+    - ansible_facts.service_mgr | lower == "systemd"
   become: true
   ansible.builtin.systemd:
     daemon_reload: true
     force: true
-  when:
-    - ansible_facts.service_mgr | lower == "systemd"
 
 - name: restart opengist
+  when:
+    - not running_in_check_mode
+    - opengist_system_service.state | default('started') == 'started'
   become: true
   ansible.builtin.service:
     name: opengist
     state: restarted
-  when:
-    - not running_in_check_mode
 
 - name: reload opengist
+  when:
+    - not running_in_check_mode
+    - opengist_system_service.state | default('started') == 'started'
   become: true
   ansible.builtin.service:
     name: opengist
     state: reloaded
-  when:
-    - not running_in_check_mode
 
 ...

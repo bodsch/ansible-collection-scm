@@ -35,7 +35,7 @@ opengist_defaults_config:
     journal_mode: WAL
 
   http:
-    host: "0.0.0.0"
+    host: "127.0.0.1"
     port: 6157
     git_enabled: true
 
@@ -45,7 +45,7 @@ opengist_defaults_config:
     enabled: false
 
   ssh:
-    host: "0.0.0.0"
+    host: "127.0.0.1"
     port: 2222
     git_enabled: false
     external_domain: ""
@@ -110,10 +110,11 @@ opengist_defaults_config:
 opengist_defaults_directory: /etc/default
 
 opengist_defaults_release:
-  # https://github.com/thomiceli/opengist/releases/download/v1.10.0/opengist-1.10.0.linux-amd64.tar.gz
-  # https://github.com/thomiceli/opengist/releases/download/v1.10.0/opengist1.10.0-linux-amd64.tar.gz
-  download_url: https://github.com/thomiceli/opengist/releases
-  file: opengist{{ opengist_version }}-{{ ansible_facts.system | lower }}-{{ system_architecture }}.tar.gz
+  provider: github
+  host: https://github.com
+  project:  thomiceli
+  repository: opengist
+  file: "opengist{{ opengist_version }}-{{ ansible_facts.system | lower }}-{{ system_architecture }}.tar.gz"
   binary: opengist
 
 # ---------------------------------------------
@@ -126,5 +127,14 @@ go_arch_map:
 system_architecture: "{{ go_arch_map[ansible_facts.architecture] | default(ansible_facts.architecture) }}"
 
 systemd_lib_directory: /lib/systemd/system
+
+_opengist_gh_token: "{{ lookup('env', 'GH_TOKEN') }}"
+_opengist_gh_user: "{{ lookup('env', 'GH_USER') }}"
+_opengist_fj_token: "{{ lookup('env', 'FJ_TOKEN') }}"
+_opengist_fj_user: "{{ lookup('env', 'FJ_USER') }}"
+
+# credentials matching the configured release provider (empty when unset)
+_opengist_scm_token: "{{ _opengist_fj_token if opengist_release.provider == 'forgejo' else _opengist_gh_token }}"
+_opengist_scm_user: "{{ _opengist_fj_user if opengist_release.provider == 'forgejo' else _opengist_gh_user }}"
 
 ...

@@ -56,13 +56,15 @@ def test_files(host, get_vars):
 
 def test_user(host, get_vars):
     """ """
-    user = get_vars.get("opengist_user", {}).get("owner", "opengist")
-    group = get_vars.get("opengist_user", {}).get("group", "opengist")
+    system_user = get_vars.get("opengist_system_user", {})
+
+    owner = system_user.get("owner", "opengist")
+    group = system_user.get("group", "opengist")
 
     assert host.group(group).exists
-    assert host.user(user).exists
-    assert group in host.user(user).groups
-    assert host.user(user).home == "/opt/opengist"
+    assert host.user(owner).exists
+    assert group in host.user(owner).groups
+    assert host.user(owner).home == "/opt/opengist"
 
 
 def test_service(host, get_vars):
@@ -89,7 +91,7 @@ def test_open_port(host, get_vars):
             listen_address = f"{listen_host}:{listen_port}"
 
     if not listen_address:
-        listen_address = "0.0.0.0:6157"
+        listen_address = "127.0.0.1:6157"
 
     print(listen_address)
 
