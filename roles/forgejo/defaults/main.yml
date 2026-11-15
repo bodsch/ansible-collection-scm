@@ -16,7 +16,9 @@ forgejo_systemd:
       - network.target
     wants: []
     requires: []
+    number_of_files: ""
   service:
+    # Use the next line if you have repos with lots of files and get a HTTP 500 error
     limits:
       nofile:
         soft: ""

@@ -68,11 +68,10 @@ Requires                = network.target {{ forgejo_systemd.unit.requires | join
       forgejo_systemd.service | count > 0 %}
   {% if forgejo_systemd.service.limits.nofile.soft | default('') | string | length > 0 and
         forgejo_systemd.service.limits.nofile.hard | default('') | string | length > 0 %}
-# Uncomment the next line if you have repos with lots of files and get a HTTP 500 error because of that
-## LimitNOFILE             = {{ forgejo_systemd.service.limits.nofile.soft }}:{{ forgejo_systemd.service.limits.nofile.hard }}
+LimitNOFILE             = {{ forgejo_systemd.service.limits.nofile.soft }}:{{ forgejo_systemd.service.limits.nofile.hard }}
   {% endif %}
 {% endif %}
-RestartSec              = 4s
+RestartSec              = 10s
 Type                    = simple
 User                    = {{ forgejo_system_user }}
 Group                   = {{ forgejo_system_group }}
