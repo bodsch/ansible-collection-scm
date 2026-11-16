@@ -5,6 +5,7 @@
     - not running_in_check_mode
   ansible.builtin.set_fact:
     forgejo_runner_config: "{{ forgejo_runner_defaults_config | combine(forgejo_runner_config, recursive=True) }}"
+  no_log: true
 
 - name: create forgejo-runner directories
   when:
@@ -76,11 +77,6 @@
   loop: "{{ forgejo_runner_register | default([]) }}"
   no_log: true
 
-# - name: d
-#   debug:
-#     msg:
-#       - "{{ forgejo_runner_controller }}"
-
 - name: "create runner token on '{{ forgejo_runner_controller.hostname }}'"
   when:
     - not running_in_check_mode
@@ -88,7 +84,7 @@
   become_user: "{{ forgejo_runner_controller.username }}"
   become: true
   delegate_to: "{{ forgejo_runner_controller.hostname }}"
-  run_once: true
+  # run_once: true
   bodsch.scm.forgejo_cli:
     command: register
     config: "{{ forgejo_config_dir }}/forgejo.ini"
@@ -96,18 +92,9 @@
     runners: "{{ forgejo_runner_register | default([]) }}"
   register: _forgejo_runner_registered
 
-# - name: d
-#   debug:
-#     msg: "{{ _forgejo_runner_registered }}"
-
-# - name: exit with fail
-#   ansible.builtin.fail:
-#     msg: A serious error occurred when downloading the archive.
-
 - name: create forgejo-runner configuration
   when:
     - not running_in_check_mode
-    # - _forgejo_runner_registered.state.changed | default('false') | bool
   ansible.builtin.template:
     force: true
     src: forgejo-runner/config.yaml.j2
@@ -117,7 +104,6 @@
     mode: "0644"
   register: forgejo_runner_config
   notify:
-    # - remove dot-runner
     - restart forgejo-runner
 
 - name: remove dot-runner
@@ -132,8 +118,6 @@
   when:
     - not running_in_check_mode
     - forgejo_runner_version is version_compare('10', '<')
-    # - forgejo_runner_config.state.changed | default('false') | bool
-    # depends on runner version
   become_user: "{{ forgejo_runner_system_user }}"
   become: true
   bodsch.scm.forgejo_runner:
@@ -154,7 +138,7 @@
   ansible.builtin.wait_for:
     path: /run/forgejo-runner/forgejo-runner.pid
     state: present
-    delay: 2
+    delay: 4
     msg: "Timeout to find /run/forgejo-runner/forgejo-runner.pid"
   ignore_errors: false
 

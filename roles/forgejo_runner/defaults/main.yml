@@ -22,8 +22,8 @@ forgejo_runner_direct_download: false
 
 forgejo_runner_controller:
   hostname: "localhost"
-  remoteuser: "forgejo-runner"
-  username: "forgejo-runner"
+  remoteuser: "forgejo"
+  username: "forgejo"
   # groupname: "forgejo"
 
 forgejo_runner_register:
