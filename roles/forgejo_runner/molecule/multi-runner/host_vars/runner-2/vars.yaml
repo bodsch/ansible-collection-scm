@@ -1,0 +1,19 @@
+---
+
+forgejo_runner_config:
+  log:
+    level: warn
+  runner:
+    labels:
+    #   #- "ubuntu-latest:docker://docker.io/ubuntu:latest"
+    #   #- "ubuntu-22.04:docker://docker.io/ubuntu:22.04"
+      # - label: ubuntu-latest
+      #   type: docker
+      #   container: docker.io/ubuntu:latest
+      # - label: self-hosted
+      #   type: host
+      #   container: "-self-hosted"
+      # # - label: ci-runner
+      # #   type: docker
+      # #   container: catthehacker/ubuntu:act-latest
+...

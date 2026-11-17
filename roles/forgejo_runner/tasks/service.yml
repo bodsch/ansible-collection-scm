@@ -6,7 +6,7 @@
   become: true
   ansible.builtin.service:
     name: forgejo-runner
-    enabled: true
-    state: started
+    state: "{{ forgejo_runner_system_service.state | default('started') }}"
+    enabled: "{{ forgejo_runner_system_service.enabled | default(true) | bool }}"
 
 ...

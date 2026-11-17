@@ -1,0 +1,9 @@
+---
+
+- name: converge
+  hosts: runner
+  any_errors_fatal: false
+  become: false
+
+  roles:
+    - role: bodsch.scm.forgejo_runner

@@ -1,29 +1,61 @@
 ---
 
+- name: daemon-reload
+  when:
+    - ansible_facts.service_mgr | lower == "systemd"
+  become: true
+  ansible.builtin.systemd:
+    daemon_reload: true
+    force: true
+
 - name: restart forgejo-runner
+  when:
+    - not running_in_check_mode
+    - forgejo_runner_system_service.state | default('started') == 'started'
   become: true
   ansible.builtin.service:
     name: forgejo-runner
     state: restarted
+  register: forgejo_runner_restarted
+  notify:
+    - query the systemd journal
 
 - name: reload forgejo-runner
+  when:
+    - not running_in_check_mode
+    - forgejo_runner_system_service.state | default('started') == 'started'
   become: true
   ansible.builtin.service:
     name: forgejo-runner
     state: reloaded
 
 - name: remove dot-runner
+  when:
+    - not running_in_check_mode
   become: true
   ansible.builtin.file:
     path: "{{ forgejo_runner_working_dir }}/.runner"
     state: absent
 
-- name: daemon-reload
-  become: true
-  ansible.builtin.systemd:
-    daemon_reload: true
-    force: true
+- name: query the systemd journal
   when:
-    - ansible_facts.service_mgr | lower == "systemd"
+    - not running_in_check_mode
+    - forgejo_runner_restarted is defined
+    - forgejo_runner_restarted.failed
+    - forgejo_runner_query_journald
+    - ansible_facts.service_mgr == 'systemd'
+  bodsch.systemd.journalctl:
+    identifier: forgejo-runner
+    lines: 150
+  register: forgejo_runner_journalctl
+  notify:
+    - forgejo-runner journalctl output
+
+- name: forgejo-runner journalctl output
+  when:
+    - not running_in_check_mode
+    - forgejo_runner_journalctl.stdout is defined
+  ansible.builtin.debug:
+    msg: "{{ forgejo_runner_journalctl.stdout }}"
 
 ...

@@ -25,8 +25,7 @@ on:
       - "!README.md"
       - 'roles/forgejo/**'
       - '.github/workflows/forgejo.yml'
-      - '.config/ansible-lint.yml'
-      - '.yamllint'
+
   pull_request:
     branches:
       - 'main'
@@ -38,8 +37,10 @@ on:
       - "!README.md"
       - 'roles/forgejo/**'
       - '.github/workflows/forgejo.yml'
-      - '.config/ansible-lint.yml'
-      - '.yamllint'
+
+concurrency:
+  group: forgejo-ci-${{ github.head_ref || github.ref_name }}
+  cancel-in-progress: true
 
 env:
   COLLECTION_NAMESPACE: bodsch

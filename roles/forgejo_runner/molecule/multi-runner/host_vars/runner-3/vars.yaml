@@ -1,0 +1,12 @@
+---
+
+forgejo_runner_config:
+  log:
+    level: warn
+  runner:
+    labels:
+      - label: self-hosted
+        type: host
+        container: "-self-hosted"
+
+...

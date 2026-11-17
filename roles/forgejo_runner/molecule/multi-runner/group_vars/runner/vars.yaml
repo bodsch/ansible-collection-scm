@@ -1,0 +1,67 @@
+---
+
+forgejo_config_dir: /etc/forgejo
+forgejo_working_dir: /var/lib/forgejo
+
+forgejo_runner_controller:
+  hostname: "forgejo"
+  remoteuser: "forgejo"
+  username: "forgejo"
+
+forgejo_runner_register:
+  - name: "{{ (ansible_facts | default({})) | bodsch.core.hostname(inventory_hostname=ansible_facts['hostname']) }}"
+    tags: []
+    instance: "http://forgejo.molecule.lan"
+    # must be an '40-character hex string' !
+    secret: "{{ vault__runner_token }}"
+    scope: ""
+    labels:
+      - self-hosted
+
+# forgejo_config_dir: /etc/forgejo
+# forgejo_working_dir: /var/lib/forgejo
+#
+# forgejo_runner_controller:
+#   hostname: "forgejo"
+#   remoteuser: "forgejo"
+#   username: "forgejo"
+#
+# forgejo_runner_register:
+#   - name: "{{ ansible_facts.hostname }}"
+#     tags: []
+#     instance: "http://forgejo.molecule.lan"
+#     secret: "4ef3eb262c04aad5e279511c1c86f7377e28d6b9"
+#     scope: ""
+#     labels:
+#       - ubuntu-latest
+#       - ubuntu-22.04
+#
+# forgejo_runner_config:
+#   log:                                                  #
+#     level: warn                                         # trace, debug, info, warn, error, fatal
+#   runner:                                               #
+#     file: .runner
+#     capacity: 2
+#     envs: {}
+#     env_file: .env
+#     timeout: 3h
+#     insecure: true
+#     fetch_timeout: 5s
+#     fetch_interval: 2s
+#     labels:
+#     #   #- "ubuntu-latest:docker://docker.io/ubuntu:latest"
+#     #   #- "ubuntu-22.04:docker://docker.io/ubuntu:22.04"
+#       - label: ubuntu-latest
+#         type: docker
+#         container: docker.io/ubuntu:latest
+#       - label: ubuntu-22.04
+#         type: docker
+#         container: docker.io/ubuntu:22.04
+#       - label: lxc
+#         type: lxc
+#         container: debian:trixie
+#       - label: self-hosted
+#         type: host
+#         container: "-self-hosted"
+
+...

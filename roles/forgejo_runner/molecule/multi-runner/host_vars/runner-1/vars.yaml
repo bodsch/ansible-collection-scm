@@ -1,0 +1,18 @@
+---
+
+forgejo_runner_config:
+  log:
+    level: warn
+  runner:
+    labels:
+      - label: self-hosted
+        type: host
+        container: "-self-hosted"
+
+  cache:
+    enabled: true
+    dir: "/var/cache/forgejo-runner"
+    host: "10.16.0.21"
+    port: "8088"
+
+...
