@@ -38,6 +38,10 @@ on:
       - 'roles/forgejo/**'
       - '.github/workflows/forgejo.yml'
 
+concurrency:
+  group: forgejo-ci-${{ github.head_ref || github.ref_name }}
+  cancel-in-progress: true
+
 env:
   COLLECTION_NAMESPACE: bodsch
   COLLECTION_NAME: scm

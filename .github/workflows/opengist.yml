@@ -38,6 +38,10 @@ on:
       - 'roles/opengist/**'
       - '.github/workflows/opengist.yml'
 
+concurrency:
+  group: opengist-ci-${{ github.head_ref || github.ref_name }}
+  cancel-in-progress: true
+
 env:
   COLLECTION_NAMESPACE: bodsch
   COLLECTION_NAME: scm

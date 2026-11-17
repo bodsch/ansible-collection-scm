@@ -34,6 +34,10 @@ on:
       - "!README.md"
       - '!roles/*/*.md'
 
+concurrency:
+  group: ci-${{ github.head_ref || github.ref_name }}
+  cancel-in-progress: true
+
 env:
   COLLECTION_NAMESPACE: bodsch
   COLLECTION_NAME: scm
