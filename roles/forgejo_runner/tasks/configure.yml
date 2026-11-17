@@ -138,7 +138,7 @@
   ansible.builtin.wait_for:
     path: /run/forgejo-runner/forgejo-runner.pid
     state: present
-    delay: 4
+    delay: 10
     msg: "Timeout to find /run/forgejo-runner/forgejo-runner.pid"
   ignore_errors: false
 
